@@ -1,0 +1,289 @@
+﻿
+@{
+    ViewData["Title"] = "المطاعم";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="content dark-edition">
+        <div class="container-fluid">
+
+            <div class="container alignright" style="margin:2% 0;">
+                <div class="row">
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#RestaurantModal">اضافة  جديد <i class='material-icons'>add</i> </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6 col-md-6 col-sm-12 ">
+                        <label class="mb-2">بحث عن الاسم</label>
+                        <input type="text" class="form-control alignright" placeholder="اكتب الاسم" autocomplete="off" name="Namese" id="Namese">
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                        <div class="text-center wow fadeInDown" style="text-align:left;">
+                            <label class="mb-2"> </label>
+                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث <i class='material-icons'>search</i>  </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header card-header-primary" style="text-align:right">
+                            <h4 class="card-title ">المطاعم</h4>
+                            <p class="card-category">جدول لعرض المطاعم داخل التطبيق</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" style="text-align: right;">
+                                <table class="table table-hover">
+                                    <thead class=" ">
+                                        <tr> 
+                                            <th scope="col">كود</th>
+                                            <th scope="col">اسم المنطقة</th>
+                                            <th scope="col">اقل سعر</th>
+                                            <th scope="col">Lat</th>
+                                            <th scope="col">Long</th>
+                                            <th scope="col">كلمة المرور</th>
+                                            <th scope="col">اسم المستخدم</th>
+                                            <th scope="col">مفتوح</th>
+                                            <th scope="col">تقييم</th>
+                                            <th scope="col">رابط الواتساب</th>
+                                            <th scope="col">العنوان</th>
+                                            <th scope="col">رقم هاتف</th>
+                                            <th scope="col">لوكو</th>
+                                            <th scope="col">خلفية</th>
+                                            <th scope="col">القسم</th>
+                                            <th scope="col">التفاصيل</th>
+                                            <th scope="col">الاسم</th>
+                                            <th scope="col"></th>
+                                            <th scope="col"></th> 
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableRestaurant">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="RestaurantModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
+                <button type="button" style="margin-left:10%;" id="close1" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" style="font-size:155%">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">الاسم</label>
+                        <input type="text" placeholder="اكتب الاسم" class="form-control alignright" autocomplete="off" name="Name" id="Name" />
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">التفاصيل</label>
+                        <textarea type="text" placeholder="اكتب التفاصيل" class="form-control alignright" autocomplete="off" name="Details" id="Details"></textarea>
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">رقم الهاتف</label>
+                        <input type="text" placeholder="اكتب رقم الهاتف" class="form-control alignright" autocomplete="off" name="Phone" id="Phone" />
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">العنوان  </label>
+                        <input type="text" placeholder="اكتب  عنوان" class="form-control alignright" autocomplete="off" name="Address" id="Address" />
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">رابط واتساب </label>
+                        <input type="text" placeholder="اكتب  رابط الواتساب" class="form-control alignright" autocomplete="off" name="Whatsapp" id="Whatsapp" />
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">اسم المستخدم</label>
+                        <input type="text" placeholder="اكتب  اسم المستخدم" class="form-control alignright" autocomplete="off" name="UserName" id="UserName" />
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">كلمة المرور</label>
+                        <input type="text" placeholder="اكتب  كلمة المرور " class="form-control alignright" autocomplete="off" name="Password" id="Password" />
+                    </div>
+                    
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">Lat</label>
+                        <input type="text" placeholder="Lat" class="form-control alignright" autocomplete="off" name="Lat" id="Lat" />
+                    </div>
+                    
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">Long</label>
+                        <input type="text" placeholder="Long" class="form-control alignright" autocomplete="off" name="Long" id="Long" />
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">اقل سعر</label>
+                        <input type="number" placeholder="Lat" class="form-control alignright" autocomplete="off" name="MinimumPrice" id="MinimumPrice" />
+                    </div>
+                    
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">اسم المنطقة</label>
+                        <input type="text" placeholder="Long" class="form-control alignright" autocomplete="off" name="Areaname" id="Areaname" />
+                    </div>
+
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">اختيار لوكو</label>
+                        <input type="file" placeholder="اختيار لوكو" class="form-control alignright" autocomplete="off" name="Logo" id="Logo" />
+                    </div> 
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">اختيار خلفية</label>
+                        <input type="file" placeholder="اختيار خلفية" class="form-control alignright" autocomplete="off" name="Background" id="Background" />
+                    </div>
+                    <div class="form-group col-md-6  alignright">
+                        <label class="text-primary">مفتوح</label>
+                        <div class='form-check col-md-6  alignright'>
+                            <label class='form-check-label'>
+                                <input class='form-check-input' type='checkbox' id='IsClosed'>
+                                <span class='form-check-sign'>
+                                    <span class='check'></span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                     <div class="form-group col-md-6  alignright">
+                        <label class="text-primary">تقييم</label>
+                        <div class='form-check col-md-6  alignright'>
+                            <label class='form-check-label'>
+                                <input class='form-check-input' type='checkbox' id='IsStars'>
+                                <span class='form-check-sign'>
+                                    <span class='check'></span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group col-md-12 text-right">
+                            <p>اختيار القسم</p>
+                            <select class="form-control text-right" style="background-color: #1a2035;" name="CategoriesId" id="CategoriesId">
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="close" data-dismiss="modal">اغلاق</button>
+                <button type="button" class="btn btn-success" id="save">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="mydiv">
+    <script>
+        function selectCategoriesId(data) {
+            var s = '<option value="0">اختيار القسم</option>'; 
+            $('#CategoriesId').append(s);
+            $.each(data, function (i, item) {
+                var ss = '<option value="' + item.categoriesId + '">' + item.categoriesName + '</option>';
+                $('#CategoriesId').append(ss);
+            });
+        };
+        $("#close").on("click", (e) => {
+            e.preventDefault();
+            RefreshRestaurant();
+        });
+        $("#close1").on("click", (e) => {
+            e.preventDefault(); RefreshRestaurant();
+        });
+         $("#search-btn").on("click", (e) => {
+            e.preventDefault();
+            RefreshRestaurant();
+        });
+        $(document).ready(function () { 
+            call_ajax("GET", "Categories/GetAll", null, selectCategoriesId);
+            RefreshRestaurant();
+        });
+        $("#save").on("click", (e) => {
+            e.preventDefault();
+
+            if ($("#CategoriesId").val() === 0 || $("#CategoriesId").val().trim() === "0") {
+                md.showNotification("رجاءا ادخل القسم ");
+                return;
+            }
+            if ($("#Name").val() === "" || $("#Name").val().trim() === "") {
+                md.showNotification("رجاءا ادخل الاسم ");
+                return;
+            }
+            if ($("#Phone").val() === "" || $("#Phone").val().trim() === "") {
+                md.showNotification("رجاءا ادخل رقم الهاتف ");
+                return;
+            } 
+            if ($("#UserName").val() === "" || $("#UserName").val().trim() === "") {
+                md.showNotification("رجاءا ادخل اسم المستخدم ");
+                return;
+            }
+            if ($("#Address").val() === "" || $("#Address").val().trim() === "") {
+                md.showNotification("رجاءا ادخل كلمة المرور ");
+                return;
+            }
+            if ($("#Phone").val() === "" || $("#Phone").val().trim() === "") {
+                md.showNotification("رجاءا ادخل  العنوان  ");
+                return;
+            }
+            if ($("#Whatsapp").val() === "" || $("#Whatsapp").val().trim() === "") {
+                md.showNotification("رجاءا ادخل  رابط واتساب ");
+                return;
+            }
+            var IsClosed = false;
+            if ($('#IsClosed').is(":checked")) {
+                IsClosed = true;
+            }
+            var IsStars = false;
+            if ($('#IsStars').is(":checked")) {
+                IsStars = true;
+            }
+
+            var fileUpload1 = $("#Logo").get(0);
+            var files1 = fileUpload1.files;
+            if (files1.length === 0) {
+                md.showNotification("رجاءا ادخل صورة لوكو ");
+                return;
+            }
+            var fileUpload = $("#Background").get(0);
+            var files = fileUpload.files;
+            if (files.length === 0) {
+                md.showNotification("رجاءا ادخل صورة الخلفية ");
+                return;
+            }
+            var data = new FormData();
+            data.append('RestaurantId', _RestaurantId);
+            data.append('Name', $("#Name").val());
+            data.append('Details', $("#Details").val());
+            data.append('Address', $("#Address").val());
+            data.append('Phone', $("#Phone").val());
+            data.append('Lat', $("#Lat").val());
+            data.append('Long', $("#Long").val());
+            data.append('Whatsapp', $("#Whatsapp").val());
+            data.append('Password', $("#Password").val());
+            data.append('UserName', $("#UserName").val());
+            data.append('MinimumPrice', $("#MinimumPrice").val());
+            data.append('MinimumPrice', $("#MinimumPrice").val());
+            data.append('Areaname', $("#Areaname").val());
+            data.append('CategoriesId', $("#CategoriesId").val());
+            data.append('IsClosed', IsClosed);
+            data.append('IsStars', IsStars);
+            data.append('Background', files[0]);
+            data.append('Logo', files1[0]);
+            call_ajax_withfile("POST", "Restaurant/Post", data, aftersaveRestaurant);
+           
+             
+        });
+
+    </script>
+</div>
+
+

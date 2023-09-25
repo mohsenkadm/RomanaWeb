@@ -1,0 +1,51 @@
+﻿@{
+    ViewData["Title"] = "تسجيل دخول";
+    Layout = "~/Views/Shared/_LayoutForLogin.cshtml";
+}
+
+<div class="container formlogin" style="margin: 10% auto;">
+    <div class="card alignright">
+        <div class="card-header card-header-info alignright">
+            <h4 class="card-title">تسجيل الدخول</h4>
+            <p class="card-category">املأ الحقول لتسجيل الدخول الى النظام</p>
+        </div>
+        <div class="card-body alignright">
+            <div class="form-group   alignright">
+                <label class="text-primary" style="width:100% ">رقم المستخدم</label>
+                <input type="text" id="UserName" autocomplete="off" name="UserName" class="form-control alignright" placeholder="اكتب رقم المستخدم" />
+            </div>
+            <div class="form-group   alignright">
+                <label class="text-primary" style="width:100% ">كلمة المرور</label>
+                <input type="text" id="Password" autocomplete="off" name="Password" class="form-control alignright" placeholder="اكتب كلمة المرور" />
+            </div>
+            <button type="button" id="login-btn" class="btn btn-primary btn-animated">تسجيل دخول</button>
+
+        </div>
+    </div>
+</div>
+<div id="mydiv">
+    <script>
+
+
+        function after_login(token) {
+            setCookie("token2", token.token, 0.5);
+            call_Action("home/index");
+        }
+        $("#login-btn").on("click", (e) => {
+            e.preventDefault();
+            var object = {
+                AdminNo: $("#UserName").val(),
+                password: $("#Password").val(),
+            };
+            if (object.AdminNo === "" || object.AdminNo.trim() === "") {
+                md.showNotification("يرجى ادخال رقم المستخدم");
+                return;
+            }
+            else if (object.password === "" || object.password.trim() === "") {
+                md.showNotification("يرجى ادخال كلمة المرور");
+                return;
+            }
+            call_ajax("POST", "Admin/Login", object, after_login);
+        });
+    </script>
+</div>

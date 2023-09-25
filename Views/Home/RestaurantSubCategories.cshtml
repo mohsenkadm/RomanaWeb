@@ -1,0 +1,146 @@
+﻿
+@{
+    ViewData["Title"] = "اصناف المطاعم";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="content dark-edition">
+        <div class="container-fluid">
+
+            <div class="container alignright" style="margin:2% 0;">
+                <div class="row">
+                    <div class="col-lg-6 col-md-6 col-sm-12 " style="text-align: center;">
+                        <label class="mb-2">اسم المطعم</label>
+                        <input type="text" class="form-control alignright" placeholder="اكتب اسم المطعم" name="Name" id="Name">
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2" style="text-align: center;">
+                        <div class="text-center wow fadeInDown" style="text-align:left;">
+                            <label class="mb-2"> </label>
+                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث</button>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#RestaurantSubCategoriesModal">اضافة  جديد <i class='material-icons'>add</i> </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header card-header-primary" style="text-align:right">
+                            <h4 class="card-title ">اصناف المطاعم</h4>
+                            <p class="card-category">جدول لعرض اصناف المطاعم داخل التطبيق</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" style="text-align: right;">
+                                <table class="table table-hover">
+                                    <thead class=" ">
+                                        <tr>
+                                            <th scope="col">اسم الصنف</th>
+                                            <th scope="col">اسم المطعم</th> 
+                                            <th scope="col"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableRestaurantSubCategories">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="RestaurantSubCategoriesModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
+                <button type="button" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" style="font-size:155%">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row"> 
+                    <div class="form-group col-md-12  alignright">
+                        <label class="text-primary">اسم الصنف</label>
+                        <select class="form-control text-right" style="background-color: #1a2035;" name="SubCategoriesId" id="SubCategoriesId">
+                        </select>
+                    </div>
+                    <div class="form-group col-md-12  alignright">
+                        <label class="text-primary">اسم المطعم</label>
+                        <select class="form-control text-right" style="background-color: #1a2035;" name="RestaurantId" id="RestaurantId">
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="close" data-dismiss="modal">اغلاق</button>
+                <button type="button" class="btn btn-success" id="save">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="mydiv">
+    <script>
+
+        function selectRestaurantId(data) {
+            var s = '<option value="0">اختيار المطعم</option>';
+            $('#RestaurantId').append(s);
+            $.each(data, function (i, item) {
+                var ss = '<option value="' + item.restaurantId + '">' + item.name + '</option>';
+                $('#RestaurantId').append(ss);
+            });
+        };
+        function selectSubCategoriesId(data) {
+            var s = '<option value="0">اختيار الصنف</option>';
+            $('#SubCategoriesId').append(s);
+            $.each(data, function (i, item) {
+                var ss = '<option value="' + item.subCategoriesId + '">' + item.subCategoriesName + '</option>'; 
+                $('#SubCategoriesId').append(ss);
+            });
+        };
+        $("#close").on("click", (e) => {
+            e.preventDefault();
+            aftersaveRestaurantSubCategories();
+        });
+        $("#search-btn").on("click", (e) => {
+            RefreshRestaurantSubCategories();
+        });
+
+        $(document).ready(function () { 
+            var obj={Name:''}
+            call_ajax("GET", "SubCategories/GetAll", obj, selectSubCategoriesId);
+            call_ajax("GET", "Restaurant/GetAll", obj, selectRestaurantId);
+            RefreshRestaurantSubCategories();
+        });
+        $("#save").on("click", (e) => {
+            e.preventDefault();  
+            if ($("#SubCategoriesId").val() === "0" || $("#SubCategoriesId").val().trim() === "") {
+                md.showNotification("رجاءا ادخل اسم الصنف ");
+                return;
+            }  
+            if ($("#RestaurantId").val() === "0" || $("#RestaurantId").val().trim() === "") {
+                md.showNotification("رجاءا ادخل اسم المطعم ");
+                return;
+            } 
+            var data = new FormData();
+            data.append('RestaurantSubCategoriesId', _RestaurantSubCategoriesId);
+            data.append('RestaurantId', $("#RestaurantId").val());
+            data.append('SubCategoriesId', $("#SubCategoriesId").val());
+            call_ajax_withfile("POST", "RestaurantSubCategories/Post", data, aftersaveRestaurantSubCategories); 
+        });
+
+    </script>
+</div>
+
+
+
+

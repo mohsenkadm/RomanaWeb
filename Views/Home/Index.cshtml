@@ -1,0 +1,156 @@
+﻿@{
+    ViewData["Title"] = "لوحة التحكم";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="card card-stats">
+                    <div class="card-header card-header-warning card-header-icon">
+                        <div class="card-icon">
+                            <i class="material-icons">person</i>
+                        </div>
+                        <p class="card-category">عدد الزبائن</p>
+                        <h3 class="card-title" id="CountUser">
+                        </h3>
+                    </div>
+                    <div class="card-footer">
+                        <div class="stats">
+                            <i class="material-icons text-warning">person</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="card card-stats">
+                    <div class="card-header card-header-success card-header-icon">
+                        <div class="card-icon">
+                            <i class="material-icons">person</i>
+                        </div>
+                        <p class="card-category">عدد المطاعم</p>
+                        <h3 class="card-title" id="CountRes"></h3>
+                    </div>
+
+                    <div class="card-footer">
+                        <div class="stats">
+                            <i class="material-icons text-success">person</i>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="card card-stats">
+                    <div class="card-header card-header-warning card-header-icon">
+                        <div class="card-icon">
+                            <i class="material-icons">person</i>
+                        </div>
+                        <p class="card-category">عدد الاقسام</p>
+                        <h3 class="card-title" id="CountCateg">
+                        </h3>
+                    </div>
+                    <div class="card-footer">
+                        <div class="stats">
+                            <i class="material-icons text-warning">person</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="card card-stats">
+                    <div class="card-header card-header-success card-header-icon">
+                        <div class="card-icon">
+                            <i class="material-icons">person</i>
+                        </div>
+                        <p class="card-category">عدد الاصناف</p>
+                        <h3 class="card-title" id="CountSubCateg"></h3>
+                    </div>
+
+                    <div class="card-footer">
+                        <div class="stats">
+                            <i class="material-icons text-success">person</i>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="card card-stats">
+                    <div class="card-header card-header-warning card-header-icon">
+                        <div class="card-icon">
+                            <i class="material-icons">person</i>
+                        </div>
+                        <p class="card-category">عدد المنتجات</p>
+                        <h3 class="card-title" id="CountProd">
+                        </h3>
+                    </div>
+                    <div class="card-footer">
+                        <div class="stats">
+                            <i class="material-icons text-warning">person</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="card card-stats">
+                    <div class="card-header card-header-success card-header-icon">
+                        <div class="card-icon">
+                            <i class="material-icons">person</i>
+                        </div>
+                        <p class="card-category">عدد الطلبات</p>
+                        <h3 class="card-title" id="CountOrder"></h3>
+                    </div>
+
+                    <div class="card-footer">
+                        <div class="stats">
+                            <i class="material-icons text-success">person</i>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="card card-stats">
+                    <div class="card-header card-header-success card-header-icon">
+                        <div class="card-icon">
+                            <i class="material-icons">person</i>
+                        </div>
+                        <p class="card-category">مبلغ الطلبات</p>
+                        <h3 class="card-title" id="PriceSale"></h3>
+                    </div>
+
+                    <div class="card-footer">
+                        <div class="stats">
+                            <i class="material-icons text-success">person</i>
+                        </div>
+                    </div>
+                </div>
+            </div> 
+        </div>
+    </div>
+</div>
+<div class="container-fluid">
+    <div class="copyright float-right" id="date">
+        © 2023
+        , made with <i class="material-icons">favorite</i> by
+        <a href="#">Developer mohsen</a> for a better web.
+    </div>
+</div>
+
+
+<div id="mydiv">
+    <script>
+        $(document).ready(function () {
+            call_ajax("GET", "Home/GetCountForMain", null, filldatacount);
+        });
+        function filldatacount(data) {
+           $("#CountUser").html(data.countUser);
+           $("#CountRes").html(data.countRes);
+            $("#CountCateg").html(data.countCateg);
+            $("#CountSubCateg").html(data.countSubCateg);
+            $("#CountProd").html(data.countProd);
+            $("#CountUsers").html(data.countUsers);
+            $("#PriceSale").html(data.priceSale);
+            $("#CountOrder").html(data.countOrder);
+        }
+    </script>
+</div>
+

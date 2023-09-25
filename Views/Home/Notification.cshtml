@@ -1,0 +1,47 @@
+﻿
+@{
+    ViewData["Title"] = "الاشعارات";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="content dark-edition">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="form-group col-md-6  alignright">
+                    <label class="text-primary">عنوان الاشعار</label>
+                    <input type="text" id="Title" autocomplete="off" name="Title" class="form-control alignright" placeholder="اكتب عنوان الاشعار" />
+                </div>
+                <div class="form-group col-md-6  alignright">
+                    <label class="text-primary">تفاصيل الاشعار</label>
+                    <input type="text" id="Details" autocomplete="off" name="Details" class="form-control alignright" placeholder="اكتب تفاصيل الاشعار" />
+                </div>
+            </div> 
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">اغلاق</button>
+            <button type="button" class="btn btn-success" id="save">حفظ</button>
+        </div>
+    </div>
+</div>
+<div id="mydiv">
+    <script>
+         
+        $("#save").on("click", (e) => {
+            e.preventDefault(); 
+            var object = { 
+                Title: $("#Title").val(),
+                Details: $("#Details").val(), 
+            };
+
+            if (object.Title === "" || object.Title.trim() === "") {
+                md.showNotification("رجاءا ادخل العنوان ");
+                return;
+            }
+            if (object.Details === "" || object.Details.trim() === "") {
+                md.showNotification("رجاءا ادخل التفاصيل ");
+                return;
+            } 
+            call_ajax("POST", "Notification/Post", object, null);
+        });
+
+    </script>
+</div>

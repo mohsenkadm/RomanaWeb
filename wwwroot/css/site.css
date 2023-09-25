@@ -1,0 +1,149 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+    .chatwidth {
+        width: 60%;
+        margin: auto;
+    }
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.alignright {
+    text-align: right;
+}
+
+@media screen and (min-width: 768px) {
+    .formlogin {
+        width: 40%;
+    }
+}
+
+@media screen and (max-width: 600px) {
+    .formlogin {
+        width: 100%;
+    }
+}
+@media (min-width:550px) {
+    .chatwidth {
+        width: 100%;
+        margin: auto;
+    }
+
+    .wd {
+        width: 100%
+    }
+}
+
+@media (min-width:650px) {
+    .chatwidth {
+        width: 70%;
+        margin: auto;
+    }
+     
+}
+
+@media (min-width:1000px) {
+    .chatwidth {
+        width: 60%;
+        margin: auto;
+    }
+}
+
+
+/*chat**/
+@media (min-width:200px) {
+    .session_chat {
+        margin-top: 30%;
+        margin-bottom: 20%;
+    }
+
+    .chatmassagewidth {
+        width: 98%;
+        margin: auto;
+        margin-bottom: 30%;
+    }
+
+    .dr {
+        margin-right: 0;
+    }
+}
+
+@media (min-width:550px) {
+    .session_chat {
+        margin-top: 21%;
+        margin-bottom: 15%;
+    }
+
+    .chatmassagewidth {
+        width: 98%;
+        margin: auto;
+        margin-bottom: 25%;
+    }
+
+    .dr {
+        margin-right: 0;
+        margin-left: 0;
+    }
+}
+
+@media (min-width:650px) {
+    .session_chat {
+        margin-top: 17%;
+        margin-bottom: 12%;
+    }
+
+    .chatmassagewidth {
+        width: 68%;
+        margin: auto;
+        margin-bottom: 15%;
+    }
+
+    .dr {
+        margin-right: 0;
+        margin-left: 0;
+    }
+}
+
+@media (min-width:768px) {
+    .session_chat {
+        margin-top: 14%;
+        margin-bottom: 11%;
+    }
+
+    .chatmassagewidth {
+        width: 58%;
+        margin: auto;
+        margin-bottom: 15%;
+    }
+
+    .dr {
+        margin-right: 0;
+        margin-left: 0;
+    }
+}
+
+@media (min-width:1000px) {
+    .session_chat {
+        margin-top: 9%;
+        margin-bottom: 6%;
+    }
+
+    .chatmassagewidth {
+        width: 58%;
+        margin: auto;
+        margin-bottom: 10%;
+    }
+}

@@ -1,0 +1,241 @@
+﻿@{
+    ViewData["Title"] = "المنتجات";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="content">
+    <div class="content dark-edition">
+        <div class="container-fluid">
+            <div class="container alignright" style="margin:2% 0;">
+
+                <div class="row">
+            <div class="col-lg-6 col-md-6 col-sm-12 " style="text-align: center;">
+                <label class="mb-2">بحث عن الاسم</label>
+                <input type="text" class="form-control alignright" placeholder="اكتب اسم المنتج" name="Name" id="Name">
+            </div>
+            <div class="col-lg-6 col-md-6 col-sm-12 " style="text-align: center;">
+                <label class="mb-2">اسم المطعم</label>
+                <input type="text" class="form-control alignright" placeholder="اكتب اسم المطعم" name="RestaurantName" id="RestaurantName">
+            </div> 
+            <div class="col-lg-6 col-md-6 col-sm-12 " style="text-align: center;">
+                <label class="mb-2">اسم الصنف</label>
+                <input type="text" class="form-control alignright" placeholder="اكتب اسم الصنف" name="SubCategoriesName" id="SubCategoriesName">
+            </div>
+            <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2" style="text-align: center;">
+                <div class="text-center wow fadeInDown" style="text-align:left;">
+                    <label class="mb-2"> </label>
+                    <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث</button>
+                </div>
+            </div>
+
+            <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                <div class="text-center wow fadeInDown">
+                    <label class="mb-2"> </label>
+                    <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#SubCategoriesModal">اضافة  جديد <i class='material-icons'>add</i> </button>
+                </div>
+             </div>
+
+                </div>
+            </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card">
+                                <div class="card-header card-header-primary" style="text-align:right">
+                                    <h4 class="card-title ">المنتجات</h4>
+                                    <p class="card-category">جدول لعرض المنتجات داخل التطبيق</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" style="text-align: right;">
+                                <table class="table table-hover">
+                                            <thead style="text-align: center;">
+                                                <tr>
+                                                     <th scope="col">الصنف</th> 
+                                                    <th scope="col"> صورة</th> 
+                                                    <th scope="col">السعر</th>
+                                                    <th scope="col">التفاصيل</th>
+                                                    <th scope="col">الاسم</th>
+                                                    <th scope="col">اسم المطعم</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody style="text-align: center;" id="tableProducts">
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+<nav aria-label="Page navigation example" style="margin:auto 50%;">
+    <ul class="pagination">
+        <li class="page-item">
+            <a class="page-link" href="#" id="prev" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+                <span class="sr-only">Previous</span>
+            </a>
+        </li>
+        <li class="page-item"><a class="page-link" href="#" id="indexid">1</a></li>
+        <li class="page-item">
+            <a class="page-link" href="#" id="next" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+                <span class="sr-only">Next</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+<!-- Modal -->
+<div class="modal fade" id="SubCategoriesModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
+                <button type="button" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" style="font-size:155%">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="form-group col-md-6  alignright">
+                        <label class="text-primary">اسم المنتج</label>
+                        <input type="text" id="ProductsName" autocomplete="off" name="ProductsName" class="form-control alignright" placeholder="اكتب اسم المنتج" />
+                    </div>
+                    <div class="form-group col-md-6  alignright">
+                        <label class="text-primary">تفاصيل المنتج</label>
+                        <input type="text" id="ProductsDetails" autocomplete="off" name="ProductsDetails" class="form-control alignright" placeholder="اكتب  تفاصيل المنتج" />
+                    </div>
+                    <div class="form-group col-md-6  alignright">
+                        <label class="text-primary">سعر المنتج</label>
+                        <input type="number" id="ProductsPrice" autocomplete="off" name="ProductsPrice" class="form-control alignright" placeholder="اكتب سعر المنتج" />
+                    </div>
+                    <div class="form-group col-md-6  alignright">
+                        <label class="text-primary">اسم الصنف</label>
+                        <select class="form-control text-right" style="background-color: #1a2035;" name="SubCategoriesId" id="SubCategoriesId">
+                        </select>
+                    </div>
+                    <div class="form-group col-md-6  alignright">
+                        <label class="text-primary">اسم المطعم</label>
+                        <select class="form-control text-right" style="background-color: #1a2035;" name="RestaurantId" id="RestaurantId">
+                        </select>
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">اختيار صورة</label>
+                        <input type="file" placeholder="اختيار الصورة" class=" alignright" autocomplete="off" name="imageca" id="imageca" />
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="close" data-dismiss="modal">اغلاق</button>
+                <button type="button" class="btn btn-success" id="save">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="mydiv">
+    <script>
+
+        $("#search-btn").on("click", (e) => {
+            RefreshProducts();
+        });
+        $("#save").on("click", (e) => {
+            e.preventDefault();
+            if ($("#ProductsName").val() === "" || $("#ProductsName").val().trim() === "") {
+                md.showNotification("رجاءا ادخل اسم المنتج ");
+                return;
+            }
+            if ($("#ProductsPrice").val() === "" || $("#ProductsPrice").val().trim() === "") {
+                md.showNotification("رجاءا ادخل اسم السعر ");
+                return;
+            }
+            if ($("#SubCategoriesId").val() === 0 || $("#SubCategoriesId").val().trim() === "") {
+                md.showNotification("رجاءا ادخل اسم الصنف ");
+                return;
+            }
+            if ($("#RestaurantId").val() === 0 || $("#RestaurantId").val().trim() === "") {
+                md.showNotification("رجاءا ادخل اسم المطعم ");
+                return;
+            }
+            var fileUpload = $("#imageca").get(0);
+            var files = fileUpload.files;
+            if (files.length === 0) {
+                md.showNotification("رجاءا ادخل الصورة ");
+                return;
+            }
+            var data = new FormData();
+            data.append('ProductsId', _ProductsId);
+            data.append('ProductsName', $("#ProductsName").val());
+            data.append('ProductsPrice', $("#ProductsPrice").val());
+            data.append('ProductsDetails', $("#ProductsDetails").val());
+            data.append('SubCategoriesId', $("#SubCategoriesId").val());
+            data.append('RestaurantId', $("#RestaurantId").val());
+            data.append('FileChoose', files[0]);
+            call_ajax_withfile("POST", "Products/Post", data, aftersaveProducts);
+        });
+
+        $("#next").on("click", (e) => {
+            e.preventDefault();
+            var count = $("#indexid").text();
+            count++;
+
+            var obj = {
+                Name: $("#Name").val(),
+                RestaurantName: $("#RestaurantName").val(),
+                SubCategoriesName: $("#SubCategoriesName").val(),
+                index: count
+            }
+            call_ajax("GET", "Products/GetAll", obj, filltableProducts);
+            $("#indexid").text(count);
+        });
+        $("#prev").on("click", (e) => {
+            e.preventDefault();
+            var count = $("#indexid").text();
+            if (count > 1) {
+                count--;
+                var obj = {
+                    Name: $("#Name").val(),
+                    RestaurantName: $("#RestaurantName").val(),
+                    SubCategoriesName: $("#SubCategoriesName").val(),
+                    index: count
+                }
+                call_ajax("GET", "Products/GetAll", obj, filltableProducts);
+                $("#indexid").text(count);
+            }
+        });
+
+        function selectRestaurantId(data) {
+            var s = '<option value="0">اختيار المطعم</option>';
+            $('#RestaurantId').append(s);
+            $.each(data, function (i, item) {
+                var ss = '<option value="' + item.restaurantId + '">' + item.name + '</option>';
+                $('#RestaurantId').append(ss);
+            });
+        };
+        function selectSubCategoriesId(data) {
+            var s = '<option value="0">اختيار الصنف</option>';
+            $('#SubCategoriesId').append(s);
+            $.each(data, function (i, item) {
+                var ss = '<option value="' + item.subCategoriesId + '">' + item.subCategoriesName + '</option>';
+                $('#SubCategoriesId').append(ss);
+            });
+        }; 
+        $(document).ready(function () {
+            var obj = { Name: '' }
+            call_ajax("GET", "SubCategories/GetAll", obj, selectSubCategoriesId);
+            call_ajax("GET", "Restaurant/GetAll", obj, selectRestaurantId);
+            RefreshProducts();
+        });
+
+        $("#close").on("click", (e) => {
+            e.preventDefault();
+            aftersaveProducts();
+        });
+        $(document).ready(function () {
+            RefreshProducts();
+        });
+    </script>
+</div>
+
+

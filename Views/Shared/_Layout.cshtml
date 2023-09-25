@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+<html lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - رومانا</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/WebSmartKid.styles.css" asp-append-version="true" />
+    
+  <link rel="apple-touch-icon" sizes="76x76" href="~/lib/assets/img/apple-icon.png">
+  <link rel="icon" type="image/png" href="~/lib/assets/img/favicon.png">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" /> 
+  <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
+  <!--     Fonts and icons     -->
+  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:400,700|Material+Icons" />
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700;900&display=swap" rel="stylesheet">
+  <!-- CSS Files -->
+  <link href="~/lib/assets/css/material-dashboard.css?v=2.1.0" rel="stylesheet" />
+  <!-- CSS Just for demo purpose, don't include it in your project -->
+  <link href="~/lib/assets/demo/demo.css" rel="stylesheet" />
+</head>
+<body style="font-family: 'Tajawal'; " class="dark-edition"> 
+    <script src="~/js/site.js" asp-append-version="true"></script> 
+    <script src="~/js/Carousel.js" asp-append-version="true"></script> 
+    <script src="~/js/Admin.js" asp-append-version="true"></script> 
+    <script src="~/js/SubCategories.js" asp-append-version="true"></script>
+    <script src="~/js/PromoCode.js" asp-append-version="true"></script>
+    <script src="~/js/CodeRes.js" asp-append-version="true"></script>
+    <script src="~/js/Restaurant.js" asp-append-version="true"></script> 
+    <script src="~/js/RestaurantSubCategories.js" asp-append-version="true"></script>
+    <script src="~/js/Users.js" asp-append-version="true"></script> 
+    <script src="~/js/Categories.js" asp-append-version="true"></script>
+    <script src="~/js/Products.js" asp-append-version="true"></script>
+    <script src="~/js/Orders.js" asp-append-version="true"></script>
+    <script src="~/js/Stars.js" asp-append-version="true"></script>
+
+    <!-- CUT FROM HERE --> 
+       
+  <div class="wrapper ">
+    <header>
+       <div class="sidebar" data-color="purple" data-background-color="black" data-image="/lib/assets/img/sidebar-2.jpg">
+      <!--
+        Tip 1: You can change the color of the sidebar using: data-color="purple | azure | green | orange | danger"
+
+        Tip 2: you can also add an image using data-image tag
+    -->
+      <div class="logo">
+          <a  class="simple-text logo-normal">
+          نظام ادارة تطبيق رومانا
+        </a>
+                    <div class="row text-center" style="width:200px">
+                        <button type="button" rel='tooltip' title='' class='btn btn-primary col' onclick="NextNavicationViews()"><i class='material-icons'>arrow_back</i> </button>
+                        <button type="button" rel='tooltip' title='' class='btn btn-primary col' onclick="PrevNavicationViews()"><i class='material-icons'>arrow_forward</i> </button>
+                    </div>
+        </div>
+      <div class="sidebar-wrapper">
+                    <ul class="nav" id="nav">
+                    </ul>
+      </div>
+    </div> 
+     
+    </header>
+     
+     <div class="main-panel">
+      <!-- Navbar -->
+      <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top " id="navigation-example">
+        <div class="container-fluid">
+          <div class="navbar-wrapper">
+            <a class="navbar-brand" href="javascript:void(0)">@ViewData["Title"]</a>
+          </div>
+          <button class="navbar-toggler" type="button" data-toggle="collapse" aria-controls="navigation-index" aria-expanded="false" aria-label="Toggle navigation" data-target="#navigation-example">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="navbar-toggler-icon icon-bar"></span>
+            <span class="navbar-toggler-icon icon-bar"></span>
+            <span class="navbar-toggler-icon icon-bar"></span>
+          </button> 
+        </div>
+      </nav>
+      <!-- End Navbar -->
+            @RenderBody() 
+      </div> 
+      
+  
+  </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    
+      <!--   Core JS Files   -->
+      <script src="~/lib/assets/js/core/jquery.min.js"></script>
+      <script src="~/lib/assets/js/core/popper.min.js"></script>
+      <script src="~/lib/assets/js/core/bootstrap-material-design.min.js"></script>
+      <script src="https://unpkg.com/default-passive-events"></script>
+      <script src="~/lib/assets/js/plugins/perfect-scrollbar.jquery.min.js"></script>
+      <!-- Place this tag in your head or just before your close body tag. -->
+      <script async defer src="https://buttons.github.io/buttons.js"></script> 
+      <!-- Chartist JS -->
+      <script src="~/lib/assets/js/plugins/chartist.min.js"></script>
+      <!--  Notifications Plugin    -->
+      <script src="~/lib/assets/js/plugins/bootstrap-notify.js"></script>
+      <!-- Control Center for Material Dashboard: parallax effects, scripts for the example pages etc -->
+      <script src="~/lib/assets/js/material-dashboard.js?v=2.1.0"></script>
+      <!-- Material Dashboard DEMO methods, don't include it in your project! -->
+      <script src="~/lib/assets/demo/demo.js"></script>
+   
+</body>
+</html>

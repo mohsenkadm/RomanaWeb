@@ -1,0 +1,130 @@
+﻿@{
+    ViewData["Title"] = "الصور";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="content dark-edition">
+        <div class="container-fluid">
+
+            <div class="container alignright" style="margin:2% 0;">
+                <div class="row">
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#CarouselModal">اضافة  جديد <i class='material-icons'>add</i> </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header card-header-primary" style="text-align:right">
+                            <h4 class="card-title ">صور اعلانية</h4>
+                            <p class="card-category">جدول لعرض الصور داخل التطبيق</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" style="text-align: right;">
+                                <table class="table table-hover">
+                                    <thead class=" ">
+                                        <tr>
+                                            <th scope="col">عرض الصورة</th>
+                                            <th scope="col">الصورة</th>
+                                            <th scope="col">رابط الصورة</th>
+                                            <th scope="col"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableCarousel">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="CarouselModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
+                <button type="button" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" style="font-size:155%">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="row col-md-12 alignright">
+                        <label class="text-primary">اختيار صورة</label>
+                        <input type="file" placeholder="اختيار الصورة" class=" alignright" autocomplete="off" name="imageca" id="imageca" />
+                    </div>
+                    <div class="form-group col-md-12  alignright">
+                        <label class="text-primary">عرض</label>
+                        <div class='form-check col-md-6  alignright'>
+                            <label class='form-check-label'>
+                                <input class='form-check-input' type='checkbox' id='IsShowca'>
+                                <span class='form-check-sign'>
+                                    <span class='check'></span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group col-md-12  alignright">
+                        <label class="text-primary">الرابط</label>
+                        <input type="text" id="Url" autocomplete="off" name="Url" class="form-control alignright" placeholder="اكتب  الرابط" />
+
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="close" data-dismiss="modal">اغلاق</button>
+                <button type="button" class="btn btn-success" id="save">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="mydiv">
+    <script>
+
+        $(document).ready(function () {
+            RefreshCarousel();
+        });
+        $("#close").on("click", (e) => {
+            e.preventDefault();
+            aftersaveCarousel();
+        });
+        $("#save").on("click", (e) => {
+            e.preventDefault();
+
+            var fileUpload = $("#imageca").get(0);
+            var files = fileUpload.files;
+            if (files.length === 0) {
+                md.showNotification("رجاءا ادخل الصورة ");
+                return;
+            }
+
+            var IsShow = false;
+            if ($('#IsShowca').is(":checked")) {
+                IsShow = true;
+            }
+            else { IsShow = false; }
+            var data = new FormData();
+            data.append('CarouseId', _CarouseId);
+            data.append('Url', $("#Url").val());
+            data.append('IsShow', IsShow); 
+            data.append('FileChoose', files[0]);
+            call_ajax_withfile("POST", "Carousel/Post", data, aftersaveCarousel);
+        });
+
+    </script>
+</div>
+
+
+
+

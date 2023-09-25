@@ -1,0 +1,120 @@
+﻿
+@{
+    ViewData["Title"] = "Stars";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+ 
+ 
+
+<div class="content">
+    <div class="content dark-edition">
+        <div class="container-fluid">
+            <div class="container alignright" style="margin:2% 0;">
+
+                <div class="row">
+                    <div class="col-lg-6 col-md-6 col-sm-12 " style="text-align: center;">
+                        <label class="mb-2"> بحث عن  اسم المطعم </label>
+                        <input type="text" class="form-control alignright" placeholder="اكتب اسم المطعم " name="RestaurantName" id="RestaurantName">
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2" style="text-align: center;">
+                        <div class="text-center wow fadeInDown" style="text-align:left;">
+                            <label class="mb-2"> </label>
+                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث</button>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#SubCategoriesModal">اضافة  جديد <i class='material-icons'>add</i> </button>
+                        </div>
+                    </div> 
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header card-header-primary" style="text-align:right">
+                            <h4 class="card-title ">المنتجات</h4>
+                            <p class="card-category">جدول لعرض المنتجات داخل التطبيق</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" style="text-align: right;">
+                                <table class="table table-hover">
+                                    <thead style="text-align: center;">
+                                        <tr>
+                                            <th scope="col">عدد النجمات</th>
+                                            <th scope="col">التعليق</th>
+                                            <th scope="col">اسم المستخدم</th>
+                                            <th scope="col">اسم المطعم</th>
+                                            <th scope="col"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style="text-align: center;" id="tableStars">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<nav aria-label="Page navigation example" style="margin:auto 50%;">
+    <ul class="pagination">
+        <li class="page-item">
+            <a class="page-link" href="#" id="prev" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+                <span class="sr-only">Previous</span>
+            </a>
+        </li>
+        <li class="page-item"><a class="page-link" href="#" id="indexid">1</a></li>
+        <li class="page-item">
+            <a class="page-link" href="#" id="next" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+                <span class="sr-only">Next</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+<div id="mydiv">
+    <script>
+        // on ready
+        $(document).ready(function () {
+            RefreshStars();
+        });
+        $("#search-btn").on("click", (e) => {
+            RefreshStars();
+        });
+        $("#next").on("click", (e) => {
+            e.preventDefault();
+            var count = $("#indexid").text();
+            count++; 
+            var obj = {
+                RestaurantName: $("#RestaurantName").val(),
+                index: count
+            }
+            call_ajax("GET", "Stars/GetAll", obj, filltableStars);
+            $("#indexid").text(count);
+        });
+        $("#prev").on("click", (e) => {
+            e.preventDefault();
+            var count = $("#indexid").text();
+            if (count > 1) {
+                count--;
+                var obj = {
+                    RestaurantName: $("#RestaurantName").val(),
+                    index: count
+                }
+                call_ajax("GET", "Stars/GetAll", obj, filltableStars);
+                $("#indexid").text(count);
+            }
+        });
+    </script>
+</div>
+
+
+
