@@ -7,11 +7,14 @@ namespace RomanaWeb.Models.Entity
         public int ProductsId { get; set; }
         public string? ProductsName { get; set; }
         public string? ProductsDetails { get; set; }
-        public decimal? ProductsPrice { get; set; }    
-        public int RestaurantId { get; set; }
-        public int SubCategoriesId { get; set; }   
+        public double? ProductsPrice { get; set; }    
+        public int? RestaurantId { get; set; }
+        public int? SubCategoriesId { get; set; }   
         public string? SubCategoriesName { get; set; }
         public string? RestaurantName { get; set; }
+        public string? Logo { get; set; }
         public string? ProductsImage { get; set; }      
+        public string? Background { get; set; }
+        public bool? IsFree { get; set; } 
     }
 }

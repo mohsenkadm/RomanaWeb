@@ -9,6 +9,7 @@ using RomanaWeb.UploadService;
 
 namespace RomanaWeb.Controllers
 {
+    [Authorize]
     public class CodeResController : MasterController
     {
 
@@ -30,6 +31,7 @@ namespace RomanaWeb.Controllers
 
         #region Get Info CodeRes  
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
             try

@@ -5,8 +5,8 @@ namespace RomanaWeb.Models.Entity
     public class Stars
     {                    
         public int StarsId { get; set; }
-        [Required]
-        public int? UserId { get; set; }
+      //  [Required]
+       // public int? UserId { get; set; }
         [Required]
         [Range(0,5)]
         public int? StarsCount { get; set; }

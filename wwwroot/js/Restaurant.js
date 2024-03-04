@@ -1,5 +1,25 @@
 ﻿
 var _RestaurantId = 0;
+function filltableResNotApproveAll(data) {
+    $('#tableRestaurant').empty();
+    if (data.length === 0) {  
+        md.showNotification('لا توجد معلومات');
+        return;
+    } 
+    $.each(data, function (i, item) {
+        var rows = "<tr>" +   
+            "<td>" + item.address + "</td>" +   
+            "<td>" + item.phone + "</td>" +
+            "<td><img src='" + item.logo + "' alt='' border=3 height=50 width=50></img></td>" +
+            "<td><img src='" + item.background + "' alt='' border=3 height=50 width=50></img></td>" +
+            "<td>" + item.categoriesName + "</td>" +   
+            "<td>" + item.details + "</td>" +   
+            "<td>" + item.name + "</td>"
+            + "<td> <button type='button' class='btn btn-danger' onclick='SetIsApproveShop(" + item.restaurantId + ")'  >حذف</button></td></tr>";
+        $('#tableRestaurant').append(rows);  
+    });
+}
+
 function filltableRestaurant(data) {
     $('#tableRestaurant').empty();
     if (data.length === 0) {  
@@ -10,11 +30,22 @@ function filltableRestaurant(data) {
         var rows = "<tr>" +
             "<td>" + item.code + "</td>" +
             "<td>" + item.areaname + "</td>" +
+            "<td>" + item.costDelivery + "</td>" +
             "<td>" + item.minimumPrice + "</td>" +
             "<td>" + item.lat + "</td>" +
             "<td>" + item.long + "</td>" +  
             "<td>" + item.password + "</td>" +
             "<td>" + item.userName + "</td>" +  
+            "<td>" +
+            "<div class='form-check'>" +
+            "<label class='form-check-label'>" +
+            "<input class='form-check-input' type='checkbox' id='IsActive" + item.restaurantId + "'>" +
+            "<span class='form-check-sign'>" +
+            "<span class='check'></span>" +
+            "</span>" +
+            "</label>" +
+            "</div>" +
+            "</td>" +
             "<td>" +
             "<div class='form-check'>" +
             "<label class='form-check-label'>" +
@@ -24,7 +55,8 @@ function filltableRestaurant(data) {
             "</span>" +
             "</label>" +
             "</div>" +
-            "</td>" + "<td>" +
+            "</td>" +
+            "<td>" +
             "<div class='form-check'>" +
             "<label class='form-check-label'>" +
             "<input class='form-check-input' type='checkbox' id='IsStars" + item.restaurantId + "'>" +
@@ -42,11 +74,12 @@ function filltableRestaurant(data) {
             "<td>" + item.categoriesName + "</td>" +   
             "<td>" + item.details + "</td>" +   
             "<td>" + item.name + "</td>"
-            + "<td> <button type='button' class='btn btn-danger' onclick='deleteCategories(" + item.restaurantId + ")'  >حذف</button>" +
-            "  |  <button type='button' class='btn btn-primary' onclick='updateCategories(" + item.restaurantId + ")'  data-toggle='modal' data-target='#RestaurantModal'>تعديل</button> </button></td></tr>";
+            + "<td> <button type='button' class='btn btn-danger' onclick='deleteRestaurant(" + item.restaurantId + ")'  >حذف</button>" +
+            "  |  <button type='button' class='btn btn-primary' onclick='updateRestaurant(" + item.restaurantId + ")'  data-toggle='modal' data-target='#RestaurantModal'>تعديل</button> </button></td></tr>";
         $('#tableRestaurant').append(rows);
         $('#IsClosed' + item.restaurantId).attr('checked', item.isClosed); 
         $('#IsStars' + item.restaurantId).attr('checked', item.isStars); 
+        $('#IsActive' + item.restaurantId).attr('checked', item.isActive); 
     });
 }
 
@@ -63,6 +96,16 @@ function RefreshRestaurant() {
     var count = $("#indexid").text();
     var obj = { Name: $("#Namese").val(), index: count }
     call_ajax("GET", "Restaurant/GetAll", obj, filltableRestaurant);
+}
+
+
+// refresh data
+function RefreshResNotApprove() {
+    call_ajax("GET", "Restaurant/GetResNotApproveAll", null, filltableResNotApproveAll);
+}
+function SetIsApproveShop(id) {
+    var obj = { Id: id };
+    call_ajax("POST", "Restaurant/SetIsApproved", obj, RefreshResNotApprove);
 }
 
 function updateRestaurant(id) {
@@ -87,6 +130,7 @@ function setdataRestaurant(data) {
     $("#Whatsapp").val(data.whatsapp); 
     $("#Password").val(data.password);
     $("#UserName").val(data.userName);
+    $("#CostDelivery").val(data.costDelivery);
     $("#CategoriesId").val(data.categoriesId).change();
     
     if (data.isStars === true) {
@@ -94,6 +138,12 @@ function setdataRestaurant(data) {
     }
     else {
         $("#IsStars").prop("checked", false);
+    }
+    if (data.isActive === true) {
+        $("#IsActive").prop("checked", true);
+    }
+    else {
+        $("#IsActive").prop("checked", false);
     }  
     if (data.isClosed === true) {
         $("#IsClosed").prop("checked", true);
@@ -111,6 +161,7 @@ function aftersaveRestaurant(Restaurant) {
     $("#Background").val('');  
     $("#Phone").val('');  
     $("#MinimumPrice").val('');
+    $("#CostDelivery").val('');
     $("#Areaname").val('');
     $("#Lat").val('');
     $("#Long").val(''); 
@@ -119,6 +170,7 @@ function aftersaveRestaurant(Restaurant) {
     $("#UserName").val('');
     $("#CategoriesId").val(0).change();
     $("#IsStars").prop("checked", true); 
+    $("#IsActive").prop("checked", true); 
     $("#IsClosed").prop("checked", false); 
     _RestaurantId = 0;
     RefreshRestaurant();

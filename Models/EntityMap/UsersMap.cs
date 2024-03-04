@@ -18,6 +18,11 @@ namespace RomanaWeb.Model.EntityMap
             builder.Property(x => x.FunctionPoint);           
             builder.Property(x => x.Lat);           
             builder.Property(x => x.Long);           
+            builder.Property(x => x.IsActive);           
+            builder.Property(x => x.IsConfirm);           
+            builder.Property(x => x.IsDelete);           
+            builder.Property(x => x.Code);           
+            builder.Property(x => x.Password);           
         }
     }
 }

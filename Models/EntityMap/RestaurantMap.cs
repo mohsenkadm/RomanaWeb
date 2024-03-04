@@ -25,11 +25,21 @@ namespace RomanaWeb.Models.EntityMap
             builder.Property(x => x.Password) ;  
             builder.Property(x => x.CategoriesId) ; 
             builder.Property(x => x.IsStars) ; 
+            builder.Property(x => x.IsActive) ; 
             builder.Property(x => x.MinimumPrice) ; 
             builder.Property(x => x.Areaname) ; 
+            builder.Property(x => x.CostDelivery) ; 
             builder.Ignore(x => x.Token);
             builder.Ignore(x => x.StarCount);  
             builder.Ignore(x => x.CategoriesName);
+            builder.Ignore(x => x.Total);
+            builder.Ignore(x => x.TotalDiscount);
+            builder.Ignore(x => x.NetAmount);
+            builder.Ignore(x => x.CountOrder);
+            builder.Ignore(x => x.daCountOrder);
+            builder.Ignore(x => x.daNetAmount);
+            builder.Ignore(x => x.daTotal);
+            builder.Ignore(x => x.daTotalDiscount);  
         }
     }
 }

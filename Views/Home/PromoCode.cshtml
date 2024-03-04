@@ -16,12 +16,12 @@
                             <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث</button>
                         </div>
                     </div>
-                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                   @*  <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
                         <div class="text-center wow fadeInDown">
                             <label class="mb-2"> </label>
                             <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#PromoCodeModal">اضافة  جديد <i class='material-icons'>add</i> </button>
                         </div>
-                    </div>
+                    </div> *@
                 </div>
             </div>
             <div class="row">
@@ -36,6 +36,7 @@
                                 <table class="table table-hover">
                                     <thead class=" ">
                                         <tr>   
+                                            <th scope="col">اسم المطعم</th> 
                                             <th scope="col">نسبة</th> 
                                             <th scope="col">اسم البرومو</th> 
                                             <th scope="col"></th>
@@ -59,7 +60,7 @@
         <div class="modal-content dark-edition">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
-                <button type="button" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" id="close1" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true" style="font-size:155%">&times;</span>
                 </button>
             </div>
@@ -86,6 +87,10 @@
     <script>
 
         $("#close").on("click", (e) => {
+            e.preventDefault();
+            aftersavePromoCode();
+        });
+        $("#close1").on("click", (e) => {
             e.preventDefault();
             aftersavePromoCode();
         });

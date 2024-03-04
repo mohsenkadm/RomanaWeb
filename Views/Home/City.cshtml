@@ -1,0 +1,136 @@
+﻿
+@{
+    ViewData["Title"] = "المدن";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="content dark-edition">
+        <div class="container-fluid">
+
+            <div class="container alignright" style="margin:2% 0;">
+                <div class="row">
+                    <div class="col-lg-6 col-md-6 col-sm-12 " style="text-align: center;">
+                        <label class="mb-2">اسم المدينة</label>
+                        <input type="text" class="form-control alignright" placeholder="اكتب اسم المدينة" name="Name" id="Name">
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2" style="text-align: center;">
+                        <div class="text-center wow fadeInDown" style="text-align:left;">
+                            <label class="mb-2"> </label>
+                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث</button>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#CityModal">اضافة  جديد <i class='material-icons'>add</i> </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header card-header-primary" style="text-align:right">
+                            <h4 class="card-title ">المدن</h4>
+                            <p class="card-category">جدول لعرض المدن داخل التطبيق</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" style="text-align: right;">
+                                <table class="table table-hover">
+                                    <thead class=" ">
+                                        <tr>   
+                                            <th scope="col">اسم المحافظة</th> 
+                                            <th scope="col">اسم المدينة</th> 
+                                            <th scope="col"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableCity">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="CityModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
+                <button type="button" id="close1" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" style="font-size:155%">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row"> 
+                    <div class="form-group col-md-12  alignright">
+                        <label class="text-primary">اسم المدينة</label>
+                        <input type="text" id="CityName" autocomplete="off" name="CityName" class="form-control alignright" placeholder="اكتب اسم المدينة" />
+                    </div> 
+                </div>
+                <div class="row">
+                    <div class="form-group col-md-12 text-right">
+                        <p>اختيار المحافظة</p>
+                        <select class="form-control text-right" style="background-color: #1a2035;" name="CountriesId" id="CountriesId">
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="close" data-dismiss="modal">اغلاق</button>
+                <button type="button" class="btn btn-success" id="save">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="mydiv">
+    <script>
+        function selectCountriesId(data) {
+            var s = '<option value="0">اختيار المحافظة</option>';
+            $('#CountriesId').append(s);
+            $.each(data, function (i, item) {
+                var ss = '<option value="' + item.countriesId + '">' + item.countriesName + '</option>';
+                $('#CountriesId').append(ss);
+            });
+        };
+        $("#close").on("click", (e) => {
+            e.preventDefault();
+            aftersaveCity();
+        });
+        $("#close1").on("click", (e) => {
+            e.preventDefault();
+            aftersaveCity();
+        });
+        $("#search-btn").on("click", (e) => {
+            RefreshCity();
+        });
+
+        $(document).ready(function () { 
+            call_ajax("GET", "Countries/GetAll", null, selectCountriesId);
+            RefreshCity();
+        });
+        $("#save").on("click", (e) => {
+            e.preventDefault();  
+            if ($("#CityName").val() === "" || $("#CityName").val().trim() === "") {
+                md.showNotification("رجاءا ادخل اسم المدينة ");
+                return;
+            } 
+            var data = new FormData();
+            data.append('CityId', _CityId);
+            data.append('CityName', $("#CityName").val());  
+            data.append('CountriesId', $("#CountriesId").val());
+            call_ajax_withfile("POST", "City/Post", data, aftersaveCity); 
+        });
+
+    </script>
+</div>
+
+
+
+

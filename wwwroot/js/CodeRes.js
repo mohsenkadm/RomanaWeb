@@ -17,7 +17,9 @@ function filltableCodeRes(data) {
             "<td>" + item.code + "</td>" 
             + "<td> <button type='button' class='btn btn-danger' onclick='deleteCodeRes(" + item.codeResId + ")'  >حذف</button>" +
             "  |  <button type='button' class='btn btn-primary' onclick='updateCodeRes(" + item.codeResId + ")'  data-toggle='modal' data-target='#CodeResModal'>تعديل</button></td></tr>";
-        $('#tableCodeRes').append(rows); 
+        $('#tableCodeRes').append(rows);
+
+        $('#IsFree' + item.codeResId).attr('checked', item.isFree); 
     });
 }
 

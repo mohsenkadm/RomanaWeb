@@ -10,13 +10,13 @@ using RomanaWeb.Helper.Repository;
 
 namespace RomanaWeb.Controllers
 {
-    [Authorize]
+   // [Authorize]
     public class OrdersController : MasterController
     {
         #region Readonly 
         private readonly ILoggerRepository _logger;
         private readonly IOrdersService _OrdersService;
-        private readonly INotificationService _noteService;    
+        private readonly INotificationService _noteService;   
         public readonly IMapper _mapper;
         #endregion
 
@@ -52,7 +52,7 @@ namespace RomanaWeb.Controllers
         #endregion
 
         #region Get Orders By OrderNo and UserId 
-        [HttpGet("GetOrdersByOrderNoAndUserId/{OrderNo},{UserId}")]
+        [HttpGet("GetOrdersByOrderNoAndUserId/{OrderNo},{PersonId}")]
         public async Task<IActionResult> GetOrdersByOrderNoAndUserId(string? OrderNo, int? PersonId)
         {
             try
@@ -70,18 +70,33 @@ namespace RomanaWeb.Controllers
         #endregion    
 
         #region Get Orders By OrderNo and RestaurantId 
-        [HttpGet("GetOrdersByOrderNoAndRestaurantId/{OrderNo},{RestaurantId}")]
-        public async Task<IActionResult> GetOrdersByOrderNoAndRestaurantId(string? OrderNo, int? RestaurantId)
+        [HttpGet("GetOrdersByOrderNoAndRestaurantId/{OrderNo},{RestaurantId},{Type}")]
+        public async Task<IActionResult> GetOrdersByOrderNoAndRestaurantId(string? OrderNo, int? RestaurantId,int Type)
         {
             try
             {
-                ResObj res = await _OrdersService.GetOrdersByOrderNoAndRestaurantId(OrderNo, RestaurantId);
-
+                ResObj res = await _OrdersService.GetOrdersByOrderNoAndRestaurantId(OrderNo, RestaurantId, Type);       
                 return Response(res.success, res.data);
             }
             catch (Exception ex)
             {
                 await _logger.WriteAsync(ex, "OrdersController => GetOrdersByOrderNoAndRestaurantId");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion   
+        #region Get Orders By OrderNo and RestaurantId 
+        [HttpGet("GetOrdersByOrderNoAndSaleManId/{OrderNo},{SaleManId},{Type}")]
+        public async Task<IActionResult> GetOrdersByOrderNoAndSaleManId(string? OrderNo, int? SaleManId, int Type)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.GetOrdersByOrderNoAndSaleManId(OrderNo, SaleManId, Type);       
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => GetOrdersByOrderNoAndSaleManId");
                 return Response(false, "حدث خطا اثناء عملية جلب البيانات");
             }
         }
@@ -166,11 +181,11 @@ namespace RomanaWeb.Controllers
         public async Task<IActionResult> Post([FromBody] OrdersModel  ordersModel)
         {
             try
-            {
-
+            {                                                                   
                 Orders Orders = _mapper.Map<Orders>(ordersModel);
+                                                                               
                 ResObj resuser = await _OrdersService.PostUser(ordersModel.Users);
-                  
+                                                                               
                 if (resuser.success)
                 {
                     Users user = (Users)resuser.data;
@@ -180,6 +195,10 @@ namespace RomanaWeb.Controllers
 
                 ResObj res;
                 res = await _OrdersService.Post(Orders);
+                if (res.success == false)
+                {         
+                    return Response(res.success, res.msg, res.data);
+                }
                 Orders orders=(Orders)res.data;
                 List<string> ids = new List<string>();   
               
@@ -187,7 +206,7 @@ namespace RomanaWeb.Controllers
                 Notification notifications = new Notification
                 {
                     Title = "طلبك",
-                    Details =  " سوف يتم الموافقة على طلبك قريبا  ",
+                    Details = $" هلو {orders.UserName} تم ايصال طلبك بنجاح ، من فضلك انتظر الموافقة عليه  ",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId,ResId=0   ,Images=""
                 };
@@ -204,14 +223,14 @@ namespace RomanaWeb.Controllers
                 Notification notifications1 = new Notification
                 {
                     Title = "طلب",
-                    Details = " بطلب منتجات بانتظار الموافقة " + orders.UserName + "قام ",
+                    Details =  $" قام {orders.UserName} بطلب منتجات بانتظار الموافقة ",
                     DateInsert = Key.DateTimeIQ,
                     ResId = orders.RestaurantId, UserId=0,Images=""
                 };                                     
                 await _noteService.Post(notifications1);
                 try
                 {
-                    await OneSignalSenderUser(notifications1.Title, notifications1.Details,
+                    await OneSignalSenderRes(notifications1.Title, notifications1.Details,
                       ids1);
                 }
                 catch (Exception ex) { }
@@ -226,7 +245,7 @@ namespace RomanaWeb.Controllers
         #endregion
 
         #region Set Order IsApporve
-        [HttpPost("SetIsApporve/{OrderId}")]
+        [HttpPost("Orders/SetIsApporve/{OrderId}")]
         public async Task<IActionResult> SetIsApporve(int OrderId)
         {
             try
@@ -239,13 +258,13 @@ namespace RomanaWeb.Controllers
                 Orders orders = (Orders)res.data;
                 List<string> ids = new List<string>();
                 string Name = "";
-               // Name = await _Userservice.GetNamePersonById(orders.UserId);
+                Name = await _OrdersService.GetNamePersonById(orders.UserId);
 
                 ids.Add(orders.UserId.ToString());
                 Notification notifications = new Notification
                 {
                     Title = "طلبك",
-                    Details = $" يرجى انتظار لتجهيز طلبك {Name} تم تجهيز طلبك من متجر",
+                    Details = $" هلو {Name} سعيدون بالموافقة على طلبك ، انتظر سوف نقوم بتجهيز الطلب وارساله اليك باأقرب وقت . ",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId
                 };
@@ -267,7 +286,7 @@ namespace RomanaWeb.Controllers
         #endregion 
 
         #region Set Order IsCancel
-        [HttpDelete("SetIsCancel/{OrderId}")]
+        [HttpDelete("Orders/SetIsCancel/{OrderId}")]
         public async Task<IActionResult> SetIsCancel(int OrderId)
         {
             try
@@ -280,13 +299,13 @@ namespace RomanaWeb.Controllers
                 Orders orders = (Orders)res.data;
                 List<string> ids = new List<string>();
                 string Name = "";
-                //Name = await _Userservice.GetNamePersonById(orders.UserId);
+                Name = await _OrdersService.GetNamePersonById(orders.UserId);
 
                 ids.Add(orders.UserId.ToString());
                 Notification notifications = new Notification
                 {
                     Title = "طلبك",
-                    Details = $"  {Name} تم الغاء طلبك من متجر",
+                    Details = $"هلو {Name} نعتذر عن عدم الموافقة على طلبك ، اما بسبب الحد الادنى للطلب او بعد مكان التوصيل . ",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId ,      
                 };
@@ -307,9 +326,50 @@ namespace RomanaWeb.Controllers
             }
         }
         #endregion
-                              
+
+        #region Set Order SetSaleManId
+        [HttpPost("Orders/SetSaleManId/{OrderId},{SaleManId}")]
+        public async Task<IActionResult> SetSaleManId(int OrderId,int SaleManId)    
+        {
+            try
+            {
+                ResObj res = await _OrdersService.SetSaleManId(OrderId,SaleManId);
+                if (res.success == false)
+                {
+                    return Response(res.success, res.msg);
+                }
+                Orders orders = (Orders)res.data;
+                List<string> ids = new List<string>();
+                string Name = "";
+                Name = await _OrdersService.GetSaleManPersonById(SaleManId);
+
+                ids.Add(orders.UserId.ToString());
+                Notification notifications = new Notification
+                {
+                    Title = "طلب جديد",
+                    Details = $"هلو {Name} نود تبليغك  ، ان هناك طلب قادم اليك .",
+                    DateInsert = Key.DateTimeIQ,
+                    UserId = orders.UserId
+                };
+                await _noteService.Post(notifications);
+                try
+                {
+                    await OneSignalSenderSal(notifications.Title, notifications.Details,
+                      ids);
+                }
+                catch (Exception ex) { }
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => SetIsDone");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion       
+
         #region Set Order IsDone
-        [HttpPost("SetIsDone/{OrderId}")]
+        [HttpPost("Orders/SetIsDone/{OrderId}")]
         public async Task<IActionResult> SetIsDone(int OrderId)
         {
             try
@@ -322,13 +382,13 @@ namespace RomanaWeb.Controllers
                 Orders orders = (Orders)res.data;
                 List<string> ids = new List<string>();
                 string Name = "";
-              //  UserName = await _Userservice.GetNamePersonById(orders.UserId);
+                Name = await _OrdersService.GetNamePersonById(orders.UserId);
 
                 ids.Add(orders.UserId.ToString());
                 Notification notifications = new Notification
                 {
                     Title = "طلبك",
-                    Details = $" يرجى انتظار توصيل الطلب الى بيتكتم {Name} تم تجهيز طلبك من متجر",
+                    Details = $"هلو {Name} نود تبليغك بتسليم طلبك الى سائق التوصيل وهو بطريقه اليك ، نود منك تجربة الطلب منّا مرة اخرى .",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId
                 };
@@ -344,6 +404,84 @@ namespace RomanaWeb.Controllers
             catch (Exception ex)
             {
                 await _logger.WriteAsync(ex, "OrdersController => SetIsDone");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion
+
+        #region Set Order SetIsSaleManApprove
+        [HttpPost("Orders/SetIsSaleManApprove/{OrderId}")]
+        public async Task<IActionResult> SetIsSaleManApprove(int OrderId)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.SetIsSaleManApprove(OrderId);
+                if (res.success == false)
+                {
+                    return Response(res.success, res.msg);
+                }
+                Orders orders = (Orders)res.data;
+                List<string> ids = new List<string>();                       
+
+                ids.Add(orders.UserId.ToString());
+                Notification notifications = new Notification
+                {
+                    Title = "طلب المندوب",
+                    Details = $" {orders.OrderNo} وافق مندوبك على طلب رقم ",
+                    DateInsert = Key.DateTimeIQ,
+                    ResId = orders.RestaurantId
+                };
+                await _noteService.Post(notifications);
+                try
+                {
+                    await OneSignalSenderRes(notifications.Title, notifications.Details,
+                      ids);
+                }
+                catch (Exception ex) { }
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => SetIsSaleManApprove");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion
+
+        #region Set Order SetIsSaleManCancel
+        [HttpPost("Orders/SetIsSaleManCancel/{OrderId}")]
+        public async Task<IActionResult> SetIsSaleManCancel(int OrderId)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.SetIsSaleManCancel(OrderId);
+                if (res.success == false)
+                {
+                    return Response(res.success, res.msg);
+                }
+                Orders orders = (Orders)res.data;   
+                List<string> ids = new List<string>();                           
+
+                ids.Add(orders.UserId.ToString());
+                Notification notifications = new Notification
+                {
+                    Title = "طلب المندوب",
+                    Details = $" {orders.OrderNo} تم الغاء الطلب من قبل مندوبك على طلب رقم ",
+                    DateInsert = Key.DateTimeIQ,
+                    ResId = orders.RestaurantId   ,UserId=0 , SaleManId=0,Images=""
+                };
+                await _noteService.Post(notifications);
+                try
+                {
+                    await OneSignalSenderRes(notifications.Title, notifications.Details,
+                      ids);
+                }
+                catch (Exception ex) { }
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => SetIsSaleManCancel");
                 return Response(false, "حدث خطا اثناء عملية جلب البيانات");
             }
         }

@@ -7,6 +7,7 @@ namespace RomanaWeb.Helper.Interface
     {
         Task<ResObj> GetNotificationAll(int? Id);
         Task<ResObj> GetNotificationForRes(int? Id);
+        Task<ResObj> GetNotificationForSale(int? Id);
         Task<ResObj> Post(Notification notification);
     }
 }

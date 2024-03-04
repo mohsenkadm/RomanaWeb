@@ -45,6 +45,7 @@ namespace RomanaWeb.Controllers
 
         #region insert or update Info SubCategories 
         [HttpPost]
+        [Authorize]
         public async Task<IActionResult> Post(SubCategories SubCategories)
         {
             try
@@ -63,6 +64,7 @@ namespace RomanaWeb.Controllers
 
         #region delete Info SubCategories 
         [HttpDelete]
+        [Authorize]
         public async Task<IActionResult> Delete(int Id)
         {
             try

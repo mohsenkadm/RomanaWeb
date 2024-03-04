@@ -43,11 +43,13 @@
                                         <tr> 
                                             <th scope="col">كود</th>
                                             <th scope="col">اسم المنطقة</th>
+                                            <th scope="col">كلفة التوصيل</th>
                                             <th scope="col">اقل سعر</th>
                                             <th scope="col">Lat</th>
                                             <th scope="col">Long</th>
                                             <th scope="col">كلمة المرور</th>
                                             <th scope="col">اسم المستخدم</th>
+                                            <th scope="col">نشط</th>
                                             <th scope="col">مفتوح</th>
                                             <th scope="col">تقييم</th>
                                             <th scope="col">رابط الواتساب</th>
@@ -126,12 +128,16 @@
                     </div>
                     <div class="row col-md-6 alignright">
                         <label class="text-primary">اقل سعر</label>
-                        <input type="number" placeholder="Lat" class="form-control alignright" autocomplete="off" name="MinimumPrice" id="MinimumPrice" />
+                        <input type="number" placeholder="اقل سعر" class="form-control alignright" autocomplete="off" name="MinimumPrice" id="MinimumPrice" />
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">كلفة التوصيل</label>
+                        <input type="number" placeholder="كلفة التوصيل" class="form-control alignright" autocomplete="off" name="CostDelivery" id="CostDelivery" />
                     </div>
                     
                     <div class="row col-md-6 alignright">
                         <label class="text-primary">اسم المنطقة</label>
-                        <input type="text" placeholder="Long" class="form-control alignright" autocomplete="off" name="Areaname" id="Areaname" />
+                        <input type="text" placeholder="اسم المنطقة" class="form-control alignright" autocomplete="off" name="Areaname" id="Areaname" />
                     </div>
 
                     <div class="row col-md-6 alignright">
@@ -158,6 +164,17 @@
                         <div class='form-check col-md-6  alignright'>
                             <label class='form-check-label'>
                                 <input class='form-check-input' type='checkbox' id='IsStars'>
+                                <span class='form-check-sign'>
+                                    <span class='check'></span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                     <div class="form-group col-md-6  alignright">
+                        <label class="text-primary">نشط</label>
+                        <div class='form-check col-md-6  alignright'>
+                            <label class='form-check-label'>
+                                <input class='form-check-input' type='checkbox' id='IsActive'>
                                 <span class='form-check-sign'>
                                     <span class='check'></span>
                                 </span>
@@ -194,10 +211,11 @@
         };
         $("#close").on("click", (e) => {
             e.preventDefault();
-            RefreshRestaurant();
+            aftersaveRestaurant();
         });
         $("#close1").on("click", (e) => {
-            e.preventDefault(); RefreshRestaurant();
+            e.preventDefault(); 
+            aftersaveRestaurant();
         });
          $("#search-btn").on("click", (e) => {
             e.preventDefault();
@@ -227,6 +245,10 @@
                 return;
             }
             if ($("#Address").val() === "" || $("#Address").val().trim() === "") {
+                md.showNotification("رجاءا ادخل العنوان  ");
+                return;
+            }
+            if ($("#Password").val() === "" || $("#Password").val().trim() === "") {
                 md.showNotification("رجاءا ادخل كلمة المرور ");
                 return;
             }
@@ -246,18 +268,25 @@
             if ($('#IsStars').is(":checked")) {
                 IsStars = true;
             }
-
+            var IsActive = false;
+            if ($('#IsActive').is(":checked")) {
+                IsActive = true;
+            }
+            debugger;
             var fileUpload1 = $("#Logo").get(0);
             var files1 = fileUpload1.files;
-            if (files1.length === 0) {
-                md.showNotification("رجاءا ادخل صورة لوكو ");
-                return;
-            }
             var fileUpload = $("#Background").get(0);
-            var files = fileUpload.files;
-            if (files.length === 0) {
-                md.showNotification("رجاءا ادخل صورة الخلفية ");
-                return;
+            var files = fileUpload.files; 
+
+            if (_RestaurantId === 0) {
+                if (files1.length === 0) {
+                    md.showNotification("رجاءا ادخل صورة لوكو ");
+                    return;
+                }
+                if (files.length === 0) {
+                    md.showNotification("رجاءا ادخل صورة الخلفية ");
+                    return;
+                }
             }
             var data = new FormData();
             data.append('RestaurantId', _RestaurantId);
@@ -273,12 +302,15 @@
             data.append('MinimumPrice', $("#MinimumPrice").val());
             data.append('MinimumPrice', $("#MinimumPrice").val());
             data.append('Areaname', $("#Areaname").val());
+            data.append('CostDelivery', $("#CostDelivery").val());
             data.append('CategoriesId', $("#CategoriesId").val());
             data.append('IsClosed', IsClosed);
+            data.append('IsActive', IsActive);
             data.append('IsStars', IsStars);
-            data.append('Background', files[0]);
-            data.append('Logo', files1[0]);
-            call_ajax_withfile("POST", "Restaurant/Post", data, aftersaveRestaurant);
+         
+            data.append('Background', files.length==0? null: files[0]);
+            data.append('Logo', files1.length == 0 ? null : files1[0]);
+            call_ajax_withfile("POST", "Restaurant/PostAdmin", data, aftersaveRestaurant);
            
              
         });

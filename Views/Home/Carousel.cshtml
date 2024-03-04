@@ -53,7 +53,7 @@
         <div class="modal-content dark-edition">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
-                <button type="button" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" style="margin-left:10%;" id="close" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true" style="font-size:155%">&times;</span>
                 </button>
             </div>
@@ -99,14 +99,20 @@
             e.preventDefault();
             aftersaveCarousel();
         });
+        $("#close1").on("click", (e) => {
+            e.preventDefault();
+            aftersaveCarousel();
+        });
         $("#save").on("click", (e) => {
             e.preventDefault();
 
             var fileUpload = $("#imageca").get(0);
             var files = fileUpload.files;
-            if (files.length === 0) {
-                md.showNotification("رجاءا ادخل الصورة ");
-                return;
+            if (_CarouseId == 0) {
+                if (files.length === 0) {
+                    md.showNotification("رجاءا ادخل الصورة ");
+                    return;
+                }
             }
 
             var IsShow = false;
@@ -117,8 +123,13 @@
             var data = new FormData();
             data.append('CarouseId', _CarouseId);
             data.append('Url', $("#Url").val());
-            data.append('IsShow', IsShow); 
-            data.append('FileChoose', files[0]);
+            data.append('IsShow', IsShow);  
+            if (files.length === 0) {
+                data.append('FileChoose', files[0]);
+            }
+            else {
+                data.append('FileChoose', files[0]);
+            }
             call_ajax_withfile("POST", "Carousel/Post", data, aftersaveCarousel);
         });
 

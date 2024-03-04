@@ -16,5 +16,10 @@ namespace RomanaWeb.Models.Entity
         public string FunctionPoint { get; set; }
         public string? Lat { get; set; }
         public string? Long { get; set; }
+        public string? Password { get; set; }
+        public bool? IsConfirm { get; set; }
+        public bool? IsActive { get; set; }
+        public bool? IsDelete { get; set; }
+        public string? Code { get; set; }
     }
 }

@@ -97,6 +97,25 @@ namespace RomanaWeb.Controllers
                 return Response(false, "حدث خطا اثناء عملية جلب البيانات");
             }
         }
+        #endregion      
+
+        #region Get RestaurantSubCategories ById Info GetByResId 
+        [HttpGet("RestaurantSubCategories/GetByResId/{Id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetByResId(int Id)
+        {
+            try
+            {
+                ResObj res = await _RestaurantSubCategoriesService.GetByResId(Id);
+
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantSubCategoriesController => GetById");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
         #endregion
     }
 }

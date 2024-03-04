@@ -80,8 +80,10 @@ namespace RomanaWeb.Controllers
                 // Create and send notification to all subscribed users
                 var notification = new Notification(appId: onesignalAppID)
                 {
-                    Contents = new StringMap(body), Headings=new StringMap(Title),Subtitle=new StringMap(body),
-                    IncludedSegments = new List<string> { "Subscribed Users" },
+                    Contents = new StringMap(body), Headings=new StringMap(Title)
+                    ,Subtitle=new StringMap(body),        
+                    LargeIcon = "https://mazyadmohammed-001-site1.anytempurl.com//Uplouds/IMG_2984.png",
+                    IncludedSegments = new List<string> { "Total Subscriptions" },
                 };
                 var response = await appInstance.CreateNotificationAsync(notification);
 
@@ -113,11 +115,142 @@ namespace RomanaWeb.Controllers
                 Subtitle = new StringMap(body),
                 IncludeExternalUserIds = id ,
                    ChannelForExternalUserIds = "push"
+                   ,LargeIcon= "https://mazyadmohammed-001-site1.anytempurl.com//Uplouds/IMG_2984.png"
             };
             var response = await appInstance.CreateNotificationAsync(notification);
 
             Console.WriteLine($"Notification created for {response.Recipients} recipients");
                      
+        }
+
+
+
+        [NonAction]
+        public async Task OneSignalSenderResAll(string Title, string body)
+        {
+            try
+            {
+                string onesignalAppID = "d3bfb798-5430-47c6-b921-38e1fddbcd26";
+                string onesignalRestID = "ZDVjYzVhNjAtYzc0Yy00Y2NmLWIwNjctMzBkNzNhOGU5MTk2";
+
+
+                // Configure the OneSignal Library
+                var appConfig = new Configuration();
+                appConfig.BasePath = "https://onesignal.com/api/v1";
+                appConfig.AccessToken = onesignalRestID;
+                var appInstance = new DefaultApi(appConfig);
+
+                // Create and send notification to all subscribed users
+                var notification = new Notification(appId: onesignalAppID)
+                {
+                    Contents = new StringMap(body),
+                    Headings = new StringMap(Title)
+                    ,
+                    Subtitle = new StringMap(body),
+                    LargeIcon = "https://mazyadmohammed-001-site1.anytempurl.com//Uplouds/IMG_2984.png",
+                    IncludedSegments = new List<string> { "Total Subscriptions" },
+                };
+                var response = await appInstance.CreateNotificationAsync(notification);
+
+                Console.WriteLine($"Notification created for {response.Recipients} recipients");
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
+        [NonAction]
+        public async Task OneSignalSenderRes(string Title, string body, List<string> id)
+        {
+            string onesignalAppID = "d3bfb798-5430-47c6-b921-38e1fddbcd26";
+            string onesignalRestID = "ZDVjYzVhNjAtYzc0Yy00Y2NmLWIwNjctMzBkNzNhOGU5MTk2";
+
+
+            // Configure the OneSignal Library
+            var appConfig = new Configuration();
+            appConfig.BasePath = "https://onesignal.com/api/v1";
+            appConfig.AccessToken = onesignalRestID;
+            var appInstance = new DefaultApi(appConfig);
+
+            // Create and send notification to all subscribed users
+            var notification = new Notification(appId: onesignalAppID)
+            {
+                Contents = new StringMap(body),
+                Headings = new StringMap(Title),
+                Subtitle = new StringMap(body),
+                IncludeExternalUserIds = id,
+                ChannelForExternalUserIds = "push"  ,
+                LargeIcon = "https://mazyadmohammed-001-site1.anytempurl.com//Uplouds/IMG_2984.png"
+            };
+            var response = await appInstance.CreateNotificationAsync(notification);
+
+            Console.WriteLine($"Notification created for {response.Recipients} recipients");
+
+        }  
+
+        [NonAction]
+        public async Task OneSignalSenderSalAll(string Title, string body)
+        {
+            try
+            {
+                string onesignalAppID = "d3bfb798-5430-47c6-b921-38e1fddbcd26";
+                string onesignalRestID = "ZDVjYzVhNjAtYzc0Yy00Y2NmLWIwNjctMzBkNzNhOGU5MTk2";
+
+
+                // Configure the OneSignal Library
+                var appConfig = new Configuration();
+                appConfig.BasePath = "https://onesignal.com/api/v1";
+                appConfig.AccessToken = onesignalRestID;
+                var appInstance = new DefaultApi(appConfig);
+
+                // Create and send notification to all subscribed users
+                var notification = new Notification(appId: onesignalAppID)
+                {
+                    Contents = new StringMap(body),
+                    Headings = new StringMap(Title)
+                    ,
+                    Subtitle = new StringMap(body),
+                    LargeIcon = "https://mazyadmohammed-001-site1.anytempurl.com//Uplouds/IMG_2984.png",
+                    IncludedSegments = new List<string> { "Total Subscriptions" },
+                };
+                var response = await appInstance.CreateNotificationAsync(notification);
+
+                Console.WriteLine($"Notification created for {response.Recipients} recipients");
+            }
+            catch (Exception ex)
+            {
+
+            }
+        }
+
+        [NonAction]
+        public async Task OneSignalSenderSal(string Title, string body, List<string> id)
+        {
+            string onesignalAppID = "d3bfb798-5430-47c6-b921-38e1fddbcd26";
+            string onesignalRestID = "ZDVjYzVhNjAtYzc0Yy00Y2NmLWIwNjctMzBkNzNhOGU5MTk2";
+
+
+            // Configure the OneSignal Library
+            var appConfig = new Configuration();
+            appConfig.BasePath = "https://onesignal.com/api/v1";
+            appConfig.AccessToken = onesignalRestID;
+            var appInstance = new DefaultApi(appConfig);
+
+            // Create and send notification to all subscribed users
+            var notification = new Notification(appId: onesignalAppID)
+            {
+                Contents = new StringMap(body),
+                Headings = new StringMap(Title),
+                Subtitle = new StringMap(body),
+                IncludeExternalUserIds = id,
+                ChannelForExternalUserIds = "push"  ,
+                LargeIcon = "https://mazyadmohammed-001-site1.anytempurl.com//Uplouds/IMG_2984.png"
+            };
+            var response = await appInstance.CreateNotificationAsync(notification);
+
+            Console.WriteLine($"Notification created for {response.Recipients} recipients");
+
         }
     }
 }

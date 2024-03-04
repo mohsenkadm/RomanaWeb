@@ -40,13 +40,16 @@
                                 <table class="table table-hover">
                                     <thead class=" ">
                                         <tr> 
-                                            <th scope="col">نشط</th>
+                                            <th scope="col">كود تاكيد</th>
+                                            <th scope="col">اقرب نقطة دالة</th>
+                                            <th scope="col">lat</th>
+                                            <th scope="col">long</th> 
                                             <th scope="col">كلمة المرور</th>
-                                            <th scope="col">اسم المستخدم</th>
+                                            <th scope="col">نشط </th>
+                                            <th scope="col">تاكيد </th>
                                             <th scope="col">العنوان</th>
                                             <th scope="col">رقم الهاتف</th>
-                                            <th scope="col">اسم الزبون</th>
-                                            <th scope="col"></th>
+                                            <th scope="col">اسم الزبون</th> 
                                             <th scope="col"></th>
                                         </tr>
                                     </thead>
@@ -170,7 +173,7 @@
                 return;
             }
 
-            call_ajax("POST", "Users/Post", object, aftersaveUsers);
+            call_ajax("POST", "Users/PostAdmin", object, aftersaveUsers);
         });
 
     </script>

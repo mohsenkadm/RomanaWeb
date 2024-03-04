@@ -11,5 +11,6 @@ namespace RomanaWeb.Models.EntityMapper
         public int ProductsId { get; set; }          
         public decimal Price { get; set; }
         public int Count { get; set; }
+        public string? Notes2 { get; set; }
     }
 }

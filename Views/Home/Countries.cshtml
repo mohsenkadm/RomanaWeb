@@ -1,0 +1,107 @@
+﻿
+@{
+    ViewData["Title"] = "المحافظات";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="content dark-edition">
+        <div class="container-fluid">
+
+            <div class="container alignright" style="margin:2% 0;">
+                <div class="row">
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#CountriesModal">اضافة  جديد <i class='material-icons'>add</i> </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header card-header-primary" style="text-align:right">
+                            <h4 class="card-title ">المجافظات</h4>
+                            <p class="card-category">جدول لعرض المحافظات داخل التطبيق</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" style="text-align: right;">
+                                <table class="table table-hover">
+                                    <thead class=" ">
+                                        <tr>   
+                                            <th scope="col">اسم المحافظة</th> 
+                                            <th scope="col"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableCountries">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="CountriesModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
+                <button type="button" id="close1" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" style="font-size:155%">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row"> 
+                    <div class="form-group col-md-12  alignright">
+                        <label class="text-primary">اسم المحافظة</label>
+                        <input type="text" id="CountriesName" autocomplete="off" name="CountriesName" class="form-control alignright" placeholder="اكتب اسم المحافظة" />
+
+                    </div> 
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="close" data-dismiss="modal">اغلاق</button>
+                <button type="button" class="btn btn-success" id="save">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="mydiv">
+    <script>
+
+        $("#close1").on("click", (e) => {
+            e.preventDefault();
+            aftersaveCountries();
+        });
+        $("#close").on("click", (e) => {
+            e.preventDefault();
+            aftersaveCountries();
+        });
+        $(document).ready(function () {
+            RefreshCountries();
+        });
+        $("#save").on("click", (e) => {
+            e.preventDefault();  
+            if ($("#CountriesName").val() === "" || $("#CountriesName").val().trim() === "") {
+                md.showNotification("رجاءا ادخل اسم القسم ");
+                return;
+            }
+           
+            var data = new FormData();
+            data.append('CountriesId', _CountriesId);
+            data.append('CountriesName', $("#CountriesName").val());  
+            call_ajax_withfile("POST", "Countries/Post", data, aftersaveCountries); 
+        });
+
+    </script>
+</div>
+
+
+
+

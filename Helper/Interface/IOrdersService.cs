@@ -5,6 +5,9 @@ namespace RomanaWeb.Helper.Interface
 {
     public interface IOrdersService
     {
+        Task<ResObj> SetIsSaleManApprove(int id);
+        Task<ResObj> SetIsSaleManCancel(int id);
+        Task<ResObj> SetSaleManId(int id, int SaleManId);
         Task<ResObj> SetIsApporve(int id);
         Task<ResObj> SetIsCancel(int id);
         Task<ResObj> SetIsDone(int id);
@@ -15,7 +18,10 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> Post(Orders Orders);
         Task<ResObj> DeleteDetails(int id);
         Task<ResObj> GetOrdersByOrderNoAndUserId(string orderNo, int? id);
-        Task<ResObj> GetOrdersByOrderNoAndRestaurantId(string orderNo, int? RestaurantId);
+        Task<ResObj> GetOrdersByOrderNoAndRestaurantId(string orderNo, int? RestaurantId,int Type);
+        Task<ResObj> GetOrdersByOrderNoAndSaleManId(string? OrderNo, int? SaleManId, int Type);
         Task<ResObj> PostUser(Users users);
+        Task<string> GetNamePersonById(int userId);
+        Task<string> GetSaleManPersonById(int SaleManId);
     }
 }

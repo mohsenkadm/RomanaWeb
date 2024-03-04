@@ -31,21 +31,37 @@ namespace RomanaWeb.Helper.Repository
 
             if (login is null)
                 return Result.Return(false, "اسم المستخدم او كلمة المرور غير صحيحة");
-             
-             UserManager userManager = new UserManager() { Id = login.RestaurantId, Name = login.Name };
+            if (login.IsActive==false)
+                return Result.Return(false, "حسابك غير فعال يرجى التواصل مع مدير التطببيق");
+              if (login.IsApproved == false)
+                return Result.Return(false, "حسابك غير موافق عليه يرجى التواصل مع مدير التطببيق");
+               if (login.IsDelete == true)
+                return Result.Return(false, "حسابك   محذوف يرجى التواصل مع مدير التطببيق");
+
+            UserManager userManager = new UserManager() { Id = login.RestaurantId, Name = login.Name };
             login.Token = JsonWebToken.GenerateToken(userManager);   
             return Result.Return(true, login);
         }
-        public async Task<ResObj> GetAllForApp(string? Name, int UserId, int CategoriesId)
+        public async Task<ResObj> GetAllForApp(string? Name, int CategoriesId,double Long, double Lat,int? CityId)
         {
-            List<Restaurant> Restaurant = await _repository.GetEntityListAsync("dbo.GetRestaurantAllForApp", new { Name, UserId, CategoriesId });
+            List<Restaurant> Restaurant = await _repository.GetEntityListAsync("dbo.GetRestaurantAllForApp", new { Name,  CategoriesId , Long, Lat, CityId });
             return Result.Return(true, Restaurant);
         }     
-        public async Task<ResObj> GetTopAllForApp(int? UserId, double Long, double Lat,int index)
+        public async Task<ResObj> GetTopAllForApp(double Long, double Lat,int? CityId)
         {
-            List<Restaurant> Restaurant = await _repository.GetEntityListAsync("dbo.GetRestaurantTopAllForApp", new { UserId,Long,Lat , index });
+            List<Restaurant> Restaurant = await _repository.GetEntityListAsync("dbo.GetRestaurantTopAllForApp", new {  Long , Lat, CityId });
             return Result.Return(true, Restaurant);
-        }                                                          
+        }                         
+        public async Task<ResObj> GetResNotApproveAll()
+        {
+            List<Restaurant> Restaurant = await _context.Restaurant.AsSplitQuery().AsNoTracking().Where(i=>i.IsApproved==false).ToListAsync();
+            return Result.Return(true, Restaurant);
+        }
+        public async Task<ResObj> GetCountForRes(int Id,DateTime datefrom, DateTime dateto)
+        {
+            Restaurant Restaurant = await _repository.GetEntityAsync("dbo.GetCountForRes", new { Id, datefrom, dateto });
+            return Result.Return(true, Restaurant);
+        }
         public async Task<ResObj> GetAll(string? Name)
         {                                                     
             List<Restaurant> Restaurant = await _repository.GetEntityListAsync("dbo.GetRestaurantAll", new { Name });
@@ -63,11 +79,14 @@ namespace RomanaWeb.Helper.Repository
             var checkres = await _context.Restaurant.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.Phone!.Contains(Restaurant.Phone!));
             if (checkres != null) return Result.Return(false, "رقم الهاتف موجود سابقا");
           
+            Restaurant.IsApproved = false;
             Restaurant.IsClosed= false;
+            Restaurant.StarCount= 0;
+            Restaurant.Code= "";
             Restaurant.Password= Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password!);
             await _context.Restaurant.AddAsync(Restaurant);
             await _context.SaveChangesAsync();
-            return Result.Return(true, "تم الحفظ بنجاح", Restaurant);
+            return Result.Return(true, "تم الحفظ بنجاح سوف يتم الموافقة على حسابك باقرب وقت", Restaurant);
         }
 
         public async Task<ResObj> Update(Restaurant Restaurant)
@@ -82,7 +101,7 @@ namespace RomanaWeb.Helper.Repository
             if (Restaurant.Logo != null)
             if (Restaurant.Logo.Length>0)    
                     Restaurant1.Logo = Restaurant.Logo;
-            if(Restaurant.Background!=null)
+            if(Restaurant.Background!=null)                 
                 if (Restaurant.Background.Length > 0)
                     Restaurant1.Background = Restaurant.Background;
             Restaurant1.Phone = Restaurant.Phone;
@@ -90,6 +109,15 @@ namespace RomanaWeb.Helper.Repository
             Restaurant1.Long = Restaurant.Long;  
             Restaurant1.Whatsapp = Restaurant.Whatsapp;  
             Restaurant1.UserName = Restaurant.UserName;   
+            Restaurant1.IsActive = Restaurant.IsActive;   
+            Restaurant1.IsApproved = Restaurant.IsApproved;   
+            Restaurant1.IsDelete = Restaurant.IsDelete;   
+            Restaurant1.IsClosed = Restaurant.IsClosed;   
+            Restaurant1.IsStars = Restaurant.IsStars;   
+            Restaurant1.MinimumPrice = Restaurant.MinimumPrice;   
+            Restaurant1.Areaname = Restaurant.Areaname;   
+            Restaurant1.CategoriesId = Restaurant.CategoriesId;   
+            Restaurant1.CostDelivery = Restaurant.CostDelivery;   
             Restaurant1.Password = Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password!);    
             _context.Entry(Restaurant1).State = EntityState.Modified;
             await _context.SaveChangesAsync();
@@ -99,7 +127,7 @@ namespace RomanaWeb.Helper.Repository
         }     
         public async Task UpdateCode(CodeRes code)
         {
-            CodeRes? CodeRes1 = await _context.CodeRes.FirstOrDefaultAsync(i=>i.CodeResId==code.CodeResId);
+            CodeRes? CodeRes1 = await _context.CodeRes.FirstOrDefaultAsync(i=>i.Code==code.Code);
             if (CodeRes1 is null)
                 return;
             CodeRes1.IsFree = false;
@@ -112,7 +140,8 @@ namespace RomanaWeb.Helper.Repository
         public async Task<ResObj> Delete(int Id)
         {
             Restaurant Restaurant1 = await GetRestaurantById(Id);
-            _context.Entry(Restaurant1).State = EntityState.Deleted;
+            Restaurant1.IsDelete = true;
+            _context.Entry(Restaurant1).State = EntityState.Modified;
                await _context.SaveChangesAsync();
 
             return Result.Return(true, "تم حذف بنجاح");
@@ -120,7 +149,7 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<Restaurant> GetRestaurantById(int Id)
         {
-            var res = await _context.Restaurant.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i=>i.RestaurantId==Id);
+            var res = await _repository.GetEntityAsync("dbo.GetRestaurantById", new {Id}) ;
             try { res.Password = Encyptmethod.DecryptStringFromBytes_Aes(res.Password); } catch (Exception) { }
             return res;
         }
@@ -135,6 +164,27 @@ namespace RomanaWeb.Helper.Repository
         {
             var res = await GetRestaurantById(id);         
             res.IsClosed = closed;
+            res.Password = Encyptmethod.EncryptStringToBytes_Aes(res.Password);
+
+            _context.Entry(res).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تم", res);
+        }
+                   
+        public async Task<ResObj> SetIsStars(int id,bool stars)
+        {
+            var res = await GetRestaurantById(id);         
+            res.IsStars = stars;
+            res.Password = Encyptmethod.EncryptStringToBytes_Aes(res.Password);
+
+            _context.Entry(res).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تم", res);
+        }        
+        public async Task<ResObj> SetIsApproved(int id)
+        {
+            var res = await GetRestaurantById(id);         
+            res.IsApproved = true;
             res.Password = Encyptmethod.EncryptStringToBytes_Aes(res.Password);
 
             _context.Entry(res).State = EntityState.Modified;

@@ -1,37 +1,46 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using NuGet.Packaging.Signing;
 using RomanaWeb.Classes;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Models.Entity;
+using static NuGet.Packaging.PackagingConstants;
 
 namespace RomanaWeb.Controllers
 {
+    [Authorize]
     public class PromoCodeController : MasterController
     {
 
         #region Readonly 
         private readonly ILoggerRepository _logger;
         private readonly IPromoCodeService _PromoCodeService;
+        private readonly INotificationService _noteService;
+        private readonly IRestaurantService _RestaurantService;
         #endregion
 
         #region Const
         public PromoCodeController(
             ILoggerRepository logger,
-            IPromoCodeService PromoCodeService)
+            IPromoCodeService PromoCodeService,
+            INotificationService noteService,IRestaurantService restaurantService)
         {
             _logger = logger;
             _PromoCodeService = PromoCodeService;
+            _noteService = noteService;
+            _RestaurantService = restaurantService;
         }
         #endregion
 
 
         #region Get Info PromoCode  
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAll(string? Name,int? ResId)
         {
             try
             {
-                ResObj res = await _PromoCodeService.GetAll();
+                ResObj res = await _PromoCodeService.GetAll(Name, ResId);
 
                 return Response(res.success, res.data);
             }
@@ -51,8 +60,22 @@ namespace RomanaWeb.Controllers
             try
             {
 
+                if(PromoCode.RestaurantId==0) return Response(false, "يجب اختيار المطعم");
+
+                var rest = await _RestaurantService.GetById(PromoCode.RestaurantId);
+
                 ResObj res;
                 res = await _PromoCodeService.Post(PromoCode);
+                Notification notifications = new Notification
+                {
+                    Title = "برومو كود",
+                    Details = $" برومو ",           
+                };                                      
+                try
+                {
+                    await OneSignalSender(notifications.Title, notifications.Details);
+                }
+                catch (Exception ex) { }
                 return Response(res.success, res.msg, res.data);
             }
             catch (Exception ex)

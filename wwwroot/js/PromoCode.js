@@ -4,10 +4,12 @@ function filltablePromoCode(data) {
     $('#tablePromoCode').empty();
     $.each(data, function (i, item) {
         var rows = "<tr>" + 
+            "<td>" + item.restaurantName + "</td>" +
             "<td>" + item.percentage + "</td>" +
         "<td>" + item.promoName + "</td>" 
-            + "<td> <button type='button' class='btn btn-danger' onclick='deletePromoCode(" + item.promoCodeId + ")'  >حذف</button>" +
-            "  |  <button type='button' class='btn btn-primary' onclick='updatePromoCode(" + item.promoCodeId + ")'  data-toggle='modal' data-target='#PromoCodeModal'>تعديل</button></td></tr>";
+          //  + "<td> <button type='button' class='btn btn-danger' onclick='deletePromoCode(" + item.promoCodeId + ")'  >حذف</button>" +
+          //  "  |  <button type='button' class='btn btn-primary' onclick='updatePromoCode(" + item.promoCodeId + ")'  data-toggle='modal' data-target='#PromoCodeModal'>تعديل</button></td></tr>";
+            +"</td></tr>";
         $('#tablePromoCode').append(rows); 
     });
 }

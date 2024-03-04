@@ -14,6 +14,8 @@ namespace RomanaWeb.Model.EntityMap
             builder.Property(x => x.Image).IsRequired();
             builder.Property(x => x.Url);
             builder.Property(x => x.IsShow); 
+            builder.Property(x => x.CountryId); 
+            builder.Ignore(x => x.CountryName); 
         }
     }
 }

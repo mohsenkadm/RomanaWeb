@@ -12,5 +12,7 @@ namespace RomanaWeb.Models.Entity
         public string Image { get; set; }
         public string? Url { get; set; }
         public bool IsShow { get; set; }
+        public int CountryId { get; set; }
+        public int CountryName { get; set; }
     }
 }

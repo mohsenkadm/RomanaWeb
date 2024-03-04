@@ -40,13 +40,14 @@ namespace RomanaWeb.Controllers
             {
                 await _logger.WriteAsync(ex, "StarsController => GetAll");
                 return Response(false, "حدث خطأ اثناء عملية جلب المعلومات");
-            }
+            }                
         }
         #endregion 
 
         #region GetByRestaurantId
+        [AllowAnonymous]
         // GET api/<StarsController>/5
-        [HttpGet("GetByRestaurantId/{RestaurantId}")]
+        [HttpGet("Stars/GetByRestaurantId/{RestaurantId}")]
         public async Task<IActionResult> GetByRestaurantId(int RestaurantId)
         {
             try
@@ -83,18 +84,19 @@ namespace RomanaWeb.Controllers
 
         #region Post
         // POST api/<StarsController>
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] Stars stars)
         {
             try
             {
-                if (ModelState.IsValid)
-                {
+                //if (ModelState.IsValid)
+                //{
                     await service.Post(stars);
                     return Response(true, "تم الحفظ بنجاح");
-                }
-                else
-                    return Response(true, "املأ الحقول اولا");
+                //}
+                //else
+                //    return Response(true, "املأ الحقول اولا");
             }
             catch(Exception ex)
             {                          

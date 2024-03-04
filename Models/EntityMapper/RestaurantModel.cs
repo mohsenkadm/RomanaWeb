@@ -14,11 +14,12 @@
         public string? Code { get; set; }
         public string? Whatsapp { get; set; }
         public string? Password { get; set; }
-        public string? UserName { get; set; } 
-        public int? StarCount { get; set; }
+        public string? UserName { get; set; }   
         public bool? IsClosed { get; set; }
         public bool? IsStars { get; set; }
+        public bool? IsActive { get; set; }
         public decimal MinimumPrice { get; set; }
+        public decimal CostDelivery { get; set; }
         public string Areaname { get; set; }
         public int CategoriesId { get; set; }    
     }

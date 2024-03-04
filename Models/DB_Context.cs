@@ -33,6 +33,11 @@ namespace RomanaWeb.Model
             modelBuilder.ApplyConfiguration(new ProductsMap());        
             modelBuilder.ApplyConfiguration(new OrderDetailMap());        
             modelBuilder.ApplyConfiguration(new OrdersMap());        
+            modelBuilder.ApplyConfiguration(new RestaurantCityMap());        
+            modelBuilder.ApplyConfiguration(new CityMap());        
+            modelBuilder.ApplyConfiguration(new SaleManMap());        
+            modelBuilder.ApplyConfiguration(new RestaurantSaleManMap());        
+            modelBuilder.ApplyConfiguration(new CountriesMap());        
         }
                                       
         public DbSet<Users> Users { get; set; }         
@@ -50,5 +55,10 @@ namespace RomanaWeb.Model
         public DbSet<Products> Products { get; set; }           
         public DbSet<OrderDetail> OrderDetail { get; set; }           
         public DbSet<Orders> Orders { get; set; }           
+        public DbSet<RestaurantCity> RestaurantCity { get; set; }           
+        public DbSet<City> City { get; set; }           
+        public DbSet<SaleMan> SaleMan { get; set; }           
+        public DbSet<RestaurantSaleMan> RestaurantSaleMan { get; set; }           
+        public DbSet<Countries> Countries { get; set; }           
     }
 }

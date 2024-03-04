@@ -16,6 +16,10 @@
                     <label class="text-primary">تفاصيل الاشعار</label>
                     <input type="text" id="Details" autocomplete="off" name="Details" class="form-control alignright" placeholder="اكتب تفاصيل الاشعار" />
                 </div>
+                <div class="row col-md-12 alignright">
+                    <label class="text-primary">اختيار صورة</label>
+                    <input type="file" placeholder="اختيار الصورة" class=" alignright" autocomplete="off" name="imageca" id="imageca" />
+                </div>
             </div> 
             <button type="button" class="btn btn-secondary" data-dismiss="modal">اغلاق</button>
             <button type="button" class="btn btn-success" id="save">حفظ</button>
@@ -26,21 +30,29 @@
     <script>
          
         $("#save").on("click", (e) => {
-            e.preventDefault(); 
-            var object = { 
-                Title: $("#Title").val(),
-                Details: $("#Details").val(), 
-            };
+            e.preventDefault();
 
-            if (object.Title === "" || object.Title.trim() === "") {
+            if ($("#Title").val() === "" || $("#Title").val().trim() === "") {
                 md.showNotification("رجاءا ادخل العنوان ");
                 return;
             }
-            if (object.Details === "" || object.Details.trim() === "") {
+            if ($("#Details").val() === "" || $("#Details").val().trim() === "") {
                 md.showNotification("رجاءا ادخل التفاصيل ");
                 return;
+            }
+            var fileUpload = $("#imageca").get(0);
+            var files = fileUpload.files;
+            var data = new FormData(); 
+            data.append('Title', $("#Title").val());
+            data.append('Details', $("#Details").val());
+            if (files.length === 0) {
+                data.append('FileChoose', files[0]);
+            }
+            else {
+                data.append('FileChoose', files[0]);
             } 
-            call_ajax("POST", "Notification/Post", object, null);
+
+            call_ajax_withfile("POST", "Notification/PostWithImage", data, null);
         });
 
     </script>

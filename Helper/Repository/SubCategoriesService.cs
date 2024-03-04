@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Polly;
 using RomanaWeb.Classes;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Model;
@@ -14,10 +15,19 @@ namespace RomanaWeb.Helper.Repository
         }
         public async Task<ResObj> Delete(int Id)
         {
-            var item = await _Context.SubCategories.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.SubCategoriesId == Id);
+            var item = await _Context.SubCategories.FirstOrDefaultAsync(i => i.SubCategoriesId == Id);
             if (item != null)
             {
-                _Context.SubCategories.Remove(item);
+                _Context.Entry(item).State = EntityState.Deleted;
+                await _Context.SaveChangesAsync();    
+            }
+            var itemProd = await _Context.Products.Where(i => i.SubCategoriesId == Id).ToListAsync();
+            if (itemProd != null)
+            {
+                foreach (var it in itemProd)
+                {
+                    _Context.Entry(it).State = EntityState.Deleted;
+                }
                 await _Context.SaveChangesAsync();
                 return Result.Return(true);
             }

@@ -3,6 +3,7 @@ using RomanaWeb.Models.Entity;
 using RomanaWeb.Model;
 using Microsoft.EntityFrameworkCore;
 using RomanaWeb.Helper.Interface;
+using static NuGet.Packaging.PackagingConstants;
 
 namespace RomanaWeb.Helper.Repository
 {
@@ -100,10 +101,18 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(false,"اسم المطعم غير موجود");
             }
 
+            var lastorder = await _context.Orders.AsSplitQuery().AsNoTracking().OrderBy(i=>i.OrderId).LastOrDefaultAsync();
+            if(lastorder!=null)
+            {
+                orders.OrderNo = lastorder.OrderNo + 1;
+            }
             orders.OrderDate = Key.DateTimeIQ ;
             orders.IsDone = false;
             orders.IsApporve = false;
             orders.IsCancel = false;
+            orders.IsSaleManCancel = false;
+            orders.IsSaleManApprove = false;
+            orders.SaleManId = 0;
 
             await _context.Orders.AddAsync(orders);
             await _context.SaveChangesAsync();
@@ -120,9 +129,15 @@ namespace RomanaWeb.Helper.Repository
             List<Orders> data = await _OrdersRepository.GetEntityListAsync("dbo.GetOrdersByOrderNoAndUserId", new { OrderNo, UserId });
             return Result.Return(true, data);
         }   
-        public async Task<ResObj> GetOrdersByOrderNoAndRestaurantId(string OrderNo, int? RestaurantId)
+        public async Task<ResObj> GetOrdersByOrderNoAndRestaurantId(string? OrderNo, int? RestaurantId,int Type)
         {                      
-            List<Orders> data = await _OrdersRepository.GetEntityListAsync("dbo.GetOrdersByOrderNoAndRestaurantId", new { OrderNo, RestaurantId });
+            List<Orders> data = await _OrdersRepository.GetEntityListAsync("dbo.GetOrdersByOrderNoAndRestaurantId", new { OrderNo, RestaurantId, Type });
+
+            return Result.Return(true, data);
+        }                                
+        public async Task<ResObj> GetOrdersByOrderNoAndSaleManId(string? OrderNo, int? SaleManId, int Type)
+        {                      
+            List<Orders> data = await _OrdersRepository.GetEntityListAsync("dbo.GetOrdersByOrderNoAndSaleManId", new { OrderNo, SaleManId, Type });
 
             return Result.Return(true, data);
         }
@@ -138,6 +153,40 @@ namespace RomanaWeb.Helper.Repository
             _context.Entry(orders).State = EntityState.Modified;
             await _context.SaveChangesAsync();
             return Result.Return(true, "تمت الموافقة", orders);
+        }       
+        public async Task<ResObj> SetIsSaleManApprove(int id)
+        {
+            var orders = await GetOrdersById(id);
+             
+            orders.IsSaleManApprove = true;
+            orders.IsSaleManCancel = false;    
+
+            _context.Entry(orders).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تمت الموافقة بنجاح", orders);
+        }             
+        public async Task<ResObj> SetSaleManId(int id,int SaleManId)
+        {
+            var orders = await GetOrdersById(id);
+             
+            orders.SaleManId = SaleManId;      
+
+            _context.Entry(orders).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تمت الموافقة بنجاح", orders);
+        }
+                          
+        public async Task<ResObj> SetIsSaleManCancel(int id)
+        {
+            var orders = await GetOrdersById(id);
+             
+            orders.IsSaleManApprove = false;
+            orders.IsSaleManCancel = true;
+            orders.SaleManId = 0;
+
+            _context.Entry(orders).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تمت الغاء الموافقة بنجاح", orders);
         }
 
         public async Task<ResObj> SetIsCancel(int id)
@@ -179,8 +228,32 @@ namespace RomanaWeb.Helper.Repository
             else
             {
                 var item = await _context.Users.FirstOrDefaultAsync(i=>i.UserId==users.UserId);
+                if (item == null)
+                {
+                    item.Name = users.Name;
+                    item.Phone = users.Phone;
+                    item.Address = users.Address;
+                    item.FunctionPoint = users.FunctionPoint;
+                    item.Lat = users.Lat;
+                    item.Long = users.Long;
+                    _context.Entry(item).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
+                }
                 return Result.Return(true, item);
             }
+        }
+
+        public async Task<string> GetNamePersonById(int userId)
+        {
+            var item= await _context.Users.Where(i => i.UserId == userId).FirstOrDefaultAsync();
+            if (item == null) return "";
+            else return item.Name;
+        }             
+        public async Task<string> GetSaleManPersonById(int SaleManId)
+        {
+            var item= await _context.SaleMan.Where(i => i.SaleManId == SaleManId).FirstOrDefaultAsync();
+            if (item == null) return "";
+            else return item.Name;
         }
     }
 }

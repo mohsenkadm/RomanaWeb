@@ -44,11 +44,11 @@ namespace RomanaWeb.Controllers
         #region Get Info Carousel 
         [AllowAnonymous]
         [HttpGet]
-        public async Task<IActionResult> GetAllApp()
+        public async Task<IActionResult> GetAllApp(int? CountryId = 0)
         {
             try
             {
-                ResObj res = await _CarouselService.GetAllApp();
+                ResObj res = await _CarouselService.GetAllApp(CountryId);
 
                 return Response(res.success, res.data);
             }
@@ -86,21 +86,29 @@ namespace RomanaWeb.Controllers
         {
             try
             {
-                if (CarouselModel.FileChoose == null )
+                if (CarouselModel.CarouseId == 0)
                 {
-                    return Response(false, "رجاءا اختيار ملف التحميل");
+                    if (CarouselModel.FileChoose == null)
+                    {
+                        return Response(false, "رجاءا اختيار ملف التحميل");
+                    }
                 }
-                var result = await _storageServices.UploadImageAsync(CarouselModel.FileChoose, _hostEnvironment.WebRootPath);
+                ResObj result = new ResObj();
+                if (CarouselModel.FileChoose != null)   
+                     result = await _storageServices.UploadImageAsync(CarouselModel.FileChoose, _hostEnvironment.WebRootPath);
 
                 Carousel Carousel = _mapper.Map<Carousel>(CarouselModel);
 
-                if (result.success)
+                if (CarouselModel.FileChoose != null)
                 {
-                    Carousel.Image = Key.CurrentUrl + @$"\Uplouds\image-{result.data}";
-                }
-                else
-                {
-                    return Response(false, result);
+                    if (result.success)
+                    {
+                        Carousel.Image = Key.CurrentUrl + @$"\Uplouds\image-{result.data}";
+                    }
+                    else
+                    {
+                        return Response(false, result);
+                    }
                 }
 
                 ResObj res; 

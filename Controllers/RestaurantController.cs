@@ -44,7 +44,7 @@ namespace RomanaWeb.Controllers
 
         #region LoginRestaurant 
         [AllowAnonymous]
-        [HttpPost]
+        [HttpGet]
         public async Task<IActionResult> Login(string UserName, string password)
         {
             try
@@ -64,12 +64,12 @@ namespace RomanaWeb.Controllers
 
         #region GetAllForApp Info Restaurant 
         [AllowAnonymous]
-        [HttpGet]
-        public async Task<IActionResult> GetAllForApp(string? Name,int UserId,int CategoriesId)
+        [HttpGet("GetAllForApp/{Name},{CategoriesId},{Long},{Lat},{CityId}")]
+        public async Task<IActionResult> GetAllForApp(string? Name, int CategoriesId, double Long, double Lat,int? CityId=0)
         {
             try
             {
-                ResObj res = await _RestaurantService.GetAllForApp(Name, UserId, CategoriesId);
+                ResObj res = await _RestaurantService.GetAllForApp(Name, CategoriesId,Long,Lat, CityId);
 
                 return Response(res.success, res.data);
             }
@@ -79,16 +79,33 @@ namespace RomanaWeb.Controllers
                 return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
             }
         }
+        #endregion  
+        #region GetAllForApp Info Restaurant              
+        [HttpGet("GetCountForRes/{Id},{datefrom},{dateto}")]
+        public async Task<IActionResult>  GetCountForRes(int Id, DateTime datefrom, DateTime dateto)
+        {
+            try
+            {
+                ResObj res = await _RestaurantService.GetCountForRes(Id, datefrom,dateto);
+
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantController => GetCountForRes => name:");
+                return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
+            }
+        }
         #endregion   
 
         #region GetAllForApp Info Restaurant 
         [AllowAnonymous]
-        [HttpGet]
-        public async Task<IActionResult> GetTopAllForApp(int? UserId,double Long,double Lat,int index)
+        [HttpGet("GetTopAllForApp/{Long},{Lat},{CityId}")]
+        public async Task<IActionResult> GetTopAllForApp(double Long, double Lat,int? CityId=0)
         {
             try
             {
-                ResObj res = await _RestaurantService.GetTopAllForApp(UserId,Long,Lat, index);
+                ResObj res = await _RestaurantService.GetTopAllForApp(Long,Lat, CityId);
 
                 return Response(res.success, res.data);
             }
@@ -119,10 +136,10 @@ namespace RomanaWeb.Controllers
             }
         }
         #endregion
-                                                         
 
-        #region Set Order SetIsColsed
-        [HttpPost]
+
+        #region Set Restaurant SetIsColsed
+        [HttpPost("Restaurant/SetIsColsed/{Id}/{Closed}")]
         public async Task<IActionResult> SetIsColsed(int Id,bool Closed)
         {
             try
@@ -140,7 +157,63 @@ namespace RomanaWeb.Controllers
                 return Response(false, "حدث خطا اثناء عملية جلب البيانات");
             }
         }
-        #endregion                  
+        #endregion
+
+        #region Set Restaurant SetIsStars
+        [HttpPost("Restaurant/SetIsStars/{Id}/{Stars}")]
+        public async Task<IActionResult> SetIsStars(int Id, bool Stars)
+        {
+            try
+            {
+                ResObj res = await _RestaurantService.SetIsStars(Id, Stars);
+                if (res.success == false)
+                {
+                    return Response(res.success, res.msg);
+                }
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantController => SetIsStars");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion
+
+        #region GetResNotApproveAll     
+        public async Task<IActionResult> GetResNotApproveAll()
+        {
+            try
+            {
+                var item = await _RestaurantService.GetResNotApproveAll();
+                return Response(true, item.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "PersonController => GetResNotApproveAll");
+                return Response(false, "حدث خطأ اثناء عملية الحفظ");
+            }
+        }
+        #endregion    
+        #region Set Restaurant SetIsStars         
+        public async Task<IActionResult> SetIsApproved(int Id)
+        {
+            try
+            {
+                ResObj res = await _RestaurantService.SetIsApproved(Id);
+                if (res.success == false)
+                {
+                    return Response(res.success, res.msg);
+                }
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantController => SetIsApproved");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion     
 
         #region insert or update Info Restaurant   admin
         [HttpPost]
@@ -186,6 +259,7 @@ namespace RomanaWeb.Controllers
 
                 if (Restaurant.RestaurantId == 0)
                 {
+                    Restaurant.Code = "";
                     res = await _RestaurantService.Post(Restaurant);
                 }
                 else
@@ -203,21 +277,20 @@ namespace RomanaWeb.Controllers
         #endregion 
         #region insert or update Info Restaurant 
         [HttpPost]
-        public async Task<IActionResult> Post(RestaurantModel RestaurantModel)
+        public async Task<IActionResult> Post([FromForm]RestaurantModel RestaurantModel)
         {
             try
             {
-                CodeRes code=new CodeRes();
-                if (RestaurantModel.RestaurantId > 0)
-                {
-                    ResObj checkcode = await _RestaurantService.CheckCode(RestaurantModel.Code);
-                    if (checkcode.success == false)
-                    {
-                        return Response(false, checkcode.msg);
-                    }
-
-                     code = (CodeRes)checkcode.data;
-                }
+                //CodeRes code=new CodeRes();
+                //if (RestaurantModel.RestaurantId > 0)
+                //{
+                //    ResObj checkcode = await _RestaurantService.CheckCode(RestaurantModel.Code);
+                //    if (checkcode.success == false)
+                //    {
+                //        return Response(false, checkcode.msg);
+                //    }                  
+                //     code = (CodeRes)checkcode.data;
+                //}
                 Restaurant Restaurant = _mapper.Map<Restaurant>(RestaurantModel);
                 if (Restaurant.RestaurantId == 0)
                 {
@@ -251,16 +324,16 @@ namespace RomanaWeb.Controllers
                         return Response(false, result);
                     }
                 }
-                if (RestaurantModel.RestaurantId > 0)
-                    Restaurant.Code = code.Code; 
+                //if (RestaurantModel.RestaurantId > 0)
+                //    Restaurant.Code = code.Code; 
                 ResObj res;
 
                 if (Restaurant.RestaurantId == 0)
                 {
                     res = await _RestaurantService.Post(Restaurant);
 
-                    code.IsFree = false;
-                    await _RestaurantService.UpdateCode(code);
+                   // code.IsFree = false;
+                  //  await _RestaurantService.UpdateCode(code);
                 }
                 else
                 {
@@ -316,7 +389,7 @@ namespace RomanaWeb.Controllers
 
         #region UpdateLocationInfo
         // GET api/<RestaurantController>/
-        [HttpPost("UpdateLocationInfo/{Id},{Long},{Lat}")]
+        [HttpPost("Restaurant/UpdateLocationInfo/{Id},{Long},{Lat}")]
         public async Task<IActionResult> UpdateLocationInfo(int Id, double Long, double Lat)
         {
             try

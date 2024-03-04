@@ -1,0 +1,61 @@
+﻿
+@{
+    ViewData["Title"] = "مطاعم غير الموافق عليها";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="content dark-edition">
+        <div class="container-fluid">
+
+            <div class="container alignright" style="margin:2% 0;">
+                <div class="row">
+                    
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header card-header-primary" style="text-align:right">
+                            <h4 class="card-title ">المطاعم غير الموافق عليها</h4>
+                            <p class="card-category">جدول لعرض المطاعم داخل التطبيق</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" style="text-align: right;">
+                                <table class="table table-hover">
+                                    <thead class=" ">
+                                        <tr>  
+                                            <th scope="col">العنوان</th>
+                                            <th scope="col">رقم هاتف</th>
+                                            <th scope="col">لوكو</th>
+                                            <th scope="col">خلفية</th>
+                                            <th scope="col">القسم</th>
+                                            <th scope="col">التفاصيل</th>
+                                            <th scope="col">الاسم</th>
+                                            <th scope="col"></th> 
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableRestaurant">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 
+<div id="mydiv">
+    <script> 
+         $("#search-btn").on("click", (e) => {
+            e.preventDefault();
+            RefreshResNotApprove();
+        });
+        $(document).ready(function () {  
+            RefreshResNotApprove();
+        }); 
+    </script>
+</div>
+
+

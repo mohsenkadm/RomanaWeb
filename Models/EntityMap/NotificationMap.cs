@@ -19,6 +19,7 @@ namespace RomanaWeb.Model.EntityMap
             builder.Ignore(x => x.FileChoose);     
             builder.Property(x => x.UserId).IsRequired();     
             builder.Property(x => x.ResId).IsRequired();     
+            builder.Property(x => x.SaleManId);     
         }
     }
 }

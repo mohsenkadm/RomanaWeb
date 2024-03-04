@@ -40,6 +40,7 @@ function filltableOrders(data) {
             "<td>" + item.functionPoint + "</td>" +
             "<td>" + item.address + "</td>" +
             "<td>" + item.userName + "</td>" +
+            "<td>" + item.saleManName + "</td>" +
             "<td>" + item.restaurantName + "</td>" +
             "<td>" + item.categoriesName + "</td>" +
             "<td>" + item.orderDate + "</td>" +

@@ -12,6 +12,7 @@ using Microsoft.Extensions.Hosting;
 using RomanaWeb.Models.EntityMapper;
 using AutoMapper;
 using RomanaWeb.UploadService;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace RomanaWeb.Controllers
 {
@@ -63,6 +64,23 @@ namespace RomanaWeb.Controllers
 
         #region Get Notification      
         [HttpGet()]
+        public async Task<IActionResult> GetNotificationForSale(int? SaleId)
+        {
+            try
+            {
+                ResObj res = await _NotificationServices.GetNotificationForSale(SaleId);
+
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "PostsController => GetNotificationForSale");
+                return Response(false, "حدث خطا");
+            }
+        }
+        #endregion  
+        #region Get Notification      
+        [HttpGet()]
         public async Task<IActionResult> GetNotificationForRes(int? ResId)
         {
             try
@@ -85,20 +103,19 @@ namespace RomanaWeb.Controllers
         {
             try
             {
-                if (Notification.FileChoose == null)
+                if (Notification.FileChoose != null)
                 {
-                    return Response(false, "رجاءا اختيار ملف التحميل");
-                }
-                var result = await _storageServices.UploadImageAsync(Notification.FileChoose, _hostEnvironment.WebRootPath);
+                    var result = await _storageServices.UploadImageAsync(Notification.FileChoose, _hostEnvironment.WebRootPath);
 
-               
-                if (result.success)
-                {
-                    Notification.Images = Key.CurrentUrl + @$"\Uplouds\image-{result.data}";
-                }
-                else
-                {
-                    return Response(false, result);
+
+                    if (result.success)
+                    {
+                        Notification.Images = Key.CurrentUrl + @$"\Uplouds\image-{result.data}";
+                    }
+                    else
+                    {
+                        return Response(false, result);
+                    }
                 }
                 ResObj res;                          
                     res = await _NotificationServices.Post(Notification);
@@ -119,6 +136,7 @@ namespace RomanaWeb.Controllers
             try
             {
                 Notification.Images = "";
+                  
                 ResObj res;                          
                     res = await _NotificationServices.Post(Notification);
                 await sendnot(Notification);
@@ -136,6 +154,8 @@ namespace RomanaWeb.Controllers
             try
             {                                       
                 await OneSignalSender(notifications.Title, notifications.Details);
+                await OneSignalSenderResAll(notifications.Title, notifications.Details);
+                await OneSignalSenderSalAll(notifications.Title, notifications.Details);
             }
             catch (Exception ex)
             { await _logger.WriteAsync(ex, " PostController => sendnot"); }

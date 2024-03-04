@@ -12,6 +12,8 @@ namespace RomanaWeb.Models.EntityMap
             builder.HasKey(x => x.PromoCodeId);
             builder.Property(x => x.PromoName).IsRequired();  
             builder.Property(x => x.Percentage).IsRequired();  
+            builder.Property(x => x.RestaurantId).IsRequired();  
+            builder.Ignore(x => x.RestaurantName);  
         }
     }
 }

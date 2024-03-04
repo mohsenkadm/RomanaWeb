@@ -7,9 +7,11 @@ using RomanaWeb.Models.Entity;
 namespace RomanaWeb.Helper.Repository
 {
     public class PromoCodeService : MasterService, IPromoCodeService, IRegisterScopped
-    {                                                                      
-        public PromoCodeService(DB_Context dB_Context, IMapper mapper) : base(mapper, dB_Context)
+    {
+        private readonly IDapperRepository<PromoCode> _PromoCodeService;
+        public PromoCodeService(DB_Context dB_Context, IMapper mapper,IDapperRepository<PromoCode> dapper) : base(mapper, dB_Context)
         {                                       
+            _PromoCodeService = dapper;
         }
         public async Task<ResObj> Delete(int Id)
         {
@@ -22,10 +24,11 @@ namespace RomanaWeb.Helper.Repository
             }
             return Result.Return(false);
         }
-        public async Task<ResObj> GetAll()
+        public async Task<ResObj> GetAll(string? Name, int? ResId)
         {
 
-            var item = await _Context.PromoCodes.AsSplitQuery().AsNoTracking().ToListAsync();
+            var item = await _PromoCodeService.GetEntityListAsync("dbo.GetPromoCodesAll", new { Name , ResId });
+            //var item = await _Context.PromoCodes.AsSplitQuery().AsNoTracking().ToListAsync();
             if (item != null)
                 return Result.Return(true, item);
             else
@@ -41,7 +44,7 @@ namespace RomanaWeb.Helper.Repository
         }
         public async Task<ResObj> Post(PromoCode PromoCode)
         {
-            if (PromoCode.PromoCodeId == 0)
+             if (PromoCode.PromoCodeId == 0)
             {
                 var check = await _Context.PromoCodes.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.PromoName == PromoCode.PromoName);
                 if (check != null)
@@ -58,6 +61,7 @@ namespace RomanaWeb.Helper.Repository
                 {
                     item.Percentage = PromoCode.Percentage;
                     item.PromoName = PromoCode.PromoName;
+                    item.RestaurantId = PromoCode.RestaurantId;
                     _Context.Entry(item).State = EntityState.Modified;
                 }
             }

@@ -173,6 +173,7 @@ namespace RomanaWeb.Controllers
             }
         }
         #endregion
+
         #region logout
         [HttpGet]     
         public async Task<IActionResult> Logout()

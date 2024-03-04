@@ -44,11 +44,11 @@ namespace RomanaWeb.Helper.Repository
                                     
             if(stars.StarsId==0)
             {
-                var info = await _Context.Stars.AsSplitQuery().AsNoTracking().Where(i => i.RestaurantId == stars.UserId).FirstOrDefaultAsync();
-                if (info != null)
-                {
-                    return Result.Return(false, "لا يمكن تقييم  لاكثر من مرة");
-                }
+                //var info = await _Context.Stars.AsSplitQuery().AsNoTracking().Where(i => i.RestaurantId == stars.UserId).FirstOrDefaultAsync();
+                //if (info != null)
+                //{
+                //    return Result.Return(false, "لا يمكن تقييم  لاكثر من مرة");
+                //}
                 await _Context.Stars.AddAsync(stars);
             }
             else
@@ -56,13 +56,15 @@ namespace RomanaWeb.Helper.Repository
                 var item= await _Context.Stars.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.StarsId == stars.StarsId);
                 if (item != null)
                 {                           
-                   item.UserId = stars.UserId;
+                  // item.UserId = stars.UserId;
                    item.StarsCount=stars.StarsCount;    
                    item.RestaurantId = stars.RestaurantId;
                    item.Comments=stars.Comments;
                     _Context.Entry(item).State = EntityState.Modified;
                 }
             }
+            
+
             await _Context.SaveChangesAsync();
             return Result.Return(true,stars);
         }

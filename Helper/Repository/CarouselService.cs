@@ -21,9 +21,9 @@ namespace RomanaWeb.Helper.Repository
             _context = context;                   
         }
 
-        public async Task<ResObj> GetAllApp()
+        public async Task<ResObj> GetAllApp(int? CountryId=0)
         {
-            List<Carousel> data = await _context.Carousel.AsSplitQuery().AsNoTracking().Where(i=>i.IsShow==true).ToListAsync() ;
+            List<Carousel> data = await _context.Carousel.AsSplitQuery().AsNoTracking().Where(i=>i.IsShow==true && (CountryId==0 || CountryId ==null || i.CountryId== CountryId)).ToListAsync() ;
             return Result.Return(true, data);
         }                            
         public async Task<ResObj> GetAll()
@@ -51,7 +51,11 @@ namespace RomanaWeb.Helper.Repository
             if (Carousel1 is null)
                 return Result.Return(false, "حدث خطا اثناء عملية جلب البيانات");
              
-            Carousel1.Image = Carousel.Image;
+            if(Carousel.Image!=null)
+            {
+                Carousel1.Image = Carousel.Image;
+            }
+
             Carousel1.IsShow = Carousel.IsShow;
             Carousel1.Url = Carousel.Url;
             _context.Entry(Carousel1).State = EntityState.Modified;

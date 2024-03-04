@@ -87,10 +87,38 @@ namespace RomanaWeb.Controllers
         public IActionResult RestaurantSubCategories()
         {
             return View();
-        }                         
+        }
         public IActionResult SubCategories()
         {
             return View();
-        }        
+        }
+        public IActionResult City()
+        {
+            return View();
+        }          
+        public IActionResult RestaurantCity()
+        {
+            return View();
+        }            
+        public IActionResult Countries()
+        {
+            return View();
+        }               
+        public IActionResult SaleMan()
+        {
+            return View();
+        }                    
+        public IActionResult GetResNotApproveAll()
+        {
+            return View();
+        }
+        public IActionResult DownloadPageuser()
+        {
+            return View();
+        }
+        public IActionResult DownloadPageres()
+        {
+            return View();
+        }
     }
 }

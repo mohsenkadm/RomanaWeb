@@ -10,7 +10,7 @@ namespace RomanaWeb.Model.EntityMap
         {
             builder.ToTable("Stars", "dbo");
             builder.HasKey(x => x.StarsId);
-            builder.Property(x => x.UserId);
+            //builder.Property(x => x.UserId);
             builder.Property(x => x.StarsCount).IsRequired();
             builder.Property(x => x.RestaurantId).IsRequired();   
             builder.Property(x => x.Comments).IsRequired();

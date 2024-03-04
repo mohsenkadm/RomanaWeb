@@ -40,11 +40,8 @@ function RefreshProducts() {
         call_ajax("GET", "Products/GetAll", obj, filltableProducts); 
 } 
 
-function updateProducts(id) {
-        var object1 = {
-            Id: id
-        };
-        call_ajax("GET", "Products/GetById", object1, setdataProducts);
+function updateProducts(id) { 
+        call_ajax("GET", "Products/GetById/"+id, null, setdataProducts);
         _ProductsId = id; 
 }
 

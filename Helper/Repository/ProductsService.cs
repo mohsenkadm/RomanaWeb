@@ -19,9 +19,11 @@ namespace RomanaWeb.Helper.Repository
             _prodService = prodService;        
         }
 
-        public async Task<ResObj> GetByRestaurantId(int RestaurantId, int UserId, int? SubCategoriesId)
+        public async Task<ResObj> GetByRestaurantId(int RestaurantId, int UserId, int? SubCategoriesId,string? prodname)
         {
-            List<Products> items = await _context.Products.AsSplitQuery().AsNoTracking().Where(i=>i.RestaurantId==RestaurantId && i.SubCategoriesId==SubCategoriesId).ToListAsync();
+            List<Products>  items = await _context.Products.AsSplitQuery().AsNoTracking().Where(i => i.RestaurantId == RestaurantId &&
+        (SubCategoriesId == 0 || i.SubCategoriesId == SubCategoriesId) && (prodname.IsEmpty() || i.ProductsName.Contains(prodname))).ToListAsync();
+
             if (items != null)
             {    
                 return Result.Return(true, items);
@@ -32,6 +34,14 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> Post(Products Products)
         {
+            if (Products.ProductsDetails == null)
+            {
+                Products.ProductsDetails = "";
+            }  
+            if (Products.IsFree == null)
+            {
+                Products.IsFree = true;
+            }   
             await _context.Products.AddAsync(Products);
             await _context.SaveChangesAsync();
            
@@ -48,8 +58,11 @@ namespace RomanaWeb.Helper.Repository
             Products1.ProductsPrice = Products.ProductsPrice;
             Products1.ProductsDetails = Products.ProductsDetails;
             Products1.SubCategoriesId = Products.SubCategoriesId;
-            if(Products.ProductsImage.Length>0)
-            Products1.ProductsImage = Products.ProductsImage;     
+            Products1.IsFree = Products.IsFree;       
+            if (Products.ProductsImage!=null)
+            {
+                Products1.ProductsImage = Products.ProductsImage;
+            }
 
             _context.Entry(Products1).State = EntityState.Modified;
             await _context.SaveChangesAsync();
@@ -66,7 +79,7 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true, "تم حذف بنجاح");
         }
 
-        public async Task<ResObj> GetAll(string? Name, string? RestaurantName, string? SubCategoriesName,int index)
+        public async Task<ResObj> GetAll(string? Name, string? RestaurantName, string? SubCategoriesName, int index)
         {
             List<Products> items = await _prodService.GetEntityListAsync("dbo.GetProductsAll", new { Name, RestaurantName, SubCategoriesName, index });
             if (items != null)
@@ -75,9 +88,18 @@ namespace RomanaWeb.Helper.Repository
             }
             else
                 return Result.Return(false);
-
         }
-                                               
+        public async Task<ResObj> GetAllBySearch(string? Name, int index)
+        {
+            List<Products> items = await _prodService.GetEntityListAsync("dbo.GetProductsAll", new { Name, index });
+            if (items != null)
+            {
+                return Result.Return(true, items);
+            }
+            else
+                return Result.Return(false);
+        }
+
         public async Task<Products> GetProductsById(int Id)
         {
             return await _context.Products.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i=>i.ProductsId==Id);
@@ -85,7 +107,7 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> GetById(int Id)
         {
-            Products items = await GetProductsById(Id);
+            Products items = await _prodService.GetEntityAsync("dbo.GetProductsById", new { Id});
             if (items != null)
             {
                  return Result.Return(true, items);
@@ -94,8 +116,17 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(false);     
         }
 
-      
-                                    
+
+
+        public async Task<ResObj> SetIsFree(int id, bool IsFree)
+        {
+            var res = await GetProductsById(id);
+            res.IsFree = IsFree;                                              
+
+            _context.Entry(res).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تم", res);
+        }
     }
 }
 

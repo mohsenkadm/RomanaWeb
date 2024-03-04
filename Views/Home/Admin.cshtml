@@ -62,7 +62,7 @@
         <div class="modal-content dark-edition">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
-                <button type="button" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
+                <button type="button" style="margin-left:10%;" id="close1" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true" style="font-size:155%">&times;</span>
                 </button>
             </div>
@@ -130,6 +130,10 @@
         
         $(document).ready(function () { 
             RefreshAdmin();
+        });
+        $("#close1").on("click", (e) => {
+            e.preventDefault();
+            aftersaveAdmin();
         });
         $("#close").on("click", (e) => {
             e.preventDefault();
