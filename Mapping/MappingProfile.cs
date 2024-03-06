@@ -14,6 +14,7 @@ namespace RomanaWeb.Mapping
             CreateMap<ProductsModel, Products>();         
             CreateMap<OrderDetailModel, OrderDetail>();      
             CreateMap<OrdersModel, Orders>();      
+            CreateMap<SaleManModel, SaleMan>();      
         }
     }
 }

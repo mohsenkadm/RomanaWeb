@@ -17,6 +17,7 @@ namespace RomanaWeb.Models.EntityMapper
         public string Notes { get; set; }
         public string PromoCode { get; set; }
 
+        public decimal? CostDelivery { get; set; }
 
         //for user      
 

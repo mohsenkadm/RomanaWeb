@@ -49,7 +49,18 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(true, item);
             else
                 return Result.Return(false);
-        }         
+        }
+
+        public async Task<ResObj> PostWithAddName(RestaurantSubCategories RestaurantSubCategories)
+        {
+            SubCategories sub = new SubCategories{ SubCategoriesId = 0, SubCategoriesName = RestaurantSubCategories.SubCategoriesName };
+            await _Context.SubCategories.AddAsync(sub);
+            await _Context.SaveChangesAsync();
+            RestaurantSubCategories.SubCategoriesId = sub.SubCategoriesId;
+            await _Context.RestaurantSubCategories.AddAsync(RestaurantSubCategories);  
+            await _Context.SaveChangesAsync();
+            return Result.Return(true, "تم الحفظ بنجاح", RestaurantSubCategories);
+        }
         public async Task<ResObj> Post(RestaurantSubCategories RestaurantSubCategories)
         {
             if (RestaurantSubCategories.RestaurantSubCategoriesId == 0)

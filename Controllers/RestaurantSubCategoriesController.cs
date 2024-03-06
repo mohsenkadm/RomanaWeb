@@ -61,6 +61,24 @@ namespace RomanaWeb.Controllers
                 return Response(false, "حدث خطا اثناء عملية الحفظ");
             }
         }
+        #endregion 
+        #region insert or update Info RestaurantSubCategories   PostWithAddName
+        [HttpPost]
+        public async Task<IActionResult> PostWithAddName([FromForm]RestaurantSubCategories RestaurantSubCategories)
+        {
+            try
+            {
+
+                ResObj res;
+                res = await _RestaurantSubCategoriesService.PostWithAddName(RestaurantSubCategories);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantSubCategoriesController => PostWithAddName => name:");
+                return Response(false, "حدث خطا اثناء عملية الحفظ");
+            }
+        }
         #endregion
 
         #region delete Info RestaurantSubCategories 

@@ -24,8 +24,9 @@ namespace RomanaWeb.Models.Entity
         public int? SaleManId { get; set; }    
         public bool? IsSaleManApprove { get; set; }    
         public bool? IsSaleManCancel { get; set; }    
-        public string? SaleManName { get; set; }    
+        public string? SaleManName { get; set; }
 
+        public decimal? CostDelivery { get; set; }
         // for show
         public string? UserName { get; set; }
         public string? Phone { get; set; }      

@@ -58,7 +58,7 @@ namespace RomanaWeb.Helper.Repository
         }    
         public async Task<ResObj> GetByRestaurantId(int RestaurantId)
         {                                                     
-            List<SaleMan> SaleMan = await _context.SaleMan.AsSplitQuery().AsNoTracking().Where(i=>i.RestaurantId== RestaurantId).ToListAsync();
+            List<SaleMan> SaleMan = await _context.SaleMan.AsSplitQuery().AsNoTracking().Where(i=>i.RestaurantId== RestaurantId && i.IsDelete==false).ToListAsync();
             foreach (SaleMan item in SaleMan)
             {
                 if (item.Password != null)
@@ -72,8 +72,9 @@ namespace RomanaWeb.Helper.Repository
         {                                                                              
             var checkres = await _context.SaleMan.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.Phone!.Contains(SaleMan.Phone!));
             if (checkres != null) return Result.Return(false, "رقم الهاتف موجود سابقا");
-          
-            
+
+
+            SaleMan.IsDelete = false;  
             SaleMan.Password= Encyptmethod.EncryptStringToBytes_Aes(SaleMan.Password!);
             await _context.SaleMan.AddAsync(SaleMan);
             await _context.SaveChangesAsync();
@@ -90,7 +91,7 @@ namespace RomanaWeb.Helper.Repository
             SaleMan1.Address = SaleMan.Address;
             SaleMan1.Phone = SaleMan.Phone;
             SaleMan1.IsDelete = SaleMan.IsDelete;   
-            SaleMan1.IsDelete = SaleMan.IsDelete;   
+            SaleMan1.IsActive = SaleMan.IsActive;   
             SaleMan1.Password = Encyptmethod.EncryptStringToBytes_Aes(SaleMan.Password!);    
             _context.Entry(SaleMan1).State = EntityState.Modified;
             await _context.SaveChangesAsync();                 

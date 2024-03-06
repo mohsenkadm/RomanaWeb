@@ -18,9 +18,8 @@ namespace RomanaWeb.Model.EntityMap
             builder.Property(x => x.IsActive);             
             builder.Property(x => x.IsDelete);        
             builder.Property(x => x.RestaurantId);        
-            builder.Property(x => x.Password);           
-            builder.Property(x => x.RestaurantId);           
-            builder.Property(x => x.RestaurantName);           
+            builder.Property(x => x.Password);               
+            builder.Ignore(x => x.RestaurantName);           
         }
     }
 }

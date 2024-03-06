@@ -9,6 +9,7 @@ namespace RomanaWeb.Helper.Interface
         public Task<ResObj> GetById(int Id);
         public Task<ResObj> GetByResId(int Id);
         public Task<ResObj> Delete(int Id);
+        public Task<ResObj> PostWithAddName(RestaurantSubCategories RestaurantSubCategories);
         public Task<ResObj> Post(RestaurantSubCategories RestaurantSubCategories);
     }
 }

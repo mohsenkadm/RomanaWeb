@@ -27,6 +27,7 @@ namespace RomanaWeb.Model.EntityMap
             builder.Property(x => x.IsSaleManApprove) ;    
             builder.Property(x => x.IsSaleManCancel) ;    
             builder.Property(x => x.SaleManId) ;    
+            builder.Property(x => x.CostDelivery) ;    
             builder.Ignore(x => x.UserName);    
             builder.Ignore(x => x.RestaurantName);    
             builder.Ignore(x => x.CategoriesName);    

@@ -1,1 +1,12 @@
- 
+ LogDT = 3/5/2024 11:32:31 PM 
+ LogMsg = SaleManController => GetByRestaurantId => name: 
+ LogDesc = Msg=SaleManController => GetByRestaurantId => name:;Ex.Msg=Invalid column name 'RestaurantName'.; 
+
+********************************************** 
+
+LogDT = 3/5/2024 11:32:31 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'RestaurantName'.; 
+
+********************************************** 
+
