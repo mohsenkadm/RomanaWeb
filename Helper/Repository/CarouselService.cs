@@ -57,6 +57,7 @@ namespace RomanaWeb.Helper.Repository
             }
 
             Carousel1.IsShow = Carousel.IsShow;
+            Carousel1.CountryId = Carousel.CountryId;
             Carousel1.Url = Carousel.Url;
             _context.Entry(Carousel1).State = EntityState.Modified;
             await _context.SaveChangesAsync();

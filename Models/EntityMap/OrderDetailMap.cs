@@ -26,6 +26,7 @@ namespace RomanaWeb.Models.EntityMap
             builder.Ignore(x => x.RestaurantId); 
             builder.Ignore(x => x.Total); 
             builder.Ignore(x => x.NetAmount); 
+            builder.Ignore(x => x.CostDelivery); 
             builder.Ignore(x => x.TotalDiscount); 
             builder.Ignore(x => x.IsCancel); 
             builder.Ignore(x => x.IsApporve);   

@@ -53,11 +53,24 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> PostWithAddName(RestaurantSubCategories RestaurantSubCategories)
         {
-            SubCategories sub = new SubCategories{ SubCategoriesId = 0, SubCategoriesName = RestaurantSubCategories.SubCategoriesName };
-            await _Context.SubCategories.AddAsync(sub);
-            await _Context.SaveChangesAsync();
-            RestaurantSubCategories.SubCategoriesId = sub.SubCategoriesId;
-            await _Context.RestaurantSubCategories.AddAsync(RestaurantSubCategories);  
+            if (RestaurantSubCategories.SubCategoriesId == 0)
+            {
+                SubCategories sub = new SubCategories { SubCategoriesId = 0, SubCategoriesName = RestaurantSubCategories.SubCategoriesName };
+                await _Context.SubCategories.AddAsync(sub);
+                await _Context.SaveChangesAsync();
+                RestaurantSubCategories.SubCategoriesId = sub.SubCategoriesId;
+                await _Context.RestaurantSubCategories.AddAsync(RestaurantSubCategories);
+                
+            }
+            else
+            {
+                var item = await _Context.SubCategories.FirstOrDefaultAsync(i => i.SubCategoriesId == RestaurantSubCategories.SubCategoriesId);
+                if (item != null)
+                {
+                    item.SubCategoriesName = RestaurantSubCategories.SubCategoriesName; 
+                    _Context.Entry(item).State = EntityState.Modified;
+                }
+            }
             await _Context.SaveChangesAsync();
             return Result.Return(true, "تم الحفظ بنجاح", RestaurantSubCategories);
         }

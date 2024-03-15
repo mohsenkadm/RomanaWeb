@@ -18,5 +18,14 @@ namespace RomanaWeb.Models.Entity
         public bool? IsDelete { get; set; }
         public int RestaurantId { get; set; }
         public string RestaurantName { get; set; }
+        // for total
+        public decimal CountOrder { get; set; }
+        public decimal NetAmount { get; set; }
+        public decimal TotalCostDelivery { get; set; }
+        public decimal Total { get; set; }
+        public decimal daCountOrder { get; set; }
+        public decimal daNetAmount { get; set; }
+        public decimal daCostDelivery { get; set; }
+        public decimal daTotal { get; set; }
     }
 }

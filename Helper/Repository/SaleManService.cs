@@ -90,7 +90,7 @@ namespace RomanaWeb.Helper.Repository
             SaleMan1.Name = SaleMan.Name;
             SaleMan1.Address = SaleMan.Address;
             SaleMan1.Phone = SaleMan.Phone;
-            SaleMan1.IsDelete = SaleMan.IsDelete;   
+            SaleMan1.IsDelete = false;   
             SaleMan1.IsActive = SaleMan.IsActive;   
             SaleMan1.Password = Encyptmethod.EncryptStringToBytes_Aes(SaleMan.Password!);    
             _context.Entry(SaleMan1).State = EntityState.Modified;

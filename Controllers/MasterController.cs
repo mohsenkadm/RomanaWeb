@@ -194,8 +194,8 @@ namespace RomanaWeb.Controllers
         {
             try
             {
-                string onesignalAppID = "d3bfb798-5430-47c6-b921-38e1fddbcd26";
-                string onesignalRestID = "ZDVjYzVhNjAtYzc0Yy00Y2NmLWIwNjctMzBkNzNhOGU5MTk2";
+                string onesignalAppID = "5020facf-da15-4dec-8287-a8a0ee8ac0a6";
+                string onesignalRestID = "ODY1MWU3OTktMjA5ZC00YWRiLTlmYTYtM2I2NGI4YTg5ZmQy";
 
 
                 // Configure the OneSignal Library
@@ -227,8 +227,8 @@ namespace RomanaWeb.Controllers
         [NonAction]
         public async Task OneSignalSenderSal(string Title, string body, List<string> id)
         {
-            string onesignalAppID = "d3bfb798-5430-47c6-b921-38e1fddbcd26";
-            string onesignalRestID = "ZDVjYzVhNjAtYzc0Yy00Y2NmLWIwNjctMzBkNzNhOGU5MTk2";
+            string onesignalAppID = "5020facf-da15-4dec-8287-a8a0ee8ac0a6";
+            string onesignalRestID = "ODY1MWU3OTktMjA5ZC00YWRiLTlmYTYtM2I2NGI4YTg5ZmQy";
 
 
             // Configure the OneSignal Library

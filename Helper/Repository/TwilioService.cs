@@ -26,15 +26,15 @@ namespace RomanaWeb.Helper.Repository
             if (person == null)
                 return Result.Return(false, "حسابك غير موجود حاول التسجيل مرة اخرى");
 
-
-            //TwilioClient.Init("ACfd1cebb6be3402ceb483993d5a3b4053", "4ed325f9d3943e476e14201a1220c787");
-
+            var accountSid = "AC83d4b101c9aee06c8e114873385ad1e3";
+            var authToken = "8eff9353e41fe46eaaffde026d4adec0";
+            TwilioClient.Init(accountSid, authToken);
             MessageResource _response = await MessageResource.CreateAsync
             (
                 body: $"رمز التحقق الخاص بك هو {OTPCode}",
-                from: new global::Twilio.Types.PhoneNumber($"+18573845268"),
+                from: new global::Twilio.Types.PhoneNumber($"+14242091843"),
                 // messagingServiceSid: "MG7a144626566d3ca69d4650645a46dab3" ,
-                to: new global::Twilio.Types.PhoneNumber($"+964{PhoneNo}")
+                to: new global::Twilio.Types.PhoneNumber($"+964{PhoneNo.Substring(1)}")
             );
 
             if (_response.Status == MessageResource.StatusEnum.Queued)

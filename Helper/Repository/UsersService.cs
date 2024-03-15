@@ -26,12 +26,16 @@ namespace RomanaWeb.Helper.Repository
             _repository = repository;
             this.twilioService = twilioService;
         }
-        public async Task<ResObj> Login(string UserName, string password)
+        public async Task<ResObj> Login(string Phone, string password)
         {
+            if (Phone.Length != 11)
+            {
+                return Result.Return(false, "يجب كتابة رقم الهاتف 11 رقما");
+            }
             password = Encyptmethod.EncryptStringToBytes_Aes(password);
 
             Users? login = await _context.Users.Where(i => i.Password == password
-            && i.Phone == UserName).FirstOrDefaultAsync();
+            && i.Phone == Phone ).FirstOrDefaultAsync();
 
             if (login is null)
                 return Result.Return(false, "اسم المستخدم او كلمة المرور غير صحيحة");
@@ -50,6 +54,10 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> ForgatePassword(string Phone)
         {
+            if(Phone.Length!=11)
+            {
+                return Result.Return(false, "يجب كتابة رقم الهاتف 11 رقما");
+            }
             Users? person = await _context.Users.FirstOrDefaultAsync(i => i.Phone == Phone);
             if (person == null)
                 return Result.Return(false, "هذا الحساب  غير موجود ");
@@ -74,6 +82,10 @@ namespace RomanaWeb.Helper.Repository
         }
         public async Task<ResObj> ConfirmCode(string code, string Phone)
         {
+            if (Phone.Length != 11)
+            {
+                return Result.Return(false, "يجب كتابة رقم الهاتف 11 رقما");
+            }
             Users? person = await _context.Users.FirstOrDefaultAsync(i => i.Phone == Phone && i.Code == code);
             if (person == null)
                 return Result.Return(false, "هذا الحساب  غير موجود ");
@@ -125,7 +137,7 @@ namespace RomanaWeb.Helper.Repository
 
             UserManager userManager = new UserManager() { Id = Users.UserId, Name = Users.Name };
             Users.Token = JsonWebToken.GenerateToken(userManager);
-            return Result.Return(true, "تم الحفظ بنجاح", Users);
+            return Result.Return(true, "تم الحفظ بنجاح يرجى تاكيد  الحساب حاليا", Users);
         }
 
         public async Task<ResObj> Update(Users Users)

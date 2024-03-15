@@ -26,6 +26,7 @@ namespace RomanaWeb.Models.Entity
         public double Total { get; set; }
         public double TotalDiscount { get; set; }
         public double NetAmount { get; set; }
+        public decimal? CostDelivery { get; set; }
         public bool IsCancel { get; set; }
         public bool IsApporve { get; set; }
         public bool IsDone { get; set; }

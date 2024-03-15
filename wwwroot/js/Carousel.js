@@ -16,7 +16,8 @@ function filltableCarousel(data) {
             "</td>" + 
             "<td><img src='" + item.image + "' alt='' border=3 height=50 width=50></img></td>" +
             "<td>" + item.url + "</td>"+
-            "<td>" + item.image + "</td>"
+            "<td>" + item.image + "</td>"+
+            "<td>" + item.countryName + "</td>"
             + "<td> <button type='button' class='btn btn-danger' onclick='deleteCarousel(" + item.carouseId + ")'  >حذف</button>" +
             "  |  <button type='button' class='btn btn-primary' onclick='updateCarousel(" + item.carouseId + ")'  data-toggle='modal' data-target='#CarouselModal'>تعديل</button></td></tr>";
         $('#tableCarousel').append(rows);
@@ -47,6 +48,7 @@ function updateCarousel(id) {
 
 function setdataCarousel(data) {
     $("#Url").val(data.url);
+    $("#CountriesId").val(data.countriesId).change();
 
     if (data.isShow === true) {
         $("#IsShowca").prop("checked", true);
@@ -58,6 +60,7 @@ function setdataCarousel(data) {
 function aftersaveCarousel(Carousel) {  
     $("#imageca").val('');
     $("#Url").val('');
+    $("#CountriesId").val(0).change();
     $("#IsShowca").prop("checked", false);
     _CarouseId = 0;
     call_ajax("GET", "Carousel/GetAll", null, filltableCarousel);

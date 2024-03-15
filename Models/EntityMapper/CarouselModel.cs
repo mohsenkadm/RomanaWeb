@@ -13,5 +13,6 @@ namespace RomanaWeb.Models.EntityMapper
         public IFormFile FileChoose { get; set; }
         public bool IsShow { get; set; }
         public string Url { get; set; }
+        public int CountryId { get; set; }
     }
 }

@@ -110,8 +110,8 @@ namespace RomanaWeb.Helper.Repository
             Restaurant1.Whatsapp = Restaurant.Whatsapp;  
             Restaurant1.UserName = Restaurant.UserName;   
             Restaurant1.IsActive = Restaurant.IsActive;   
-            Restaurant1.IsApproved = Restaurant.IsApproved;   
-            Restaurant1.IsDelete = Restaurant.IsDelete;   
+            //Restaurant1.IsApproved = Restaurant.IsApproved;   
+            Restaurant1.IsDelete = false;   
             Restaurant1.IsClosed = Restaurant.IsClosed;   
             Restaurant1.IsStars = Restaurant.IsStars;   
             Restaurant1.MinimumPrice = Restaurant.MinimumPrice;   

@@ -11,7 +11,7 @@ function filltableSaleMan(data) {
             "<td>" +
             "<div class='form-check'>" +
             "<label class='form-check-label'>" +
-            "<input class='form-check-input' type='checkbox' id='IsActive" + item.userId + "'>" +
+            "<input class='form-check-input' type='checkbox' id='IsActive" + item.saleManId + "'>" +
             "<span class='form-check-sign'>" +
             "<span class='check'></span>" +
             "</span>" +
@@ -22,9 +22,9 @@ function filltableSaleMan(data) {
             "<td>" + item.address + "</td>" +   
             "<td>" + item.phone + "</td>" +
             "<td>" + item.name + "</td>"
-            + "<td> <button type='button' class='btn btn-danger' onclick='deleteSaleMan(" + item.userId + ")'  >حذف</button></td></tr>";
+            + "<td> <button type='button' class='btn btn-danger' onclick='deleteSaleMan(" + item.saleManId + ")'  >حذف</button></td></tr>";
         $('#tableSaleMan').append(rows);  
-        $('#IsActive' + item.userId).attr('checked', item.isActive); 
+        $('#IsActive' + item.saleManId).attr('checked', item.isActive); 
     });
 }
 

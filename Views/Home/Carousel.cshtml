@@ -28,10 +28,12 @@
                             <div class="table-responsive" style="text-align: right;">
                                 <table class="table table-hover">
                                     <thead class=" ">
-                                        <tr>
+                                        <tr> 
                                             <th scope="col">عرض الصورة</th>
                                             <th scope="col">الصورة</th>
+                                            <th scope="col">الرابط</th>
                                             <th scope="col">رابط الصورة</th>
+                                            <th scope="col">المحافظة</th>
                                             <th scope="col"></th>
                                         </tr>
                                     </thead>
@@ -74,7 +76,13 @@
                             </label>
                         </div>
                     </div>
-
+                    <div class="row">
+                        <div class="form-group col-md-12 text-right">
+                            <p>اختيار المحافظة</p>
+                            <select class="form-control text-right" style="background-color: #1a2035;" name="CountriesId" id="CountriesId">
+                            </select>
+                        </div>
+                    </div>
                     <div class="form-group col-md-12  alignright">
                         <label class="text-primary">الرابط</label>
                         <input type="text" id="Url" autocomplete="off" name="Url" class="form-control alignright" placeholder="اكتب  الرابط" />
@@ -91,8 +99,17 @@
 </div>
 <div id="mydiv">
     <script>
-
+        function selectCountriesId(data) {
+            var s = '<option value="0">اختيار المحافظة</option>';
+            $('#CountriesId').append(s);
+            $.each(data, function (i, item) {
+                var ss = '<option value="' + item.countriesId + '">' + item.countriesName + '</option>';
+                $('#CountriesId').append(ss);
+            });
+        };
         $(document).ready(function () {
+
+            call_ajax("GET", "Countries/GetAll", null, selectCountriesId);
             RefreshCarousel();
         });
         $("#close").on("click", (e) => {
@@ -130,6 +147,8 @@
             else {
                 data.append('FileChoose', files[0]);
             }
+
+            data.append('CountryId', $("#CountriesId").val());
             call_ajax_withfile("POST", "Carousel/Post", data, aftersaveCarousel);
         });
 

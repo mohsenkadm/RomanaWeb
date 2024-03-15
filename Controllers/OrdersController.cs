@@ -339,17 +339,18 @@ namespace RomanaWeb.Controllers
                     return Response(res.success, res.msg);
                 }
                 Orders orders = (Orders)res.data;
+                // for saleman
                 List<string> ids = new List<string>();
                 string Name = "";
                 Name = await _OrdersService.GetSaleManPersonById(SaleManId);
 
-                ids.Add(orders.UserId.ToString());
+                ids.Add(orders.SaleManId.ToString());
                 Notification notifications = new Notification
                 {
                     Title = "طلب جديد",
                     Details = $"هلو {Name} نود تبليغك  ، ان هناك طلب قادم اليك .",
-                    DateInsert = Key.DateTimeIQ,
-                    UserId = orders.UserId
+                    DateInsert = Key.DateTimeIQ,     
+                    SaleManId = SaleManId,ResId=0,UserId=0
                 };
                 await _noteService.Post(notifications);
                 try
@@ -358,11 +359,13 @@ namespace RomanaWeb.Controllers
                       ids);
                 }
                 catch (Exception ex) { }
+
+              
                 return Response(res.success, res.msg);
             }
             catch (Exception ex)
             {
-                await _logger.WriteAsync(ex, "OrdersController => SetIsDone");
+                await _logger.WriteAsync(ex, "OrdersController => SetSaleManId");
                 return Response(false, "حدث خطا اثناء عملية جلب البيانات");
             }
         }
@@ -423,13 +426,13 @@ namespace RomanaWeb.Controllers
                 Orders orders = (Orders)res.data;
                 List<string> ids = new List<string>();                       
 
-                ids.Add(orders.UserId.ToString());
+                ids.Add(orders.RestaurantId.ToString());
                 Notification notifications = new Notification
                 {
                     Title = "طلب المندوب",
                     Details = $" {orders.OrderNo} وافق مندوبك على طلب رقم ",
                     DateInsert = Key.DateTimeIQ,
-                    ResId = orders.RestaurantId
+                    ResId = orders.RestaurantId   ,UserId=0,SaleManId=0
                 };
                 await _noteService.Post(notifications);
                 try
@@ -438,6 +441,29 @@ namespace RomanaWeb.Controllers
                       ids);
                 }
                 catch (Exception ex) { }
+                // for user
+                List<string> idsuser = new List<string>();
+                string Nameuser = "";
+                Nameuser = await _OrdersService.GetNamePersonById(orders.UserId);
+
+                idsuser.Add(orders.UserId.ToString());
+                Notification notificationsuser = new Notification
+                {
+                    Title = "طلبك",
+                    Details = $"هلو {Nameuser} نود تبليغك  ، ان هناك طلبك بيد المندوب .",
+                    DateInsert = Key.DateTimeIQ,
+                    SaleManId = 0,
+                    ResId = 0,
+                    UserId = orders.UserId
+                };
+                await _noteService.Post(notificationsuser);
+                try
+                {
+                    await OneSignalSenderUser(notificationsuser.Title, notificationsuser.Details,
+                      ids);
+                }
+                catch (Exception ex) { }
+
                 return Response(res.success, res.msg);
             }
             catch (Exception ex)
@@ -462,7 +488,7 @@ namespace RomanaWeb.Controllers
                 Orders orders = (Orders)res.data;   
                 List<string> ids = new List<string>();                           
 
-                ids.Add(orders.UserId.ToString());
+                ids.Add(orders.RestaurantId.ToString());
                 Notification notifications = new Notification
                 {
                     Title = "طلب المندوب",
