@@ -104,11 +104,16 @@ namespace RomanaWeb.Controllers
 
         #region Get Info order 
         [HttpGet()]
-        public async Task<IActionResult> GetAll(string? OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto)
+        public async Task<IActionResult> GetAll(string? OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto,int? CountriesId,int? state)
         {
             try
             {
-                ResObj res = await _OrdersService.GetAll(OrderNo, RestaurantName, datefrom, dateto);
+                int? RestaurantId = 0;
+                if (UserManager.Role == "res")
+                {
+                    RestaurantId = UserManager.Id;
+                }
+                ResObj res = await _OrdersService.GetAll(OrderNo, RestaurantName, datefrom, dateto,RestaurantId, CountriesId, state);
 
                 return Response(res.success, res.data);
             }
@@ -206,7 +211,7 @@ namespace RomanaWeb.Controllers
                 Notification notifications = new Notification
                 {
                     Title = "طلبك",
-                    Details = $" هلو {orders.UserName} تم ايصال طلبك بنجاح ، من فضلك انتظر الموافقة عليه  ",
+                    Details = $" مرحبا {orders.UserName} لقد استلمنا طلبك بنجاح ، فضلاً انتظر الموافقة عليه  ",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId,ResId=0   ,Images=""
                 };
@@ -264,7 +269,7 @@ namespace RomanaWeb.Controllers
                 Notification notifications = new Notification
                 {
                     Title = "طلبك",
-                    Details = $" هلو {Name} سعيدون بالموافقة على طلبك ، انتظر سوف نقوم بتجهيز الطلب وارساله اليك باأقرب وقت . ",
+                    Details = $" مرحبا {Name}  تمت الموافقة على الطلب ، يتم تجهيز طلبك ",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId
                 };
@@ -305,7 +310,7 @@ namespace RomanaWeb.Controllers
                 Notification notifications = new Notification
                 {
                     Title = "طلبك",
-                    Details = $"هلو {Name} نعتذر عن عدم الموافقة على طلبك ، اما بسبب الحد الادنى للطلب او بعد مكان التوصيل . ",
+                    Details = $"مرحبا {Name} نعتذر عن عدم قبول طلبك . يمكنك تجربة الطلب مرة اخرى . ",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId ,      
                 };
@@ -391,7 +396,7 @@ namespace RomanaWeb.Controllers
                 Notification notifications = new Notification
                 {
                     Title = "طلبك",
-                    Details = $"هلو {Name} نود تبليغك بتسليم طلبك الى سائق التوصيل وهو بطريقه اليك ، نود منك تجربة الطلب منّا مرة اخرى .",
+                    Details = $"مرحبا {Name}سلمنا طلبك الى شركة التوصيل انتظر تواصلهم معك.",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId
                 };

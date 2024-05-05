@@ -36,7 +36,8 @@ namespace RomanaWeb.Model.EntityMap
             builder.Ignore(x => x.Long);    
             builder.Ignore(x => x.Lat);    
             builder.Ignore(x => x.FunctionPoint);    
-            builder.Ignore(x => x.CategoriesName);    
+            builder.Ignore(x => x.CityName);    
+            builder.Ignore(x => x.CountriesName);    
             builder.Ignore(x => x.OrderDetails);    
             builder.Ignore(x => x.Phone);    
             builder.Ignore(x => x.Logo);    

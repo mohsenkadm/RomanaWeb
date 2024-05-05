@@ -79,13 +79,13 @@ namespace RomanaWeb.Controllers
         #endregion                                                                                                                                                                             
 
         #region Get Info Products by RestaurantId and userid   and SubCategoriesId   
-        [HttpGet("Products/GetByRestaurantId/{RestaurantId},{UserId},{SubCategoriesId},{prodname}")]
+        [HttpGet("Products/GetByRestaurantId/{RestaurantId},{SubCategoriesId},{prodname}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetByRestaurantId(int RestaurantId, int UserId, int SubCategoriesId,string? prodname)
+        public async Task<IActionResult> GetByRestaurantId(int RestaurantId, int SubCategoriesId,string? prodname)
         {
             try
             {
-                ResObj res = await _ProductsService.GetByRestaurantId(RestaurantId, UserId, SubCategoriesId, prodname);
+                ResObj res = await _ProductsService.GetByRestaurantId(RestaurantId, SubCategoriesId, prodname);
 
                 return Response(res.success, res.data);
             }
@@ -120,49 +120,104 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
-        #region insert or update Info Products 
+        //#region insert or update Info Products 
+        //[HttpPost]
+        //public async Task<IActionResult> Post([FromForm]ProductsModel ProductsModel)
+        //{
+        //    try
+        //    {
+        //        //if (ModelState.IsValid)
+        //        //{
+        //        if (ProductsModel.ProductsId == 0)
+        //        {
+        //            if (ProductsModel.FileChoose == null)
+        //            {
+        //                return Response(false, "رجاءا اختيار ملف التحميل");
+        //            }
+        //        }
+        //        ResObj result=new ResObj();
+        //        if (ProductsModel.FileChoose != null)
+        //             result = await storageServices.UploadImageAsync(ProductsModel.FileChoose, _hostEnvironment.WebRootPath);
+
+        //        Products Products = _mapper.Map<Products>(ProductsModel);
+        //        if (ProductsModel.FileChoose != null)
+        //        {
+        //            if (result.success)
+        //            {
+        //                Products.ProductsImage = Key.CurrentUrl + @$"\Uplouds\image-{result.data}";
+        //            }
+        //            else
+        //            {
+        //                return Response(false, result);
+        //            }
+        //        }
+        //            ResObj res;
+        //            if (Products.ProductsId == 0)
+        //            {
+        //                res = await _ProductsService.Post(Products);
+        //            }
+        //            else
+        //            {
+        //                res = await _ProductsService.Update(Products);
+        //            }    
+        //       // }
+        //       // else
+        //       //     return Response(false, "املأ الحقول اولا");
+        //        return Response(true, "تم الحفظ بنجاح");
+                
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await _logger.WriteAsync(ex, "ProductsController => Post => name:"  );
+        //        return Response(false, "حدث خطا اثناء عملية الحفظ");
+        //    }
+        //}
+        //#endregion
+              
+        #region insert or update Info Products     2
         [HttpPost]
         public async Task<IActionResult> Post([FromForm]ProductsModel ProductsModel)
         {
             try
-            {
-                //if (ModelState.IsValid)
-                //{
+            {       
                 if (ProductsModel.ProductsId == 0)
                 {
-                    if (ProductsModel.FileChoose == null)
+                    if (ProductsModel.FileChoose.Count() == 0)
                     {
                         return Response(false, "رجاءا اختيار ملف التحميل");
                     }
-                }
-                ResObj result=new ResObj();
-                if (ProductsModel.FileChoose != null)
-                     result = await storageServices.UploadImageAsync(ProductsModel.FileChoose, _hostEnvironment.WebRootPath);
-
+                }                              
                 Products Products = _mapper.Map<Products>(ProductsModel);
-                if (ProductsModel.FileChoose != null)
+                ResObj res;
+                if (Products.ProductsId == 0)
                 {
-                    if (result.success)
+                    res = await _ProductsService.Post(Products);
+                }
+                else
+                {
+                    res = await _ProductsService.Update(Products);
+                }
+                foreach (var item in ProductsModel.FileChoose)
+                {
+                    if (item != null)
                     {
-                        Products.ProductsImage = Key.CurrentUrl + @$"\Uplouds\image-{result.data}";
-                    }
-                    else
-                    {
-                        return Response(false, result);
+
+                        var result = await storageServices.UploadImageAsync(item, _hostEnvironment.WebRootPath);
+                        if (result.success)
+                        {
+                            await _ProductsService.PostImages(new Images()
+                            {
+                                ProductsId = Convert.ToInt32(res.data),
+                                ImagePath =Key.CurrentUrl + @$"\Uplouds\Images\image-{result.data}"     
+                            });
+                        }
+                        else
+                        {
+                            return Response(false, result);
+                        }
                     }
                 }
-                    ResObj res;
-                    if (Products.ProductsId == 0)
-                    {
-                        res = await _ProductsService.Post(Products);
-                    }
-                    else
-                    {
-                        res = await _ProductsService.Update(Products);
-                    }    
-               // }
-               // else
-               //     return Response(false, "املأ الحقول اولا");
+                                                 
                 return Response(true, "تم الحفظ بنجاح");
                 
             }
@@ -170,6 +225,25 @@ namespace RomanaWeb.Controllers
             {
                 await _logger.WriteAsync(ex, "ProductsController => Post => name:"  );
                 return Response(false, "حدث خطا اثناء عملية الحفظ");
+            }
+        }
+        #endregion
+
+        #region Get Info GetImagesByProductsId 
+        [AllowAnonymous]
+        [HttpGet("GetImagesByProductsId/{Id}")]
+        public async Task<IActionResult> GetImagesByProductsId(int Id)
+        {
+            try
+            {
+                ResObj res = await _ProductsService.GetImagesByProductsId(Id);
+
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "PostsController => GetImagesByPostId ");
+                return Response(false, "حدث خطا");
             }
         }
         #endregion

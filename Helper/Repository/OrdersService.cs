@@ -77,10 +77,10 @@ namespace RomanaWeb.Helper.Repository
         }
 
         // get all orders only master
-        public async Task<ResObj> GetAll(string OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto)
+        public async Task<ResObj> GetAll(string OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto, int? RestaurantId,int? CountriesId,int? state)
         {
             List<Orders> data = await _OrdersRepository.GetEntityListAsync("dbo.GetOrderAll",
-                new { OrderNo, RestaurantName, datefrom, dateto });
+                new { OrderNo, RestaurantName, datefrom, dateto,RestaurantId , CountriesId , state });
             return Result.Return(true, data);
         }
 
@@ -228,14 +228,14 @@ namespace RomanaWeb.Helper.Repository
             else
             {
                 var item = await _context.Users.FirstOrDefaultAsync(i=>i.UserId==users.UserId);
-                if (item == null)
+                if (item != null)
                 {
-                    item.Name = users.Name;
-                    item.Phone = users.Phone;
-                    item.Address = users.Address;
-                    item.FunctionPoint = users.FunctionPoint;
+                    //item.Name = users.Name;
+                    //item.Phone = users.Phone;
+                    //item.Address = users.Address;
+                    //item.FunctionPoint = users.FunctionPoint;
                     item.Lat = users.Lat;
-                    item.Long = users.Long;
+                    item.Long = users.Long;        
                     _context.Entry(item).State = EntityState.Modified;
                     await _context.SaveChangesAsync();
                 }

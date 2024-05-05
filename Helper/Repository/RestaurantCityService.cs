@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.CodeAnalysis.Elfie.Serialization;
 using Microsoft.EntityFrameworkCore;
 using RomanaWeb.Classes;
 using RomanaWeb.Helper.Interface;
@@ -74,6 +75,14 @@ namespace RomanaWeb.Helper.Repository
             }
             await _Context.SaveChangesAsync();
             return Result.Return(true, "تم الحفظ بنجاح", RestaurantCity);
+        }                
+        public async Task<ResObj> PostFromAppAll(int resId,decimal CostDelivery)
+        {
+            await _Repository.RunScriptAsync("INSERT INTO [dbo].[RestaurantCity]" +
+                "           ([CityId],[RestaurantId],[CostDelivery]) " +
+                "(select CityId,"+resId+","+ CostDelivery + " from City where CityId not in (select CityId from RestaurantCity where RestaurantId="+resId+"))");
+            
+                return Result.Return(true, "تم الحفظ");  
         }
     }
 }

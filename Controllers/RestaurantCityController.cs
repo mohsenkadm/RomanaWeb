@@ -78,8 +78,28 @@ namespace RomanaWeb.Controllers
                 return Response(false, "حدث خطا اثناء عملية الحفظ");
             }
         }
-        #endregion
+        #endregion             
 
+
+        #region PostFromApp all insert or update Info RestaurantCity 
+        [HttpPost("RestaurantCity/PostFromAppAll/{ResId}/{CostDelivery}")]
+        [Authorize]
+        public async Task<IActionResult> PostFromAppAll(int ResId,decimal CostDelivery)
+        {
+            try
+            {
+
+                ResObj res;
+                res = await _RestaurantCityService.PostFromAppAll(ResId, CostDelivery);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantCityController => PostFromApp => name:");
+                return Response(false, "حدث خطا اثناء عملية الحفظ");
+            }
+        }
+        #endregion
         #region delete Info RestaurantCity 
         [HttpDelete]
         [Authorize]

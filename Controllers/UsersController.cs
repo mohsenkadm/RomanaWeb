@@ -89,7 +89,7 @@ namespace RomanaWeb.Controllers
             }
             catch (Exception ex)
             {
-                await _logger.WriteAsync(ex, "PersonController => Login => name:" + Phone);
+                await _logger.WriteAsync(ex, "PersonController => ForgatePassword => name:" + Phone);
                 return Response(false, "حدث خطا اثناء عملية جلب البيانات");
             }
         }

@@ -21,5 +21,6 @@ namespace RomanaWeb.Models.Entity
         public bool? IsActive { get; set; }
         public bool? IsDelete { get; set; }
         public string? Code { get; set; }
+        public int CityId { get; set; }
     }
 }

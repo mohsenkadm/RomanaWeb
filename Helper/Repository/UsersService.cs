@@ -47,7 +47,7 @@ namespace RomanaWeb.Helper.Repository
             if (login.IsDelete == true)
                 return Result.Return(false, "حسابك   محذوف يرجى التواصل مع مدير التطببيق");
 
-            UserManager userManager = new UserManager() { Id = login.UserId, Name = login.Name };
+            UserManager userManager = new UserManager() { Id = login.UserId, Name = login.Name ,Role="user"};
             login.Token = JsonWebToken.GenerateToken(userManager);   
             return Result.Return(true, login);
         }
@@ -58,22 +58,26 @@ namespace RomanaWeb.Helper.Repository
             {
                 return Result.Return(false, "يجب كتابة رقم الهاتف 11 رقما");
             }
-            Users? person = await _context.Users.FirstOrDefaultAsync(i => i.Phone == Phone);
+            Users? person = await _context.Users.FirstOrDefaultAsync(i => i.Phone == Phone && i.IsDelete==false);
             if (person == null)
                 return Result.Return(false, "هذا الحساب  غير موجود ");
             Random random = new Random();
-            string code = random.Next(1000, 9999).ToString();
+            string code = random.Next(1000, 9999).ToString();          
+            person.Code = code;
+            _context.Entry(person).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
             await twilioService.SendOTPCodeToPhoneNo(Phone, code);
 
             return Result.Return(true, "تم ارسال كود التحقق بنجاح");
         }
         public async Task<ResObj> Update_Pass_WithCode(string Pass, string Phone, string Code)
         {
-            Users? person = await _context.Users.FirstOrDefaultAsync(i => i.Phone == Phone);
+            Users? person = await _context.Users.FirstOrDefaultAsync(i => i.Phone == Phone && i.IsDelete==false);
             if (person == null)
                 return Result.Return(false, "هذا الحساب  غير موجود ");
             if (Code != person.Code)
                 return Result.Return(false, "الكود غير فعال");
+            person.IsConfirm = true;
             person.Password = Encyptmethod.EncryptStringToBytes_Aes(Pass);
             _context.Entry(person).State = EntityState.Modified;
             await _context.SaveChangesAsync();
@@ -127,7 +131,7 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> Post(Users Users)
         {                                                                              
-            var checkres = await _context.Users.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.Phone!.Contains(Users.Phone!));
+            var checkres = await _context.Users.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.Phone!.Contains(Users.Phone!) && i.IsDelete==false);
             if (checkres != null) return Result.Return(false, "رقم الهاتف موجود سابقا");
                              
             Users.Code= "";
@@ -151,6 +155,7 @@ namespace RomanaWeb.Helper.Repository
             
             Users1.Phone = Users.Phone;
             Users1.Lat = Users.Lat;
+            Users1.CityId = Users.CityId;
             Users1.Long = Users.Long;   
             Users1.IsActive = Users.IsActive;   
             Users1.IsDelete = Users.IsDelete;  
@@ -166,6 +171,7 @@ namespace RomanaWeb.Helper.Repository
         {
             Users Users1 = await GetUsersById(Id);
             Users1.IsDelete = true;
+            Users1.Password = Encyptmethod.EncryptStringToBytes_Aes(Users1.Password);
             _context.Entry(Users1).State = EntityState.Modified;
                await _context.SaveChangesAsync();
 

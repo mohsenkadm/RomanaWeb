@@ -13,7 +13,7 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> SetIsDone(int id);
         Task<ResObj> Delete(int Id);
         Task<ResObj> GetById(int Id);        
-        Task<ResObj> GetAll(string? orderNo, string? UserName, DateTime datefrom, DateTime dateto);
+        Task<ResObj> GetAll(string? orderNo, string? UserName, DateTime datefrom, DateTime dateto, int? RestaurantId,int? CountriesId,int? state);
         Task<ResObj> GetOrdersWithDetailAll(int Id);
         Task<ResObj> Post(Orders Orders);
         Task<ResObj> DeleteDetails(int id);

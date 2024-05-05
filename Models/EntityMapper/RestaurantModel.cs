@@ -21,6 +21,7 @@
         public decimal MinimumPrice { get; set; }
         public decimal CostDelivery { get; set; }
         public string Areaname { get; set; }
+        public string Insta { get; set; }
         public int CategoriesId { get; set; }    
     }
 }

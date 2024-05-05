@@ -1,4 +1,5 @@
-﻿using RomanaWeb.Classes;
+﻿using Microsoft.CodeAnalysis.Elfie.Serialization;
+using RomanaWeb.Classes;
 using RomanaWeb.Models.Entity;
 
 namespace RomanaWeb.Helper.Interface
@@ -9,6 +10,7 @@ namespace RomanaWeb.Helper.Interface
         public Task<ResObj> GetById(int Id);
         public Task<ResObj> GetByResId(int Id);
         public Task<ResObj> Delete(int Id);
-        public Task<ResObj> Post(RestaurantCity RestaurantCity);
+        public Task<ResObj> Post(RestaurantCity RestaurantCity);      
+        Task<ResObj> PostFromAppAll(int resId, decimal CostDelivery);
     }
 }

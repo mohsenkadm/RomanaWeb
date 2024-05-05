@@ -19,11 +19,11 @@ namespace RomanaWeb.Helper.Repository
             _prodService = prodService;        
         }
 
-        public async Task<ResObj> GetByRestaurantId(int RestaurantId, int UserId, int? SubCategoriesId,string? prodname)
+        public async Task<ResObj> GetByRestaurantId(int RestaurantId, int? SubCategoriesId,string? prodname)
         {
-            List<Products>  items = await _context.Products.AsSplitQuery().AsNoTracking().Where(i => i.RestaurantId == RestaurantId &&
-        (SubCategoriesId == 0 || i.SubCategoriesId == SubCategoriesId) && (prodname.IsEmpty() || i.ProductsName.Contains(prodname))).ToListAsync();
 
+            List<Products> items = await _prodService.GetEntityListAsync("dbo.GetProductsByRestaurantId", new { RestaurantId, SubCategoriesId, prodname });
+                        
             if (items != null)
             {    
                 return Result.Return(true, items);
@@ -59,22 +59,24 @@ namespace RomanaWeb.Helper.Repository
             Products1.ProductsDetails = Products.ProductsDetails;
             Products1.SubCategoriesId = Products.SubCategoriesId;
             Products1.IsFree = Products.IsFree;       
-            if (Products.ProductsImage!=null)
+            if (Products.ProductsImageFirst!=null)
             {
-                Products1.ProductsImage = Products.ProductsImage;
+                Products1.ProductsImageFirst = Products.ProductsImageFirst;
             }
 
             _context.Entry(Products1).State = EntityState.Modified;
             await _context.SaveChangesAsync();
           
-            return Result.Return(true, "تم الحفظ بنجاح", Products1);
+            return Result.Return(true, "تم الحفظ بنجاح", Products1.ProductsId);
         }
                    
         public async Task<ResObj> Delete(int Id)
         {
             Products Products1 = await GetProductsById(Id);
+
             _context.Entry(Products1).State = EntityState.Deleted;
             await _context.SaveChangesAsync();
+            await DeleteImageForProd(Id);
 
             return Result.Return(true, "تم حذف بنجاح");
         }
@@ -108,12 +110,14 @@ namespace RomanaWeb.Helper.Repository
         public async Task<ResObj> GetById(int Id)
         {
             Products items = await _prodService.GetEntityAsync("dbo.GetProductsById", new { Id});
+            items.Images = await _context.Images.Where(i => i.ProductsId == Id).
+                AsNoTracking().AsSplitQuery().ToListAsync();
             if (items != null)
             {
-                 return Result.Return(true, items);
+                return Result.Return(true, items);
             }
             else
-                return Result.Return(false);     
+                return Result.Return(false);
         }
 
 
@@ -126,6 +130,31 @@ namespace RomanaWeb.Helper.Repository
             _context.Entry(res).State = EntityState.Modified;
             await _context.SaveChangesAsync();
             return Result.Return(true, "تم", res);
+        }
+        public async Task<ResObj> DeleteImage(int id)
+        {
+            await _prodService.RunScriptAsync("delete from Images where ImageId=" + id);
+            return Result.Return(true, "تم حذف بنجاح");
+        }
+
+        public async Task<ResObj> DeleteImageForProd(int id)
+        {
+            await _prodService.RunScriptAsync("delete from Images where ProductsId=" + id);
+            return Result.Return(true, "تم حذف بنجاح");
+        }
+
+        public async Task<ResObj> PostImages(Images images)
+        {
+            await _context.AddAsync(images);
+            await _context.SaveChangesAsync();
+
+            return Result.Return(true, "تم الحفظ بنجاح");
+        }
+
+        public async Task<ResObj> GetImagesByProductsId(int Id)
+        {
+            List<Images> img = await _context.Images.Where(i => i.ProductsId == Id).ToListAsync();
+            return Result.Return(true, img);
         }
     }
 }

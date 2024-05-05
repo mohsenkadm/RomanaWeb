@@ -33,6 +33,11 @@ namespace RomanaWeb.Controllers
         public IActionResult Login()
         {
             return View();
+        }           
+        [AllowAnonymous]
+        public IActionResult LoginForRes()
+        {
+            return View();
         }
 
         public IActionResult Index()
@@ -71,6 +76,10 @@ namespace RomanaWeb.Controllers
         public IActionResult Orders()
         {
             return View();
+        }                 
+        public IActionResult OrdersForRes()
+        {
+            return View();
         }             
         public IActionResult Products()
         {
@@ -107,8 +116,16 @@ namespace RomanaWeb.Controllers
         public IActionResult SaleMan()
         {
             return View();
+        }                
+        public IActionResult Delivery()
+        {
+            return View();
         }                    
         public IActionResult GetResNotApproveAll()
+        {
+            return View();
+        }                         
+        public IActionResult GetReportRes()
         {
             return View();
         }

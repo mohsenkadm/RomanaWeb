@@ -26,9 +26,11 @@ namespace RomanaWeb.Models.EntityMap
             builder.Property(x => x.CategoriesId) ; 
             builder.Property(x => x.IsStars) ; 
             builder.Property(x => x.IsActive) ; 
+            builder.Property(x => x.IsTop) ; 
             builder.Property(x => x.MinimumPrice) ; 
             builder.Property(x => x.Areaname) ; 
             builder.Property(x => x.CostDelivery) ; 
+            builder.Property(x => x.Insta) ; 
             builder.Ignore(x => x.Token);
             builder.Ignore(x => x.StarCount);  
             builder.Ignore(x => x.CategoriesName);
@@ -40,6 +42,9 @@ namespace RomanaWeb.Models.EntityMap
             builder.Ignore(x => x.daNetAmount);
             builder.Ignore(x => x.daTotal);
             builder.Ignore(x => x.daTotalDiscount);  
+            builder.Ignore(x => x.CountDelivery);  
+            builder.Ignore(x => x.TotalNetDelivery);  
+            builder.Ignore(x => x.CountProducts);  
         }
     }
 }

@@ -22,7 +22,7 @@ namespace RomanaWeb.Helper.Repository
             List<Notification> data;
             if(UserId==0)
             data = await _Context.Notification.AsSplitQuery().AsNoTracking().Where(i => i.ResId == 0 && i.UserId == 0 && i.SaleManId==0).OrderByDescending(i=>i.NotificationId).ToListAsync();
-            else  data = await _Context.Notification.AsSplitQuery().AsNoTracking().Where(i => i.UserId == UserId || (i.UserId==0 && i.ResId == 0 )).OrderByDescending(i=>i.NotificationId).ToListAsync();
+            else  data = await _Context.Notification.AsSplitQuery().AsNoTracking().Where(i => i.UserId == UserId || (i.UserId==0 && i.ResId == 0 && i.SaleManId == 0)).OrderByDescending(i=>i.NotificationId).ToListAsync();
             return Result.Return(true, data);
         }                    
         public async Task<ResObj> GetNotificationForRes(int? ResId)

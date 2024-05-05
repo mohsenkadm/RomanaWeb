@@ -21,38 +21,42 @@ namespace RomanaWeb.Helper.Repository
         public async Task<ResObj> SendOTPCodeToPhoneNo(string PhoneNo,string OTPCode)
         {
 
-
-            Users? person = await _Context.Users.FirstOrDefaultAsync(i => i.Phone ==  PhoneNo);
-            if (person == null)
-                return Result.Return(false, "حسابك غير موجود حاول التسجيل مرة اخرى");
-
-            var accountSid = "AC83d4b101c9aee06c8e114873385ad1e3";
-            var authToken = "8eff9353e41fe46eaaffde026d4adec0";
-            TwilioClient.Init(accountSid, authToken);
-            MessageResource _response = await MessageResource.CreateAsync
-            (
-                body: $"رمز التحقق الخاص بك هو {OTPCode}",
-                from: new global::Twilio.Types.PhoneNumber($"+14242091843"),
-                // messagingServiceSid: "MG7a144626566d3ca69d4650645a46dab3" ,
-                to: new global::Twilio.Types.PhoneNumber($"+964{PhoneNo.Substring(1)}")
-            );
-
-            if (_response.Status == MessageResource.StatusEnum.Queued)
+            try
             {
 
+                Users? person = await _Context.Users.FirstOrDefaultAsync(i => i.Phone == PhoneNo);
+                if (person == null)
+                    return Result.Return(false, "حسابك غير موجود حاول التسجيل مرة اخرى");
 
-                person.IsConfirm = false;
-                person.Code = OTPCode;
-                _Context.Entry(person).State = EntityState.Modified;
-                await _Context.SaveChangesAsync();
+                var accountSid = "AC83d4b101c9aee06c8e114873385ad1e3";
+                var authToken = "253c7d0e0fff0df3c5259ed729b1372d";
+                TwilioClient.Init(accountSid, authToken);
+                MessageResource _response = await MessageResource.CreateAsync
+                (
+                    body: $"رمز التحقق الخاص بك هو {OTPCode}",
+                    from: new global::Twilio.Types.PhoneNumber($"+14242091843"),
+                    // messagingServiceSid: "MG7a144626566d3ca69d4650645a46dab3" ,
+                    to: new global::Twilio.Types.PhoneNumber($"+964{PhoneNo.Substring(1)}")
+                );
 
-                return Result.Return(false, "تم ارسال كود التحقق الخاص بك");
+                if (_response.Status == MessageResource.StatusEnum.Queued)
+                {
+                    person.IsConfirm = false;
+                    person.Code = OTPCode;
+                    _Context.Entry(person).State = EntityState.Modified;
+                    await _Context.SaveChangesAsync();
+
+                    return Result.Return(true, "تم ارسال كود التحقق الخاص بك");
+                }
+                else
+                {
+                    return Result.Return(false, "لم يتم ارسال كود التحقق الخاص بك حاول مرة اخرى");
+                }
             }
-            else
+            catch(Exception ex)
             {
-                return Result.Return(false, "لم يتم ارسال كود التحقق الخاص بك حاول مرة اخرى");
+                return Result.Return(false);
             }
-
         }
     }
 }

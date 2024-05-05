@@ -26,6 +26,7 @@ namespace RomanaWeb.Models.Entity
         public bool? IsClosed { get; set; }
         public bool? IsStars { get; set; }
         public bool? IsActive { get; set; }
+        public bool? IsTop { get; set; }
         public bool? IsDelete { get; set; }
         public bool? IsApproved { get; set; }
         public decimal MinimumPrice { get; set; }
@@ -33,9 +34,13 @@ namespace RomanaWeb.Models.Entity
         public decimal? CostDelivery { get; set; }
         public int CategoriesId { get; set; }
         public string CategoriesName { get; set; }
+        public string Insta { get; set; }
 
         // for total
-        public decimal CountOrder { get; set; }
+        public int CountProducts { get; set; }
+        public decimal TotalNetDelivery { get; set; }
+        public int CountDelivery { get; set; }
+        public int CountOrder { get; set; }
         public decimal NetAmount { get; set; }
         public decimal TotalDiscount { get; set; }
         public decimal Total { get; set; }

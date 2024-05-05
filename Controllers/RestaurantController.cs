@@ -20,8 +20,7 @@ namespace RomanaWeb.Controllers
         private readonly IRestaurantService _RestaurantService;
         private readonly IWebHostEnvironment _hostEnvironment;
         public readonly IMapper _mapper;
-        public readonly IStorageServices _storageServices;   
-        private readonly INotificationService _noteService;
+        public readonly IStorageServices _storageServices;     
         public readonly DB_Context _Context;
         #endregion
 
@@ -29,12 +28,10 @@ namespace RomanaWeb.Controllers
         public RestaurantController(
             ILoggerRepository logger,
             IRestaurantService RestaurantService,
-             IWebHostEnvironment hostEnvironment,
-             INotificationService noteService,DB_Context dB_Context, IMapper mapper, IStorageServices storageServices)
+             IWebHostEnvironment hostEnvironment,   DB_Context dB_Context, IMapper mapper, IStorageServices storageServices)
         {
             _logger = logger;
-            _RestaurantService = RestaurantService; 
-            _noteService = noteService;
+            _RestaurantService = RestaurantService;      
             _Context= dB_Context;
             _hostEnvironment = hostEnvironment;
             _mapper = mapper;
@@ -87,6 +84,23 @@ namespace RomanaWeb.Controllers
             try
             {
                 ResObj res = await _RestaurantService.GetCountForRes(Id, datefrom,dateto);
+
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantController => GetCountForRes => name:");
+                return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion     
+        #region Get Report Info Restaurant              
+        [HttpGet()]
+        public async Task<IActionResult> GetReportRes(string RestaurantName, DateTime datefrom, DateTime dateto)
+        {
+            try
+            {
+                ResObj res = await _RestaurantService.GetReportRes(RestaurantName, datefrom,dateto);
 
                 return Response(res.success, res.data);
             }

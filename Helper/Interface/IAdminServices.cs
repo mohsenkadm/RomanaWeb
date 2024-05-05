@@ -14,6 +14,8 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> GetById(int Id);
         Task<ResObj> GetPermissionForLayout(int id);
         Task<ResObj> changestate(Permission permission);
-        Task<ResObj> GetPermissionByUserId(int userId);  
+        Task<ResObj> GetPermissionByUserId(int userId);
+
+        Task<ResObj> SavePermission(int? UserId);
     }
 }

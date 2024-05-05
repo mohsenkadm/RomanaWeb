@@ -13,8 +13,9 @@ namespace RomanaWeb.Models.Entity
         public string? SubCategoriesName { get; set; }
         public string? RestaurantName { get; set; }
         public string? Logo { get; set; }
-        public string? ProductsImage { get; set; }      
+        public string? ProductsImageFirst { get; set; }      
         public string? Background { get; set; }
-        public bool? IsFree { get; set; } 
+        public bool? IsFree { get; set; }
+        public List<Images> Images { get; set; }
     }
 }

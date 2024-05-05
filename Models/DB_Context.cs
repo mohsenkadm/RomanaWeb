@@ -38,6 +38,8 @@ namespace RomanaWeb.Model
             modelBuilder.ApplyConfiguration(new SaleManMap());        
             modelBuilder.ApplyConfiguration(new RestaurantSaleManMap());        
             modelBuilder.ApplyConfiguration(new CountriesMap());        
+            modelBuilder.ApplyConfiguration(new ImagesMap());        
+            modelBuilder.ApplyConfiguration(new DeliveryMap());        
         }
                                       
         public DbSet<Users> Users { get; set; }         
@@ -60,5 +62,7 @@ namespace RomanaWeb.Model
         public DbSet<SaleMan> SaleMan { get; set; }           
         public DbSet<RestaurantSaleMan> RestaurantSaleMan { get; set; }           
         public DbSet<Countries> Countries { get; set; }           
+        public DbSet<Images> Images { get; set; }           
+        public DbSet<Delivery> Delivery { get; set; }           
     }
 }

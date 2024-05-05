@@ -37,6 +37,8 @@ namespace RomanaWeb.Models.Entity
         public string? Long { get; set; }
         public string? RestaurantName { get; set; }
         public string? CategoriesName { get; set; }
+        public string? CityName { get; set; }
+        public string? CountriesName { get; set; }
 
         public List<OrderDetail>? OrderDetails { get; set; }
     }

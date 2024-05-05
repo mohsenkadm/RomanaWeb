@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using NuGet.Packaging.Signing;
 using RomanaWeb.Classes;
 using RomanaWeb.Helper.Interface;
+using RomanaWeb.Helper.Repository;
 using RomanaWeb.Models.Entity;
 using static NuGet.Packaging.PackagingConstants;
 
@@ -85,6 +86,42 @@ namespace RomanaWeb.Controllers
             }
         }
         #endregion
+        #region insert or update Info PromoCode 
+        [HttpPost]
+        public async Task<IActionResult> PostApp([FromForm]PromoCode PromoCode)
+        {
+            try
+            {
+
+                if (PromoCode.RestaurantId == 0) return Response(false, "يجب اختيار المطعم");
+
+                var rest = await _RestaurantService.GetById(PromoCode.RestaurantId);
+
+                ResObj res;
+                res = await _PromoCodeService.Post(PromoCode);
+                Restaurant resname = await _RestaurantService.GetRestaurantById(PromoCode.RestaurantId);
+
+                Notification notifications = new Notification
+                {
+                    Title = "برومو كود",
+                    Details = $"مرحباً عزيزنا متوفر خصم في {resname.Name} سارع في التسوق الان "
+                    ,ResId=0,UserId=0,SaleManId=0
+                };
+                try
+                {
+                    await _noteService.Post(notifications);
+                    await OneSignalSender(notifications.Title, notifications.Details);
+                }
+                catch (Exception ex) { }
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "PromoCodeController => Post => name:");
+                return Response(false, "حدث خطا اثناء عملية الحفظ");
+            }
+        }
+        #endregion
 
         #region delete Info PromoCode 
         [HttpDelete]
@@ -120,6 +157,25 @@ namespace RomanaWeb.Controllers
                 return Response(false, "حدث خطا اثناء عملية جلب البيانات");
             }
         }
-        #endregion 
+        #endregion
+
+        #region Get PromoCode ById Info GetByResId 
+        [HttpGet("PromoCode/GetByResId/{Id}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetByResId(int Id)
+        {
+            try
+            {
+                ResObj res = await _PromoCodeService.GetByResId(Id);
+
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "PromoCodeController => GetById");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion
     }
 }

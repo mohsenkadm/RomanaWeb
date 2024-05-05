@@ -1,9 +1,8 @@
 ﻿
 @{
-    ViewData["Title"] = "الطلبات";
+    ViewData["Title"] = "المدن";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
 
 <div class="content">
     <div class="content dark-edition">
@@ -14,6 +13,10 @@
                     <div class="col-lg-6 col-md-6 col-sm-12 ">
                         <label class="mb-2">رقم الطلب</label>
                         <input type="text" id="OrderNo" name="OrderNo" class="form-control alignright" placeholder="ابحث عن رقم الطلب" />
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12 ">
+                        <label class="mb-2">اسم الشخص</label>
+                        <input type="text" id="Name" name="Name" class="form-control alignright" placeholder="ابحث عن اسم الشخص" />
                     </div>
                     <div class="col-lg-6 col-md-6 col-sm-12 ">
                         <label class="mb-2">اسم المطعم</label>
@@ -28,10 +31,10 @@
                         <input type="date" name="datefrom" id="datefrom" class="form-control alignright" />
                     </div>
                     <div class="col-lg-6 col-md-6 col-sm-12 ">
-                            <p>اختيار المحافظة</p>
-                            <select class="form-control text-right" style="background-color: #1a2035;" name="CountriesId" id="CountriesId">
-                            </select>
-                        </div> 
+                        <p>اختيار المحافظة</p>
+                        <select class="form-control text-right" style="background-color: #1a2035;" name="CountriesId" id="CountriesId">
+                        </select>
+                    </div>
                     <div class="col-lg-4 col-md-2 col-sm-2 col-xs-2">
                         <div class="text-center wow fadeInDown" style="text-align:left;">
                             <label class="mb-2"></label>
@@ -44,36 +47,30 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header card-header-primary" style="text-align:right">
-                            <h4 class="card-title ">الطلبات</h4>
-                            <p class="card-category">جدول لعرض الطلبات داخل التطبيق</p>
+                            <h4 class="card-title ">الطلبات التوصيل</h4>
+                            <p class="card-category">جدول لعرض طلبات التوصيل داخل التطبيق</p>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive" style="text-align: right;">
                                 <table class="table table-hover">
                                     <thead class=" ">
-                                        <tr>
-                                            <th scope="col">منتهي</th>
-                                            <th scope="col">موافقة</th>
-                                            <th scope="col">ملغي</th>
-                                            <th scope="col">صافي المبلغ</th>
-                                            <th scope="col">الخصم</th>
-                                            <th scope="col">المجموع</th>
-                                            <th scope="col">المدينة</th>
-                                            <th scope="col">المحافظة</th>
-                                            <th scope="col">رقم الهاتف</th>
+                                        <tr>   
+                                            <th scope="col">اسم المحافظة</th> 
+                                            <th scope="col">اسم المدينة</th> 
                                             <th scope="col">اقرب نقطة دالة</th>
-                                            <th scope="col">العنوان</th>
-                                            <th scope="col">اسم الزبون</th>
-                                            <th scope="col">اسم المندوب</th>
-                                            <th scope="col">اسم المطعم</th>
-                                            <th scope="col">القسم</th>
+                                            <th scope="col">المبلغ الكلي</th>
+                                            <th scope="col">مبلع التوصيل</th>
                                             <th scope="col">تاريخ الطلب</th>
+                                            <th scope="col">ملاحظات</th>
+                                            <th scope="col">رقم الهاتف</th>
+                                            <th scope="col">العنوان</th>
+                                            <th scope="col">اسم الشخص</th>
+                                            <th scope="col">اسم المطعم</th>
                                             <th scope="col">رقم الطلب</th>
-                                            <th scope="col"></th>
                                             <th scope="col"></th>
                                         </tr>
                                     </thead>
-                                    <tbody id="tableOrders">
+                                    <tbody id="tableDelivery">
                                     </tbody>
                                 </table>
                             </div>
@@ -84,45 +81,9 @@
         </div>
     </div>
 </div>
-
-<!-- Modal -->
-<div class="modal fade" id="OrdersDetailsModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content dark-edition">
-            <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">تفاصيل الطلب</h5>
-                <button type="button" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true" style="font-size:155%">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <table class="table  table-responsive   table-hover table-bordered text-center">
-                        <thead class=" ">
-                            <tr>
-                                <th scope="col">الكمية</th>
-                                <th scope="col">السعر</th>
-                                <th scope="col">تفاصيل المنتج</th>
-                                <th scope="col">اسم المنتج</th>
-                                <th scope="col">صورة المنتج</th>
-                                <th scope="col"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableOrdersDetail">
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">اغلاق</button>
-            </div>
-        </div>
-    </div>
-</div>
-
+ 
 <div id="mydiv">
     <script>
-
         function selectCountriesId(data) {
             var s = '<option value="0">اختيار المحافظة</option>';
             $('#CountriesId').append(s);
@@ -131,8 +92,13 @@
                 $('#CountriesId').append(ss);
             });
         };
-        $(document).ready(function () {
+        
+        $("#search-btn").on("click", (e) => {
+            e.preventDefault();
+            RefreshDelivery();
+        });
 
+        $(document).ready(function () { 
             call_ajax("GET", "Countries/GetAll", null, selectCountriesId);
             var now = new Date();
             var day = ("0" + now.getDate()).slice(-2);
@@ -140,13 +106,13 @@
             var today = now.getFullYear() + "-" + (month) + "-" + (day);
             $("#datefrom").val(today);
             $("#dateto").val(today);
-            RefreshOrders();
+            RefreshDelivery();
         });
+      
 
-        $("#search-btn").on("click", (e) => {
-            e.preventDefault();
-            RefreshOrders();
-        });
     </script>
 </div>
+
+
+
 

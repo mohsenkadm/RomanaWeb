@@ -31,7 +31,7 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(false, "اسم المستخدم او كلمة المرور غير صحيحة");
                 
 
-            UserManager userManager = new UserManager() { Id = login.AdminId, Name = login.AdminName };
+            UserManager userManager = new UserManager() { Id = login.AdminId, Name = login.AdminName , Role="admin"};
             login.Token = JsonWebToken.GenerateToken(userManager);
 
             return Result.Return(true, login);
@@ -123,5 +123,12 @@ namespace RomanaWeb.Helper.Repository
             List<Permission> permissions= await _permissionService.GetEntityListAsync("dbo.GetPermissionByUserId", new { UserId });
             return Result.Return(true, permissions);
         }
+
+        public async Task<ResObj> SavePermission(int? UserId)
+        {
+            await _permissionService.RunSpAsync("dbo.SavePermission", new { UserId });
+            return Result.Return(true);
+        }
     }
+
 }

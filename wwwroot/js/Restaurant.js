@@ -28,6 +28,7 @@ function filltableRestaurant(data) {
     } 
     $.each(data, function (i, item) {
         var rows = "<tr>" +
+            "<td>" + item.insta + "</td>" +
             "<td>" + item.code + "</td>" +
             "<td>" + item.areaname + "</td>" +
             "<td>" + item.costDelivery + "</td>" +
@@ -36,6 +37,16 @@ function filltableRestaurant(data) {
             "<td>" + item.long + "</td>" +  
             "<td>" + item.password + "</td>" +
             "<td>" + item.userName + "</td>" +  
+            "<td>" +
+            "<div class='form-check'>" +
+            "<label class='form-check-label'>" +
+            "<input class='form-check-input' type='checkbox' id='IsTop" + item.restaurantId + "'>" +
+            "<span class='form-check-sign'>" +
+            "<span class='check'></span>" +
+            "</span>" +
+            "</label>" +
+            "</div>" +
+            "</td>" + 
             "<td>" +
             "<div class='form-check'>" +
             "<label class='form-check-label'>" +
@@ -79,6 +90,7 @@ function filltableRestaurant(data) {
         $('#tableRestaurant').append(rows);
         $('#IsClosed' + item.restaurantId).attr('checked', item.isClosed); 
         $('#IsStars' + item.restaurantId).attr('checked', item.isStars); 
+        $('#IsTop' + item.restaurantId).attr('checked', item.isTop); 
         $('#IsActive' + item.restaurantId).attr('checked', item.isActive); 
     });
 }
@@ -130,6 +142,7 @@ function setdataRestaurant(data) {
     $("#Whatsapp").val(data.whatsapp); 
     $("#Password").val(data.password);
     $("#UserName").val(data.userName);
+    $("#Insta").val(data.insta);
     $("#CostDelivery").val(data.costDelivery);
     $("#CategoriesId").val(data.categoriesId).change();
     
@@ -151,6 +164,12 @@ function setdataRestaurant(data) {
     else {
         $("#IsClosed").prop("checked", false);
     }  
+    if (data.isTop === true) {
+        $("#IsTop").prop("checked", true);
+    }
+    else {
+        $("#IsTop").prop("checked", false);
+    }  
 }
 function aftersaveRestaurant(Restaurant) {
      
@@ -168,10 +187,12 @@ function aftersaveRestaurant(Restaurant) {
     $("#Whatsapp").val('');
     $("#Password").val('');
     $("#UserName").val('');
+    $("#Insta").val('');
     $("#CategoriesId").val(0).change();
     $("#IsStars").prop("checked", true); 
     $("#IsActive").prop("checked", true); 
     $("#IsClosed").prop("checked", false); 
+    $("#IsTop").prop("checked", false); 
     _RestaurantId = 0;
     RefreshRestaurant();
 } 

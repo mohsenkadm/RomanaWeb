@@ -88,6 +88,10 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (RestaurantId == 0)
+                {
+                    RestaurantId = UserManager.Id;
+                }
                 ResObj res = await _SaleManService.GetByRestaurantId(RestaurantId);
 
                 return Response(res.success, res.data);

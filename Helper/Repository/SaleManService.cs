@@ -104,6 +104,8 @@ namespace RomanaWeb.Helper.Repository
         {
             SaleMan SaleMan1 = await GetSaleManById(Id);
             SaleMan1.IsDelete = true;
+
+            SaleMan1.Password = Encyptmethod.EncryptStringToBytes_Aes(SaleMan1.Password);
             _context.Entry(SaleMan1).State = EntityState.Modified;
                await _context.SaveChangesAsync();
 

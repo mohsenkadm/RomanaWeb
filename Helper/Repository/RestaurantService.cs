@@ -7,6 +7,7 @@ using RomanaWeb.Model.General;
 using RestSharp;
 using Polly;
 using System.Runtime.InteropServices;
+using NUnit.Framework.Interfaces;
 
 namespace RomanaWeb.Helper.Repository
 {
@@ -38,7 +39,7 @@ namespace RomanaWeb.Helper.Repository
                if (login.IsDelete == true)
                 return Result.Return(false, "حسابك   محذوف يرجى التواصل مع مدير التطببيق");
 
-            UserManager userManager = new UserManager() { Id = login.RestaurantId, Name = login.Name };
+            UserManager userManager = new UserManager() { Id = login.RestaurantId, Name = login.Name,Role="res" };
             login.Token = JsonWebToken.GenerateToken(userManager);   
             return Result.Return(true, login);
         }
@@ -82,6 +83,7 @@ namespace RomanaWeb.Helper.Repository
             Restaurant.IsApproved = false;
             Restaurant.IsClosed= false;
             Restaurant.StarCount= 0;
+            Restaurant.CostDelivery = 0;
             Restaurant.Code= "";
             Restaurant.Password= Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password!);
             await _context.Restaurant.AddAsync(Restaurant);
@@ -112,12 +114,14 @@ namespace RomanaWeb.Helper.Repository
             Restaurant1.IsActive = Restaurant.IsActive;   
             //Restaurant1.IsApproved = Restaurant.IsApproved;   
             Restaurant1.IsDelete = false;   
+            Restaurant1.IsTop = Restaurant.IsTop;   
             Restaurant1.IsClosed = Restaurant.IsClosed;   
             Restaurant1.IsStars = Restaurant.IsStars;   
             Restaurant1.MinimumPrice = Restaurant.MinimumPrice;   
             Restaurant1.Areaname = Restaurant.Areaname;   
             Restaurant1.CategoriesId = Restaurant.CategoriesId;   
             Restaurant1.CostDelivery = Restaurant.CostDelivery;   
+            Restaurant1.Insta = Restaurant.Insta;   
             Restaurant1.Password = Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password!);    
             _context.Entry(Restaurant1).State = EntityState.Modified;
             await _context.SaveChangesAsync();
@@ -141,6 +145,7 @@ namespace RomanaWeb.Helper.Repository
         {
             Restaurant Restaurant1 = await GetRestaurantById(Id);
             Restaurant1.IsDelete = true;
+            Restaurant1.Password = Encyptmethod.EncryptStringToBytes_Aes(Restaurant1.Password);
             _context.Entry(Restaurant1).State = EntityState.Modified;
                await _context.SaveChangesAsync();
 
@@ -216,6 +221,17 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(true, "تم ", item);
             }
             return Result.Return(false);
+        }
+
+        public async Task<ResObj> GetReportRes(string RestaurantName, DateTime datefrom, DateTime dateto)
+        {
+            var items = await _repository.GetEntityListAsync("dbo.GetReportRes", new { RestaurantName, datefrom , dateto });
+            if (items != null)
+            {
+                return Result.Return(true, items);
+            }
+            else
+                return Result.Return(false);
         }
     }
 }

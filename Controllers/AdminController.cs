@@ -80,7 +80,7 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
-        #region LoginUser 
+        #region LoginAdmin 
         [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Login(string AdminNo, string password)
@@ -127,7 +127,9 @@ namespace RomanaWeb.Controllers
                 if (Admin.AdminId == 0)
                     res = await _AdminServices.Post(Admin);
                 else
-                    res = await _AdminServices.Update(Admin);        
+                    res = await _AdminServices.Update(Admin);
+
+                await _AdminServices.SavePermission(Admin.AdminId);
                 return Response(res.success, res.msg, res.data);
             }
             catch (Exception ex)
