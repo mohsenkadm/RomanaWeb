@@ -135,6 +135,7 @@ namespace RomanaWeb.Helper.Repository
             if (checkres != null) return Result.Return(false, "رقم الهاتف موجود سابقا");
                              
             Users.Code= "";
+            if (Users.CityId == null) Users.CityId = 0;
             Users.Password= Encyptmethod.EncryptStringToBytes_Aes(Users.Password!);
             await _context.Users.AddAsync(Users);
             await _context.SaveChangesAsync();

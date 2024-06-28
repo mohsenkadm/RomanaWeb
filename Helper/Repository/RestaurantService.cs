@@ -55,7 +55,7 @@ namespace RomanaWeb.Helper.Repository
         }                         
         public async Task<ResObj> GetResNotApproveAll()
         {
-            List<Restaurant> Restaurant = await _context.Restaurant.AsSplitQuery().AsNoTracking().Where(i=>i.IsApproved==false).ToListAsync();
+            List<Restaurant> Restaurant = await _context.Restaurant.AsSplitQuery().AsNoTracking().Where(i=>i.IsApproved==false && i.IsDelete==false).ToListAsync();
             return Result.Return(true, Restaurant);
         }
         public async Task<ResObj> GetCountForRes(int Id,DateTime datefrom, DateTime dateto)
@@ -80,8 +80,10 @@ namespace RomanaWeb.Helper.Repository
             var checkres = await _context.Restaurant.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.Phone!.Contains(Restaurant.Phone!));
             if (checkres != null) return Result.Return(false, "رقم الهاتف موجود سابقا");
           
-            Restaurant.IsApproved = false;
+          //  Restaurant.IsApproved = false;
             Restaurant.IsClosed= false;
+            Restaurant.IsDelete= false;
+            Restaurant.IsTop= false;
             Restaurant.StarCount= 0;
             Restaurant.CostDelivery = 0;
             Restaurant.Code= "";
@@ -190,6 +192,16 @@ namespace RomanaWeb.Helper.Repository
         {
             var res = await GetRestaurantById(id);         
             res.IsApproved = true;
+            res.Password = Encyptmethod.EncryptStringToBytes_Aes(res.Password);
+
+            _context.Entry(res).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تم", res);
+        }       
+        public async Task<ResObj> SetInsta(int Id, string Url)
+        {
+            var res = await GetRestaurantById(Id);         
+            res.Insta = Url;
             res.Password = Encyptmethod.EncryptStringToBytes_Aes(res.Password);
 
             _context.Entry(res).State = EntityState.Modified;

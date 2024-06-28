@@ -10,3 +10,99 @@ LogDT = 3/5/2024 11:32:31 PM
 
 ********************************************** 
 
+LogDT = 5/8/2024 8:09:03 PM 
+ LogMsg = DeliveryController => Delete => name: 
+ LogDesc = Msg=DeliveryController => Delete => name:;Ex.Msg=Invalid column name 'CountriesId'.; 
+
+********************************************** 
+
+LogDT = 5/8/2024 8:09:03 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'CountriesId'.; 
+
+********************************************** 
+
+LogDT = 5/8/2024 8:10:08 PM 
+ LogMsg = DeliveryController => Delete => name: 
+ LogDesc = Msg=DeliveryController => Delete => name:;Ex.Msg=Invalid column name 'CountriesId'.; 
+
+********************************************** 
+
+LogDT = 5/8/2024 8:10:08 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'CountriesId'.; 
+
+********************************************** 
+
+LogDT = 5/19/2024 8:11:58 PM 
+ LogMsg = DeliveryController => GetExcelAll 
+ LogDesc = Msg=DeliveryController => GetExcelAll;Ex.Msg=Conversion failed when converting the nvarchar value 'undefined' to data type int.; 
+
+********************************************** 
+
+LogDT = 5/19/2024 8:11:58 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'undefined'.; 
+
+********************************************** 
+
+LogDT = 5/19/2024 8:12:58 PM 
+ LogMsg = DeliveryController => GetExcelAll 
+ LogDesc = Msg=DeliveryController => GetExcelAll;Ex.Msg=Conversion failed when converting the nvarchar value 'undefined' to data type int.; 
+
+********************************************** 
+
+LogDT = 5/19/2024 8:12:58 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'undefined'.; 
+
+********************************************** 
+
+LogDT = 5/19/2024 8:13:07 PM 
+ LogMsg = DeliveryController => GetExcelAll 
+ LogDesc = Msg=DeliveryController => GetExcelAll;Ex.Msg=Conversion failed when converting the nvarchar value 'undefined' to data type int.; 
+
+********************************************** 
+
+LogDT = 5/19/2024 8:13:07 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'undefined'.; 
+
+********************************************** 
+
+LogDT = 5/24/2024 3:58:53 PM 
+ LogMsg = OrdersController => GetExcelAll 
+ LogDesc = Msg=OrdersController => GetExcelAll;Ex.Msg=The connection is broken and recovery is not possible.  The client driver attempted to recover the connection one or more times and all attempts failed.  Increase the value of ConnectRetryCount to increase the number of recovery attempts.;InEx.Msg=A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections. (provider: Named Pipes Provider, error: 40 - Could not open a connection to SQL Server); 
+
+********************************************** 
+
+LogDT = 5/24/2024 3:58:53 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Execution Timeout Expired.  The timeout period elapsed prior to completion of the operation or the server is not responding.;InEx.Msg=The wait operation timed out.; 
+
+********************************************** 
+
+LogDT = 5/24/2024 3:58:59 PM 
+ LogMsg = OrdersController => GetExcelAll 
+ LogDesc = Msg=OrdersController => GetExcelAll;Ex.Msg=The connection is broken and recovery is not possible.  The client driver attempted to recover the connection one or more times and all attempts failed.  Increase the value of ConnectRetryCount to increase the number of recovery attempts.;InEx.Msg=A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections. (provider: Named Pipes Provider, error: 40 - Could not open a connection to SQL Server); 
+
+********************************************** 
+
+LogDT = 5/24/2024 3:58:59 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=The connection is broken and recovery is not possible.  The client driver attempted to recover the connection one or more times and all attempts failed.  Increase the value of ConnectRetryCount to increase the number of recovery attempts.;InEx.Msg=A network-related or instance-specific error occurred while establishing a connection to SQL Server. The server was not found or was not accessible. Verify that the instance name is correct and that SQL Server is configured to allow remote connections. (provider: Named Pipes Provider, error: 40 - Could not open a connection to SQL Server); 
+
+********************************************** 
+
+LogDT = 6/21/2024 6:17:49 PM 
+ LogMsg = OrdersController => SetIsWaiting 
+ LogDesc = Msg=OrdersController => SetIsWaiting;Ex.Msg=Invalid column name 'SetIsWaiting'.; 
+
+********************************************** 
+
+LogDT = 6/21/2024 6:17:49 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'SetIsWaiting'.; 
+
+********************************************** 
+

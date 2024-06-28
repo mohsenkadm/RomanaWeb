@@ -102,16 +102,22 @@ namespace RomanaWeb.Helper.Repository
             }
 
             var lastorder = await _context.Orders.AsSplitQuery().AsNoTracking().OrderBy(i=>i.OrderId).LastOrDefaultAsync();
-            if(lastorder!=null)
+            if (lastorder != null)
             {
                 orders.OrderNo = lastorder.OrderNo + 1;
             }
+            else orders.OrderNo = 1;
             orders.OrderDate = Key.DateTimeIQ ;
             orders.IsDone = false;
             orders.IsApporve = false;
             orders.IsCancel = false;
             orders.IsSaleManCancel = false;
             orders.IsSaleManApprove = false;
+            orders.IsNotDelivered = false;
+            orders.IsDelivered = false;
+            orders.IsWaiting = false;
+            orders.Reason = "";
+            orders.Reason2 = "";
             orders.SaleManId = 0;
 
             await _context.Orders.AddAsync(orders);
@@ -176,6 +182,44 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true, "تمت الموافقة بنجاح", orders);
         }
                           
+        public async Task<ResObj> SetIsNotDelivered(int id, string Reason)
+        {
+            var orders = await GetOrdersById(id);
+             
+            orders.IsNotDelivered = true;
+            orders.IsDelivered = false;
+            orders.IsWaiting = false;
+            orders.Reason = Reason;     
+
+            _context.Entry(orders).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تمت الغاء توصيل بنجاح", orders);
+        }                  
+        public async Task<ResObj> SetIsWaiting(int id, string Reason2)
+        {
+            var orders = await GetOrdersById(id);
+             
+            orders.IsNotDelivered = false;
+            orders.IsDelivered = false;     
+            orders.IsWaiting = true;     
+            orders.Reason2 = Reason2;     
+
+            _context.Entry(orders).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تمت تأجيل توصيل بنجاح", orders);
+        }                   
+        public async Task<ResObj> SetIsDelivered(int id)
+        {
+            var orders = await GetOrdersById(id);
+             
+            orders.IsNotDelivered = false;
+            orders.IsDelivered = true;
+
+            orders.IsWaiting = false;
+            _context.Entry(orders).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تمت  توصيل  بنجاح", orders);
+        }                 
         public async Task<ResObj> SetIsSaleManCancel(int id)
         {
             var orders = await GetOrdersById(id);
@@ -234,6 +278,7 @@ namespace RomanaWeb.Helper.Repository
                     //item.Phone = users.Phone;
                     //item.Address = users.Address;
                     //item.FunctionPoint = users.FunctionPoint;
+                    item.CityId = users.CityId;
                     item.Lat = users.Lat;
                     item.Long = users.Long;        
                     _context.Entry(item).State = EntityState.Modified;

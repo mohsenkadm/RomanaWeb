@@ -137,5 +137,20 @@ namespace RomanaWeb.Controllers
         {
             return View();
         }
+
+        // مندوب يختار تم توصيل او لا 
+        [HttpGet("Home/ForDelivery/{OrderId}")]
+        public IActionResult ForDelivery(int OrderId)
+        {
+            ViewData["OrderId"] = OrderId.ToString();
+            return View();
+        }         
+        // مندوب يختار تم توصيل او لا 
+        [HttpGet("Home/ForDelivery2/{OrderId}")]
+        public IActionResult ForDelivery2(int OrderId)
+        {
+            ViewData["OrderId"] = OrderId.ToString();
+            return View();
+        }
     }
 }

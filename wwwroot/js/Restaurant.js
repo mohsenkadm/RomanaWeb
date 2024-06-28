@@ -15,7 +15,7 @@ function filltableResNotApproveAll(data) {
             "<td>" + item.categoriesName + "</td>" +   
             "<td>" + item.details + "</td>" +   
             "<td>" + item.name + "</td>"
-            + "<td> <button type='button' class='btn btn-danger' onclick='SetIsApproveShop(" + item.restaurantId + ")'  >حذف</button></td></tr>";
+            + "<td> <button type='button' class='btn btn-danger' onclick='SetIsApproveShop(" + item.restaurantId + ")'  >موافق</button></td></tr>";
         $('#tableRestaurant').append(rows);  
     });
 }
@@ -85,8 +85,8 @@ function filltableRestaurant(data) {
             "<td>" + item.categoriesName + "</td>" +   
             "<td>" + item.details + "</td>" +   
             "<td>" + item.name + "</td>"
-            + "<td> <button type='button' class='btn btn-danger' onclick='deleteRestaurant(" + item.restaurantId + ")'  >حذف</button>" +
-            "  |  <button type='button' class='btn btn-primary' onclick='updateRestaurant(" + item.restaurantId + ")'  data-toggle='modal' data-target='#RestaurantModal'>تعديل</button> </button></td></tr>";
+            + "<td> <button type='button' class='btn btn-danger' onclick='deleteRestaurant(" + item.restaurantId + ")'  >حذف</button></td>" +
+            "  <td> <button type='button' class='btn btn-primary' onclick='updateRestaurant(" + item.restaurantId + ")'  data-toggle='modal' data-target='#RestaurantModal'>تعديل</button> </button></td></tr>";
         $('#tableRestaurant').append(rows);
         $('#IsClosed' + item.restaurantId).attr('checked', item.isClosed); 
         $('#IsStars' + item.restaurantId).attr('checked', item.isStars); 

@@ -27,12 +27,12 @@
                 </div>
             </div>
 
-            <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+           @*  <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
                 <div class="text-center wow fadeInDown">
                     <label class="mb-2"> </label>
                             <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#ProductsModal">اضافة  جديد <i class='material-icons'>add</i> </button>
                 </div>
-             </div>
+             </div> *@
 
                 </div>
             </div>
@@ -136,6 +136,38 @@
         </div>
     </div>
 </div>
+
+
+<!-- Modal -->
+<div class="modal fade" id="ImageModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content  dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">صور المنتجات</h5>
+                <button type="button" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true" style="font-size:155%">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="table  table-hover table-bordered text-center">
+                    <thead class="thead-dark ">
+                        <tr>
+                            <th scope="col">الصورة</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableImage">
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">اغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <div id="mydiv">
     <script>
 

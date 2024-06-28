@@ -208,7 +208,7 @@ namespace RomanaWeb.Controllers
                             await _ProductsService.PostImages(new Images()
                             {
                                 ProductsId = Convert.ToInt32(res.data),
-                                ImagePath =Key.CurrentUrl + @$"\Uplouds\Images\image-{result.data}"     
+                                ImagePath =Key.CurrentUrl + @$"\Uplouds\image-{result.data}"     
                             });
                         }
                         else
@@ -285,6 +285,23 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
-       
+        #region DeleteImage Info Products 
+        [HttpDelete]
+        public async Task<IActionResult> DeleteImage(int Id)
+        {
+            try
+            {
+                ResObj res = await _ProductsService.DeleteImage(Id);
+
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ProductsController => DeleteImage => name:");
+                return Response(false, "حدث خطا اثناء عملية الحذف");
+            }
+        }
+        #endregion
+
     }
 }

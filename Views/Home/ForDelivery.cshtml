@@ -1,0 +1,124 @@
+﻿
+@{
+    ViewData["Title"] = "ForDelivery";
+    Layout = "~/Views/Shared/_LayoutForLogin.cshtml";
+    var orderid = ViewData["OrderId"];
+}
+
+
+<div class="content">
+    <div class="content dark-edition">
+        <div class="container-fluid">
+            <div class="container alignright" style="margin:2% 0;">
+                <h4 class="card-title ">@orderid</h4>
+                <div class="row"> 
+                    <div class="col-lg-6 col-md-6 col-sm-12" style="text-align: center;">
+                        <div class="text-center wow fadeInDown" style="text-align:left;">
+                            <label class="mb-2"> </label>
+                            <button type="button" id="approve-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">تم توصيل</button>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" id="notapprove-btn" class="btn btn-success btnwidth" style="text-align:center; width:100%;">الغاء توصيل</button>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12 " style="text-align: center;">
+                       
+                    </div>
+                        <div class="col-lg-6 col-md-6 col-sm-12 " style="text-align: center;">
+                        <label class="mb-2">السبب</label> 
+                        <br>
+                        <br>
+                        <label class="mb-2">
+                            <input type="radio" class="alignright" name="Reason" value="لم يرد على الاتصال"> لم يرد على الاتصال
+                        </label>
+                        <br>
+                        <label class="mb-2">
+                            <input type="radio" class="alignright" name="Reason" value="البضاعة غير مطابقة">  البضاعة غير مطابقة
+                        </label>
+                        <br>
+                        <label class="mb-2">
+                            <input type="radio" class="alignright" name="Reason" value="الرقم مغلق">  الرقم مغلق
+                        </label> 
+                    </div>
+                </div>
+                <div class="col">
+
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" id="waiting-btn" class="btn btn-success btnwidth" style="text-align:center; width:100%;">تأجيل توصيل</button>
+                        </div>
+                    </div>
+                    <div class="col-lg-6 col-md-6 col-sm-12 " style="text-align: center;">
+                        <label class="mb-2">السبب</label>
+                        <br>
+                        <br>
+                        <label class="mb-2">
+                            <input type="radio" class="alignright" name="Reason2" value="لم يرد على الاتصال"> لم يرد على الاتصال
+                        </label>
+                        <br> 
+                        <label class="mb-2">
+                            <input type="radio" class="alignright" name="Reason2" value="الرقم مغلق">  الرقم مغلق
+                        </label>
+                    </div>
+                </div>
+            </div> 
+        </div>
+    </div>
+</div>
+
+<div id="mydiv">
+    <script>
+        var _orderid = "0";
+        var wrongpass = false;
+        $(document).ready(function () {
+            checkpass();
+            _orderid = @orderid;
+        });
+        function checkpass() {
+            let pass = prompt("ادخل الباسورد", "");
+            if (pass !== null) {
+                if (pass !== "2") {
+                    alert("كلمة المرور او اسم المستخدم غير صحيح");
+                    wrongpass = true;
+                    return;
+                }
+                else {
+                    wrongpass = false;
+                }
+            }
+            else {
+                wrongpass = true;
+                return;
+            }
+        }
+        $("#approve-btn").on("click", (e) => {
+            if (wrongpass) {
+                checkpass();
+                return;
+            }
+            call_ajax("POST", "Orders/SetIsDelivered/" + _orderid , null, null);
+        });
+        $("#notapprove-btn").on("click", (e) => {
+            e.preventDefault();
+            if (wrongpass) {
+                checkpass();
+                return;
+            }
+            var selectedValue = $("input[type='radio'][name='Reason']:checked").val();
+            call_ajax("POST", "Orders/SetIsNotDelivered/" + _orderid + "/" + selectedValue, null, null);
+        });
+        $("#waiting-btn").on("click", (e) => {
+            e.preventDefault();
+            if (wrongpass) {
+                checkpass();
+                return;
+            }
+            var selectedValue = $("input[type='radio'][name='Reason2']:checked").val();
+            call_ajax("POST", "Orders/SetIsWaiting/" + _orderid + "/" + selectedValue, null, null);
+        });
+    </script>
+</div>

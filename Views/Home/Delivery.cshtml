@@ -41,6 +41,13 @@
                             <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث</button>
                         </div>
                     </div>
+                    
+                    <div class="col-lg-4 col-md-2 col-sm-2 col-xs-2">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" id="execel-btn" class="btn btn-success btnwidth" style="text-align:center; width:100%;">اكسل<i class='material-icons'>add</i> </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="row">
@@ -108,7 +115,12 @@
             $("#dateto").val(today);
             RefreshDelivery();
         });
-      
+
+        $("#execel-btn").on("click", (e) => {
+            e.preventDefault(); 
+            window.open("/Delivery/GetExcelAll?Name=" + $("#Name").val() + "&CountriesId=" + $("#CountriesId").val() + "&RestaurantName" +
+                $("#RestaurantName").val() + "&datefrom=" + $("#datefrom").val() + "&dateto=" + $("#dateto").val() + "&No=" + $("#No").val());
+        });
 
     </script>
 </div>

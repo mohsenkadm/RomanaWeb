@@ -20,10 +20,17 @@ namespace RomanaWeb.Models.EntityMap
             builder.Property(x => x.Notes);
             builder.Property(x => x.NetAmount);
             builder.Property(x => x.RestaurantId);     
+            builder.Property(x => x.DateInsert);
             builder.Property(x => x.CityId);
+            builder.Property(x => x.IsDelivered);
+            builder.Property(x => x.IsNotDelivered);
+            builder.Property(x => x.IsWaiting);
+            builder.Property(x => x.Reason);
+            builder.Property(x => x.Reason2);
             builder.Ignore(x => x.CityName);  
-            builder.Property(x => x.CountriesId).IsRequired();  
+            builder.Ignore(x => x.CountriesId);  
             builder.Ignore(x => x.CountriesName);  
+            builder.Ignore(x => x.ResPhone);  
         }
     }
 }

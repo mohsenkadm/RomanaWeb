@@ -6,11 +6,12 @@ using RomanaWeb.Helper.Interface;
 using AutoMapper;
 using RomanaWeb.Models.EntityMapper;
 using RomanaWeb.Classes;
-using RomanaWeb.Helper.Repository;    
-
+using RomanaWeb.Helper.Repository;
+using System.Data;
+using ClosedXML.Excel;
 namespace RomanaWeb.Controllers
 {
-   // [Authorize]
+    // [Authorize]
     public class OrdersController : MasterController
     {
         #region Readonly 
@@ -125,6 +126,67 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
+        #region Get Info Delivery 
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<FileResult> GetExcelAll(string? OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto, int? CountriesId)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.GetAll(OrderNo, RestaurantName, datefrom, dateto, 0, CountriesId, 1);
+
+
+                var p = GenerateExcel("report-order-" + Key.DateTimeIQ + ".xlsx", (List<Orders>)res.data);
+                return p;
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => GetExcelAll");
+                return null;
+            }
+        }
+        [NonAction]
+        private FileResult GenerateExcel(string fileName, IEnumerable<Orders> people)
+        {
+            DataTable dataTable = new DataTable("order");
+            dataTable.Columns.AddRange(new DataColumn[]
+            {
+                new DataColumn("OrderId"),
+                new DataColumn("OrderNo"),
+                new DataColumn("RestaurantName"),
+                new DataColumn("ResPhone"),
+                new DataColumn("UserName"),
+                new DataColumn("Address"),
+                new DataColumn("Phone"),
+                new DataColumn("FunctionPoint"),
+                new DataColumn("NetAmount"),
+                new DataColumn("CountriesName"),
+                new DataColumn("CityName"),
+            });
+
+            foreach (var p in people)
+            {
+                dataTable.Rows.Add(p.OrderId, p.OrderNo, p.RestaurantName,p.ResPhone, p.UserName, p.Address, p.Phone,
+                   p.FunctionPoint,
+                    p.NetAmount, p.CountriesName, p.CityName
+                    );
+            }
+
+            using (XLWorkbook wb = new XLWorkbook())
+            {
+                wb.Worksheets.Add(dataTable);
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    wb.SaveAs(stream);
+
+                    return File(stream.ToArray(),
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        fileName);
+                }
+            }
+
+        }
+        #endregion
 
         #region delete Info Orders 
         [HttpDelete("Delete/{OrderId}")]
@@ -188,7 +250,11 @@ namespace RomanaWeb.Controllers
             try
             {                                                                   
                 Orders Orders = _mapper.Map<Orders>(ordersModel);
-                                                                               
+
+                if (Orders.NetAmount == 0)
+                {
+                    return Response(false, "مبلغ الفاتورة 0");
+                }
                 ResObj resuser = await _OrdersService.PostUser(ordersModel.Users);
                                                                                
                 if (resuser.success)
@@ -518,6 +584,130 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
+        #region Set Order SetIsDelivered
+        [HttpPost("Orders/SetIsDelivered/{OrderId}")]
+        public async Task<IActionResult> SetIsDelivered(int OrderId)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.SetIsDelivered(OrderId);
+                if (res.success == false)
+                {
+                    return Response(res.success, res.msg);
+                }
+                Orders orders = (Orders)res.data;
+                List<string> ids = new List<string>();
+
+                ids.Add(orders.RestaurantId.ToString());
+                Notification notifications = new Notification
+                {
+                    Title = "توصيل",
+                    Details = $" {orders.OrderNo}  عزيزي تم توصيل الطلب الى الزبون بنجاح  رقم الطلب ",
+                    DateInsert = Key.DateTimeIQ,
+                    ResId = orders.RestaurantId,
+                    UserId = 0,
+                    SaleManId = 0
+                };
+                await _noteService.Post(notifications);
+                try
+                {
+                    await OneSignalSenderRes(notifications.Title, notifications.Details,
+                      ids);
+                }
+                catch (Exception ex) { }
+               
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => SetIsDelivered");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion
+
+        #region Set Order SetIsNotDelivered
+        [HttpPost("Orders/SetIsNotDelivered/{OrderId}/{Reason}")]
+        public async Task<IActionResult> SetIsNotDelivered(int OrderId,string Reason)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.SetIsNotDelivered(OrderId, Reason);
+                if (res.success == false)
+                {
+                    return Response(res.success, res.msg);
+                }
+                Orders orders = (Orders)res.data;
+                List<string> ids = new List<string>();
+
+                ids.Add(orders.RestaurantId.ToString());
+                Notification notifications = new Notification
+                {
+                    Title = "توصيل",
+                    Details = $" {orders.Reason} والسبب  {orders.OrderNo}  عزيزي تم رفض الطلب من قبل الزبون رقم الطلب  ",
+                    DateInsert = Key.DateTimeIQ,
+                    ResId = orders.RestaurantId,
+                    UserId = 0,
+                    SaleManId = 0
+                };
+                await _noteService.Post(notifications);
+                try
+                {
+                    await OneSignalSenderRes(notifications.Title, notifications.Details,
+                      ids);
+                }
+                catch (Exception ex) { }
+               
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => SetIsNotDelivered");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion      
+        #region Set Order SetIsWaiting
+        [HttpPost("Orders/SetIsWaiting/{OrderId}/{Reason2}")]
+        public async Task<IActionResult> SetIsWaiting(int OrderId,string Reason2)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.SetIsWaiting(OrderId, Reason2);
+                if (res.success == false)
+                {
+                    return Response(res.success, res.msg);
+                }
+                Orders orders = (Orders)res.data;
+                List<string> ids = new List<string>();
+
+                ids.Add(orders.RestaurantId.ToString());
+                Notification notifications = new Notification
+                {
+                    Title = "توصيل",
+                    Details = $" {orders.Reason2} والسبب  {orders.OrderNo}  عزيزي تم تأجيل الطلب  رقم الطلب  ",
+                    DateInsert = Key.DateTimeIQ,
+                    ResId = orders.RestaurantId,
+                    UserId = 0,
+                    SaleManId = 0
+                };
+                await _noteService.Post(notifications);
+                try
+                {
+                    await OneSignalSenderRes(notifications.Title, notifications.Details,
+                      ids);
+                }
+                catch (Exception ex) { }
+               
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => SetIsWaiting");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion
 
     }
 }

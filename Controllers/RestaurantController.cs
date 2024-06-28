@@ -274,13 +274,15 @@ namespace RomanaWeb.Controllers
                 if (Restaurant.RestaurantId == 0)
                 {
                     Restaurant.Code = "";
+                    Restaurant.IsApproved = true;
+                    Restaurant.IsActive = true;
                     res = await _RestaurantService.Post(Restaurant);
                 }
                 else
                 {
                     res = await _RestaurantService.Update(Restaurant);
                 }
-                return Response(res.success, res.msg, res.data);
+                return Response(res.success, "تم الحفظ بنجاح", res.data);
             }
             catch (Exception ex)
             {
@@ -344,6 +346,9 @@ namespace RomanaWeb.Controllers
 
                 if (Restaurant.RestaurantId == 0)
                 {
+
+                    Restaurant.IsApproved = false;
+                    Restaurant.IsActive = true;
                     res = await _RestaurantService.Post(Restaurant);
 
                    // code.IsFree = false;
@@ -419,6 +424,25 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
-
+        #region Set Restaurant SetInsta
+        [HttpPost("Restaurant/SetInsta/{Id}/{Url}")]
+        public async Task<IActionResult> SetInsta(int Id, string Url)
+        {
+            try
+            {
+                ResObj res = await _RestaurantService.SetInsta(Id, Url);
+                if (res.success == false)
+                {
+                    return Response(res.success, res.msg);
+                }
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantController => SetInsta");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion
     }
 }

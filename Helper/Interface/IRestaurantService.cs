@@ -24,5 +24,6 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> UpdateLocationInfo(int id, double Long, double Lat);
         Task UpdateCode(CodeRes code);
         Task<ResObj> GetReportRes(string restaurantName, DateTime datefrom, DateTime dateto);
+        Task<ResObj> SetInsta(int id, string url);
     }
 }

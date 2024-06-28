@@ -28,6 +28,11 @@ namespace RomanaWeb.Model.EntityMap
             builder.Property(x => x.IsSaleManCancel) ;    
             builder.Property(x => x.SaleManId) ;    
             builder.Property(x => x.CostDelivery) ;    
+            builder.Property(x => x.IsDelivered) ;    
+            builder.Property(x => x.IsNotDelivered) ;    
+            builder.Property(x => x.IsWaiting) ;    
+            builder.Property(x => x.Reason) ;    
+            builder.Property(x => x.Reason2) ;    
             builder.Ignore(x => x.UserName);    
             builder.Ignore(x => x.RestaurantName);    
             builder.Ignore(x => x.CategoriesName);    
@@ -40,6 +45,7 @@ namespace RomanaWeb.Model.EntityMap
             builder.Ignore(x => x.CountriesName);    
             builder.Ignore(x => x.OrderDetails);    
             builder.Ignore(x => x.Phone);    
+            builder.Ignore(x => x.ResPhone);    
             builder.Ignore(x => x.Logo);    
         }
     }

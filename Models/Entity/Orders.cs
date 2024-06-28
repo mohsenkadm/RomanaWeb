@@ -24,12 +24,18 @@ namespace RomanaWeb.Models.Entity
         public int? SaleManId { get; set; }    
         public bool? IsSaleManApprove { get; set; }    
         public bool? IsSaleManCancel { get; set; }    
+        public bool? IsDelivered { get; set; }    
+        public bool? IsNotDelivered { get; set; }    
+        public bool? IsWaiting { get; set; }    
+        public string? Reason { get; set; }
+        public string? Reason2 { get; set; }
         public string? SaleManName { get; set; }
 
         public decimal? CostDelivery { get; set; }
         // for show
         public string? UserName { get; set; }
         public string? Phone { get; set; }      
+        public string? ResPhone { get; set; }      
         public string? Address { get; set; }
         public string? FunctionPoint { get; set; }
         public string? Logo { get; set; }

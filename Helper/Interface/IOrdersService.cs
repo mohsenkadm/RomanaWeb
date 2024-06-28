@@ -7,6 +7,9 @@ namespace RomanaWeb.Helper.Interface
     {
         Task<ResObj> SetIsSaleManApprove(int id);
         Task<ResObj> SetIsSaleManCancel(int id);
+        Task<ResObj> SetIsNotDelivered(int id,string Reason);
+        Task<ResObj> SetIsWaiting(int id,string Reason2);
+        Task<ResObj> SetIsDelivered(int id);
         Task<ResObj> SetSaleManId(int id, int SaleManId);
         Task<ResObj> SetIsApporve(int id);
         Task<ResObj> SetIsCancel(int id);
