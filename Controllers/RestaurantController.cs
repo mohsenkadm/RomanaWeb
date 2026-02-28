@@ -282,7 +282,7 @@ namespace RomanaWeb.Controllers
                 {
                     res = await _RestaurantService.Update(Restaurant);
                 }
-                return Response(res.success, "تم الحفظ بنجاح", res.data);
+                return Response(res.success, res.msg, res.data);
             }
             catch (Exception ex)
             {
@@ -349,6 +349,7 @@ namespace RomanaWeb.Controllers
 
                     Restaurant.IsApproved = false;
                     Restaurant.IsActive = true;
+                    Restaurant.IsTop = false;
                     res = await _RestaurantService.Post(Restaurant);
 
                    // code.IsFree = false;
@@ -444,5 +445,25 @@ namespace RomanaWeb.Controllers
             }
         }
         #endregion
+
+
+        #region RefreshToken
+        [AllowAnonymous]
+        [HttpPost("Restaurant/RefreshToken/{Id}")]
+        public async Task<IActionResult> RefreshToken(int Id)
+        {
+            try
+            {
+                ResObj res = await _RestaurantService.RefreshToken(Id);
+
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantController => RefreshToken " + Id);
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion 
     }
 }

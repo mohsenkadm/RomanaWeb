@@ -8,6 +8,8 @@ using RestSharp;
 using Polly;
 using System.Runtime.InteropServices;
 using NUnit.Framework.Interfaces;
+using NuGet.Protocol.Core.Types;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages;
 
 namespace RomanaWeb.Helper.Repository
 {
@@ -77,7 +79,7 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> Post(Restaurant Restaurant)
         {                                                                              
-            var checkres = await _context.Restaurant.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.Phone!.Contains(Restaurant.Phone!));
+            var checkres = await _context.Restaurant.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.Phone!.Contains(Restaurant.Phone!) && i.IsDelete==false);
             if (checkres != null) return Result.Return(false, "رقم الهاتف موجود سابقا");
           
           //  Restaurant.IsApproved = false;
@@ -115,8 +117,11 @@ namespace RomanaWeb.Helper.Repository
             Restaurant1.UserName = Restaurant.UserName;   
             Restaurant1.IsActive = Restaurant.IsActive;   
             //Restaurant1.IsApproved = Restaurant.IsApproved;   
-            Restaurant1.IsDelete = false;   
-            Restaurant1.IsTop = Restaurant.IsTop;   
+            Restaurant1.IsDelete = false;
+            if (Restaurant.IsTop != null)
+            {
+                Restaurant1.IsTop = Restaurant.IsTop;
+            } 
             Restaurant1.IsClosed = Restaurant.IsClosed;   
             Restaurant1.IsStars = Restaurant.IsStars;   
             Restaurant1.MinimumPrice = Restaurant.MinimumPrice;   
@@ -244,6 +249,25 @@ namespace RomanaWeb.Helper.Repository
             }
             else
                 return Result.Return(false);
+        }
+
+        public async Task<ResObj> RefreshToken(int Id)
+        {
+            Restaurant? res = await _context.Restaurant.Where(i => i.RestaurantId==Id).FirstOrDefaultAsync();
+
+            if (res is null)
+                return Result.Return(false, "حدث خطا اثناء عملية تسجيل الدخول");
+            if (res.IsActive == false)
+                return Result.Return(false, "حسابك غير فعال يرجى التواصل مع مدير التطببيق");
+            if (res.IsApproved == false)
+                return Result.Return(false, "حسابك غير موافق عليه يرجى التواصل مع مدير التطببيق");
+            if (res.IsDelete == true)
+                return Result.Return(false, "حسابك   محذوف يرجى التواصل مع مدير التطببيق");
+
+            UserManager userManager = new UserManager() { Id = res.RestaurantId, Name = res.UserName!, Role = "res" };
+            res.Token = JsonWebToken.GenerateToken(userManager);
+
+            return Result.Return(true, res);
         }
     }
 }

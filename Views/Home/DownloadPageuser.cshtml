@@ -13,25 +13,77 @@
 </style>
 <br />
 <div class="clearfix row">
-    <div class="text-center col-sm-12 col-xl-12">
+    <div class="text-center col-sm-12 col-xl-12"> 
+        <br />
+        <div class="text-center" style=" font-size: 38px;">
+            <a style="color:white;">تطبيق رمانة</a>
+        </div>
+        <br/>
+        <br/> 
+        <br/>
         <div class="text-center" style="margin: 39px; font-size: 28px;">
-            <a>لتحميل تطبيق   رمانة  على جهاز الاندرويد</a>
+            <a style="color:white;">لتحميل تطبيق   رمانة  على جهاز الاندرويد او الايفون</a>
         </div>
-        <div class="text-center">
-            <a href="https://play.google.com/store/apps/details?id=com.alaman.romanaappflutter"> <img class="img-fluid" src="~/images/downloadandroid.png" alt="alternative" style="width:35%;"></a>
+        <div class="text-center" style="
+    margin: auto; ">
+            <img onclick="urlapp()" class="col" width="300" src="/images/googleplay.jpg">
+            <img onclick="urlapple()" class="col" width="300" src="/images/appstore.jpg">
         </div>
-    </div>
-</div>
-<br />
-<br />
-<div class="clearfix row">
-    <div class="text-center col-sm-12 col-xl-12">
-        <div class="text-center" style="margin: 39px; font-size: 28px;">
-            <a>لتحميل تطبيق   رمانة  على جهاز الايفون</a>
+        
+        <br/>
+       @*   <img width="400"   src="~/images/support.jpg" />
+         <br />
+         <br />
+         <div class="text-center" style="margin: 39px; font-size: 28px;">
+             <a style="color:white;">الدعم الفني لتطبيق رمانة</a>
+         </div>
+         <div onclick="urlwhatsapp()" class="row text-center" style="
+     margin: auto; 
+     border-radius: 15px;
+     border: white;
+ width: 325px;
+     border-style: solid;
+     ">
+             <img class="col-3 text-center" src="/images/whatsapp.png" width="30" style="margin: auto;">
+             <div class="col-9 row">
+                 <label class="mb-2" style="font-size: 24px; color:white;  margin: auto;">+9647850047002</label>
+             </div>
+         </div>
+        <br /> *@
+        <br />
+        <div class="text-center" style="margin: 39px; font-size: 28px; ">
+            <a style="color:white;">مواقع التواصل الاجتماعي لتطبيق رمانة</a>
         </div>
-        <div class="text-center">
-            <a href="https://apps.apple.com/us/app/rummana-%D8%B1%D9%85%D8%A7%D9%86%D8%A9/id6471382620"> <img class="img-fluid" src="~/images/downloadios.png" alt="alternative" style="width:35%;"></a>
+        <div class="text-center" style="
+    margin: auto; ">
+            <img onclick="urltelegram()" class="col" width="300" src="/images/telegram.jpg"> 
+            <img onclick="urlinsta()" class="col" width="300" src="/images/instagram.jpg"> 
+            <img onclick="urlface()" class="col" width="300" src="/images/facebook.jpg"> 
         </div>
+        
+        <br />
+        <br />
     </div>
 </div>
 
+<script>
+    function urlapple(){
+        window.open('https://apps.apple.com/us/app/rummana-%D8%B1%D9%85%D8%A7%D9%86%D8%A9/id6471382620');
+    }
+    function urlwhatsapp(){
+        window.open('https://wa.me/+9647850047002');
+    }
+    function urlface(){
+        window.open('https://www.facebook.com/profile.php?id=61551440293842&mibextid=LQQJ4d');
+    }
+    function urlinsta(){
+        window.open('https://www.instagram.com/rummana.food?igsh=dHJxMjhscmdkZGJm');
+    }
+    function urltelegram(){
+        window.open('https://t.me/rummana_app');
+    }
+    function urlapp(){
+        window.open('https://play.google.com/store/apps/details?id=com.romanashop');
+    }
+    
+</script>

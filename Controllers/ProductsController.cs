@@ -197,6 +197,7 @@ namespace RomanaWeb.Controllers
                 {
                     res = await _ProductsService.Update(Products);
                 }
+                if(ProductsModel.FileChoose!=null)
                 foreach (var item in ProductsModel.FileChoose)
                 {
                     if (item != null)

@@ -13,6 +13,7 @@ using RomanaWeb.UploadService;
 
 namespace RomanaWeb.Controllers
 {
+    [Authorize]
     public class SaleManController : MasterController
     {
         #region Readonly 
@@ -60,10 +61,7 @@ namespace RomanaWeb.Controllers
             }
         }
         #endregion
-
-
-       
-
+                                         
         #region GetCountForSale Info SaleMan              
         [HttpGet("GetCountForSale/{Id},{datefrom},{dateto}")]
         public async Task<IActionResult>  GetCountForSale(int Id, DateTime datefrom, DateTime dateto)

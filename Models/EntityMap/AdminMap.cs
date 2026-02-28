@@ -17,6 +17,11 @@ namespace RomanaWeb.Model.EntityMap
             builder.Ignore(x => x.Token);                         
             builder.Ignore(x => x.CountRes);                         
             builder.Ignore(x => x.CountUser);                         
+            builder.Ignore(x => x.CountCateg);                         
+            builder.Ignore(x => x.CountSubCateg);                         
+            builder.Ignore(x => x.CountOrder);                         
+            builder.Ignore(x => x.CountProd);                         
+            builder.Ignore(x => x.PriceSale);                         
         }
     }
 }

@@ -15,5 +15,10 @@ namespace RomanaWeb.Models.Entity
         public string Token { get; set; }       
         public string CountUser { get; set; }       
         public string CountRes { get; set; }       
+        public string CountCateg { get; set; }       
+        public string CountSubCateg { get; set; }       
+        public string CountProd { get; set; }       
+        public string PriceSale { get; set; }       
+        public string CountOrder { get; set; }       
     }
 }

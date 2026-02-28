@@ -1,18 +1,29 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RomanaWeb.Classes;
 using RomanaWeb.Helper;
 using RomanaWeb.Mapping;
-using RomanaWeb.Model;    
+using RomanaWeb.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.UseContentRoot(Directory.GetCurrentDirectory());
 builder.WebHost.UseWebRoot("wwwroot");
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy => policy
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
+});
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(cfg =>
     {
@@ -28,35 +39,47 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(Key.SecretKey))
         };
     });
+
 builder.Services.AddAuthorization();
-builder.Services.AddDbContext<DB_Context>(option => option.UseSqlServer(DBConn.ConnectionString),
+
+builder.Services.AddDbContext<DB_Context>(
+    option => option.UseSqlServer(DBConn.ConnectionString),
     ServiceLifetime.Scoped, ServiceLifetime.Scoped);
+
 builder.Services.AddSignalR();
-builder.Services.AddSession(o => {
+
+builder.Services.AddSession(o =>
+{
     o.IdleTimeout = TimeSpan.FromDays(10);
 });
+
 AppRegisterServices.RegisterServices<IRegisterScopped>(builder.Services);
 AppRegisterServices.RegisterServices<IRegisterSingleton>(builder.Services);
-builder.Services.AddSingleton(new MapperConfiguration(config => config.AddProfile(new MappingProfile())).CreateMapper());
+
+builder.Services.AddSingleton(
+    new MapperConfiguration(config => config.AddProfile(new MappingProfile())).CreateMapper()
+);
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-                              
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-app.UseCors();
+app.UseCors("AllowAll");
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseSession();
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Login}/{id?}");

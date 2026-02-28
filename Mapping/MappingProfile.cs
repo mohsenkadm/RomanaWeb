@@ -10,6 +10,7 @@ namespace RomanaWeb.Mapping
         {                                      
             CreateMap<RestaurantModel, Restaurant>();         
             CreateMap<CarouselModel, Carousel>();         
+            CreateMap<QuestionsModel, Questions>();         
             CreateMap<CategoriesModel, Categories>();         
             CreateMap<ProductsModel, Products>();         
             CreateMap<OrderDetailModel, OrderDetail>();      

@@ -18,6 +18,7 @@
         public bool? IsClosed { get; set; }
         public bool? IsStars { get; set; }
         public bool? IsActive { get; set; }
+        public bool? IsTop { get; set; }
         public decimal MinimumPrice { get; set; }
         public decimal CostDelivery { get; set; }
         public string Areaname { get; set; }

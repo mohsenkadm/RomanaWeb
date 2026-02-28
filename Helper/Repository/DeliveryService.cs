@@ -45,7 +45,7 @@ namespace RomanaWeb.Helper.Repository
         }                              
         public async Task<ResObj> GetById(int Id)
         {
-            var item = GetDeliveryAsync(Id);
+            var item = await GetDeliveryAsync(Id);
             if (item != null)
                 return Result.Return(true, item);
             else
@@ -73,6 +73,11 @@ namespace RomanaWeb.Helper.Repository
                     Delivery.No = lastorder.No + 1;
                 }
                 else Delivery.No = 1;
+                Delivery.IsDelivered = false;
+                Delivery.IsWaiting = false;
+                Delivery.IsNotDelivered = false;
+                Delivery.Reason = "" ;
+                Delivery.Reason2 = "" ;
                 Delivery.DateInsert = Key.DateTimeIQ;
                 await _Context.Delivery.AddAsync(Delivery);
             }

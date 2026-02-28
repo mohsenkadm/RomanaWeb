@@ -106,3 +106,83 @@ LogDT = 6/21/2024 6:17:49 PM
 
 ********************************************** 
 
+LogDT = 1/23/2025 4:20:30 PM 
+ LogMsg = AdminController => Login => name:mohsen 
+ LogDesc = Msg=AdminController => Login => name:mohsen;Ex.Msg=An exception was thrown while attempting to evaluate a LINQ query parameter expression. See the inner exception for more information. To show additional information call 'DbContextOptionsBuilder.EnableSensitiveDataLogging'.;InEx.Msg=The input string 'mohsen' was not in a correct format.; 
+
+********************************************** 
+
+LogDT = 1/23/2025 4:20:30 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DbContextOptionsBuilder'.; 
+
+********************************************** 
+
+LogDT = 1/23/2025 4:21:07 PM 
+ LogMsg = AdminController => Login => name:mohsen 
+ LogDesc = Msg=AdminController => Login => name:mohsen;Ex.Msg=An exception was thrown while attempting to evaluate a LINQ query parameter expression. See the inner exception for more information. To show additional information call 'DbContextOptionsBuilder.EnableSensitiveDataLogging'.;InEx.Msg=The input string 'mohsen' was not in a correct format.; 
+
+********************************************** 
+
+LogDT = 1/23/2025 4:21:07 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DbContextOptionsBuilder'.; 
+
+********************************************** 
+
+LogDT = 1/23/2025 4:21:12 PM 
+ LogMsg = AdminController => Login => name:mohsen 
+ LogDesc = Msg=AdminController => Login => name:mohsen;Ex.Msg=An exception was thrown while attempting to evaluate a LINQ query parameter expression. See the inner exception for more information. To show additional information call 'DbContextOptionsBuilder.EnableSensitiveDataLogging'.;InEx.Msg=The input string 'mohsen' was not in a correct format.; 
+
+********************************************** 
+
+LogDT = 1/23/2025 4:21:12 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DbContextOptionsBuilder'.; 
+
+********************************************** 
+
+LogDT = 1/23/2025 4:21:40 PM 
+ LogMsg = AdminController => Login => name:mohsen 
+ LogDesc = Msg=AdminController => Login => name:mohsen;Ex.Msg=An exception was thrown while attempting to evaluate a LINQ query parameter expression. See the inner exception for more information. To show additional information call 'DbContextOptionsBuilder.EnableSensitiveDataLogging'.;InEx.Msg=The input string 'mohsen' was not in a correct format.; 
+
+********************************************** 
+
+LogDT = 1/23/2025 4:21:40 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DbContextOptionsBuilder'.; 
+
+********************************************** 
+
+LogDT = 1/23/2025 5:03:59 PM 
+ LogMsg = AdminController => Login => name:1 
+ LogDesc = Msg=AdminController => Login => name:1;Ex.Msg=Invalid column name 'CountCateg'.
+Invalid column name 'CountOrder'.
+Invalid column name 'CountProd'.
+Invalid column name 'CountSubCateg'.
+Invalid column name 'PriceSale'.; 
+
+********************************************** 
+
+LogDT = 1/23/2025 5:03:59 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'CountCateg'.; 
+
+********************************************** 
+
+LogDT = 1/23/2025 5:04:12 PM 
+ LogMsg = AdminController => Login => name:1 
+ LogDesc = Msg=AdminController => Login => name:1;Ex.Msg=Invalid column name 'CountCateg'.
+Invalid column name 'CountOrder'.
+Invalid column name 'CountProd'.
+Invalid column name 'CountSubCateg'.
+Invalid column name 'PriceSale'.; 
+
+********************************************** 
+
+LogDT = 1/23/2025 5:04:12 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'CountCateg'.; 
+
+********************************************** 
+

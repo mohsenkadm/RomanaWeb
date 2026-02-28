@@ -18,8 +18,8 @@
                 {
                     ConnectionType.SqlServerLocal => "Server=.; Database=RomanaDb; Trusted_Connection=True; " +
                     " TrustServerCertificate=True",
-                    ConnectionType.SqlServerSmarter => "Data Source=SQL5111.site4now.net;Initial" +
-                    " Catalog=db_a9f134_romanadb;User Id=db_a9f134_romanadb_admin;Password=pkQv1bE3Q57GO0n; MultipleActiveResultSets=True;",
+                    ConnectionType.SqlServerSmarter => "Data Source=SQL5111.site4now.net;Initial Catalog=db_a9f134_romanadb;User Id=db_a9f134_romanadb_admin;Password=pkQv1bE3Q57GO0n;" +
+                    "MultipleActiveResultSets=True;Encrypt=True;TrustServerCertificate=True;",
                     _ => "",
                 };
             }

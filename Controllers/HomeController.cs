@@ -10,9 +10,12 @@ namespace RomanaWeb.Controllers
     public class HomeController : Controller
     {
         private readonly IAdminServices _AdminServices;
-        public HomeController(IAdminServices AdminServices)
+
+        private IWebHostEnvironment Environment;
+        public HomeController(IAdminServices AdminServices, IWebHostEnvironment environment)
         {
             _AdminServices = AdminServices;
+            Environment = environment;
         }
         [HttpGet]
         public async Task<IActionResult> GetCountForMain()
@@ -128,7 +131,12 @@ namespace RomanaWeb.Controllers
         public IActionResult GetReportRes()
         {
             return View();
+        }                          
+        public IActionResult Questions()
+        {
+            return View();
         }
+        [HttpGet("Do")]
         public IActionResult DownloadPageuser()
         {
             return View();
@@ -151,6 +159,18 @@ namespace RomanaWeb.Controllers
         {
             ViewData["OrderId"] = OrderId.ToString();
             return View();
+        }
+        [HttpGet("downloadapp")]
+        public FileResult DownloadFile()
+        {
+            //Build the File Path.
+            string path = Environment.WebRootPath + $@"\apps\app.apk";
+
+            //Read the File data into Byte Array.
+            byte[] bytes = System.IO.File.ReadAllBytes(path);
+
+            //Send the File to Download.
+            return File(bytes, "application/octet-stream", "apprummana.apk");
         }
     }
 }

@@ -39,6 +39,6 @@ function deleteSaleMan(id) {
 }
 function RefreshSaleMan() { 
     var obj = { Name: $("#Namese").val() }
-    call_ajax("GET", "SaleMan/GetAll", obj, filltableSaleMan);
+    call_ajax("GET", "SaleMan/GetAll", obj, filltableSaleMan); 
 }
  

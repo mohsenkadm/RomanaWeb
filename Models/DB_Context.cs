@@ -40,6 +40,7 @@ namespace RomanaWeb.Model
             modelBuilder.ApplyConfiguration(new CountriesMap());        
             modelBuilder.ApplyConfiguration(new ImagesMap());        
             modelBuilder.ApplyConfiguration(new DeliveryMap());        
+            modelBuilder.ApplyConfiguration(new QuestionsMap());        
         }
                                       
         public DbSet<Users> Users { get; set; }         
@@ -64,5 +65,6 @@ namespace RomanaWeb.Model
         public DbSet<Countries> Countries { get; set; }           
         public DbSet<Images> Images { get; set; }           
         public DbSet<Delivery> Delivery { get; set; }           
+        public DbSet<Questions> Questions { get; set; }           
     }
 }
