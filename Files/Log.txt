@@ -186,3 +186,55 @@ LogDT = 1/23/2025 5:04:12 PM
 
 ********************************************** 
 
+LogDT = 3/4/2026 11:45:21 PM 
+ LogMsg = UsersController => GetAll => name: 
+ LogDesc = Msg=UsersController => GetAll => name:;Ex.Msg=Invalid column name 'IsBlock'.
+Invalid column name 'NumberSendOtp'.; 
+
+********************************************** 
+
+LogDT = 3/4/2026 11:45:21 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'IsBlock'.; 
+
+********************************************** 
+
+LogDT = 3/4/2026 11:45:22 PM 
+ LogMsg = UsersController => GetAll => name: 
+ LogDesc = Msg=UsersController => GetAll => name:;Ex.Msg=Invalid column name 'IsBlock'.
+Invalid column name 'NumberSendOtp'.; 
+
+********************************************** 
+
+LogDT = 3/4/2026 11:45:22 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'IsBlock'.; 
+
+********************************************** 
+
+LogDT = 3/4/2026 11:45:25 PM 
+ LogMsg = UsersController => GetAll => name: 
+ LogDesc = Msg=UsersController => GetAll => name:;Ex.Msg=Invalid column name 'IsBlock'.
+Invalid column name 'NumberSendOtp'.; 
+
+********************************************** 
+
+LogDT = 3/4/2026 11:45:25 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'IsBlock'.; 
+
+********************************************** 
+
+LogDT = 3/4/2026 11:46:09 PM 
+ LogMsg = UsersController => GetAll => name: 
+ LogDesc = Msg=UsersController => GetAll => name:;Ex.Msg=Invalid column name 'IsBlock'.
+Invalid column name 'NumberSendOtp'.; 
+
+********************************************** 
+
+LogDT = 3/4/2026 11:46:09 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'IsBlock'.; 
+
+********************************************** 
+

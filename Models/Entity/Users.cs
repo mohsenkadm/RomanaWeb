@@ -22,5 +22,7 @@ namespace RomanaWeb.Models.Entity
         public bool? IsDelete { get; set; }
         public string? Code { get; set; }
         public int? CityId { get; set; }
+        public int? NumberSendOtp { get; set; } = 0;
+        public bool? IsBlock { get; set; }
     }
 }

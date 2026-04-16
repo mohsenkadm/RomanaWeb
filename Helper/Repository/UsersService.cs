@@ -17,14 +17,14 @@ namespace RomanaWeb.Helper.Repository
         public readonly IDapperRepository<Users> _repository;
         // cotext only apply scopped 
         private readonly DB_Context _context;
-        private readonly ITwilioService twilioService;
+        private readonly IOtpService _otpService;
 
         public UsersService(
-            DB_Context context, IDapperRepository<Users> repository, ITwilioService twilioService)
+            DB_Context context, IDapperRepository<Users> repository, IOtpService otpService)
         {
             _context = context;
             _repository = repository;
-            this.twilioService = twilioService;
+            _otpService = otpService;
         }
         public async Task<ResObj> Login(string Phone, string password)
         {
@@ -66,7 +66,7 @@ namespace RomanaWeb.Helper.Repository
             person.Code = code;
             _context.Entry(person).State = EntityState.Modified;
             await _context.SaveChangesAsync();
-            await twilioService.SendOTPCodeToPhoneNo(Phone, code);
+            await _otpService.SendOTPCodeToPhoneNo(Phone, code);
 
             return Result.Return(true, "تم ارسال كود التحقق بنجاح");
         }

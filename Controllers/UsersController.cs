@@ -18,7 +18,7 @@ namespace RomanaWeb.Controllers
         #region Readonly 
         private readonly ILoggerRepository _logger;
         private readonly IUsersService _UsersService;
-        public readonly ITwilioService twilio;
+        public readonly IOtpService _otpService;
         private readonly INotificationService _noteService;
         public readonly DB_Context _Context;
         #endregion
@@ -26,11 +26,11 @@ namespace RomanaWeb.Controllers
         #region Const
         public UsersController(
             ILoggerRepository logger,
-            IUsersService UsersService, ITwilioService twilio,
+            IUsersService UsersService, IOtpService otpService,
              INotificationService noteService,DB_Context dB_Context)
         {
             _logger = logger; 
-            this.twilio = twilio;
+            _otpService = otpService;
 
             _UsersService = UsersService; 
             _noteService = noteService;
@@ -139,7 +139,7 @@ namespace RomanaWeb.Controllers
         {
             try
             {
-                ResObj res = await twilio.SendOTPCodeToPhoneNo(Phone, new Random().Next(1000, 9999).ToString());
+                ResObj res = await _otpService.SendOTPCodeToPhoneNo(Phone, new Random().Next(1000, 9999).ToString());
 
                 return Response(res.success, res.msg, res.data);
             }

@@ -24,6 +24,8 @@ namespace RomanaWeb.Model.EntityMap
             builder.Property(x => x.IsDelete);           
             builder.Property(x => x.Code);           
             builder.Property(x => x.Password);           
+            builder.Property(x => x.IsBlock);           
+            builder.Property(x => x.NumberSendOtp);           
         }
     }
 }
