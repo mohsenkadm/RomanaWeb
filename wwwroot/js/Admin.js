@@ -41,22 +41,60 @@ function messageList(data) {
 };
 
 
+// Map control names to proper Material Icons
+var _navIcons = {
+    'Index': 'dashboard',
+    'Admin': 'admin_panel_settings',
+    'Users': 'people',
+    'Restaurant': 'store',
+    'Categories': 'category',
+    'SubCategories': 'list_alt',
+    'Products': 'inventory_2',
+    'Orders': 'shopping_cart',
+    'OrdersForRes': 'receipt_long',
+    'Stars': 'star_rate',
+    'Ratings': 'reviews',
+    'Carousel': 'view_carousel',
+    'Notification': 'notifications',
+    'PromoCode': 'local_offer',
+    'CodeRes': 'qr_code',
+    'City': 'location_city',
+    'Countries': 'public',
+    'RestaurantCity': 'map',
+    'RestaurantSubCategories': 'storefront',
+    'SaleMan': 'delivery_dining',
+    'Delivery': 'local_shipping',
+    'GetResNotApproveAll': 'pending_actions',
+    'GetReportRes': 'assessment',
+    'Analytics': 'insights',
+    'AppSettings': 'settings',
+    'Questions': 'help_center',
+    'message': 'chat'
+};
+
 function filllayout(data) {
     $('#nav').empty();
-    $.each(data, function (i, item) { 
+
+    // Highlight active page based on current URL
+    var currentPath = window.location.pathname.toLowerCase();
+
+    $.each(data, function (i, item) {
+        var icon = _navIcons[item.controlName] || 'circle';
+        var isActive = currentPath.indexOf(item.controlName.toLowerCase()) >= 0;
+        var activeClass = isActive ? ' active' : '';
         var rows = "";
+
         if (item.controlName == 'message') {
-            rows = "<li class='nav-item'>" +
-                "<a class='nav-link' onclick =\"GetMessageList()\");' data-toggle='modal' data-target='#messagemodel' > " +
-                "<i class='material-icons'>person</i>" +
+            rows = "<li class='nav-item" + activeClass + "'>" +
+                "<a class='nav-link' href='javascript:void(0)' onclick=\"GetMessageList()\" data-toggle='modal' data-target='#messagemodel'>" +
+                "<i class='material-icons'>" + icon + "</i>" +
                 "<p>" + item.permissionName + "</p>" +
-                "</a >" +
-                "</li >";
-        }
-        else {
-            rows = "<li class='nav-item '>" +
-                "<a class='nav-link' onclick =\"call_Action('Home/" + item.controlName + "')\");' >" +
-                "<i class='material-icons'>person</i>" +
+                "</a>" +
+                "</li>";
+        } else {
+            rows = "<li class='nav-item" + activeClass + "'>" +
+                "<a class='nav-link' href='/Home/" + item.controlName + "'>" +
+                "<i class='material-icons'>" + icon + "</i>" +
                 "<p>" + item.permissionName + "</p>" +
                 "</a>" +
                 "</li>";
@@ -64,12 +102,12 @@ function filllayout(data) {
         $('#nav').append(rows);
     });
 
-    var lastrow = "<li class='nav-item '>" +
-                    "<a class='nav-link' onclick ='logut()' >" +
-                    "<i class='material-icons'>person</i>" +
-                    "<p>تسجيل خروج</p>" +
-                    "</a>" +
-                    "</li>"; 
+    var lastrow = "<li class='nav-item'>" +
+        "<a class='nav-link' href='javascript:void(0)' onclick='logut()'>" +
+        "<i class='material-icons'>logout</i>" +
+        "<p>تسجيل خروج</p>" +
+        "</a>" +
+        "</li>";
     $('#nav').append(lastrow);
 }
 
@@ -142,6 +180,5 @@ function logut() {
 };
 function afterlogout() {
     document.cookie = "token2= ; expires = Thu, 01 Jan 1970 00:00:00 GMT";
-    call_Action("Home/Login")
-
+    window.location.href = '/Home/Login';
 }

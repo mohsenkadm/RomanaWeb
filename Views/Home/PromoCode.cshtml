@@ -4,46 +4,90 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
+<style>
+    .promo-card { animation: promoFadeIn 0.6s ease-out both; transition: transform 0.3s ease; }
+    .promo-card:hover { transform: translateY(-3px); }
+    @@keyframes promoFadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+</style>
+
 <div class="content">
     <div class="content dark-edition">
         <div class="container-fluid">
 
-            <div class="container alignright" style="margin:2% 0;">
-                <div class="row"> 
-                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2" style="text-align: center;">
+            <!-- Page Summary -->
+            <div class="rm-page-summary">
+                <div class="rm-summary-icon bg-purple"><i class="material-icons">local_offer</i></div>
+                <div class="rm-summary-body">
+                    <h4>ادارة البرومو كود</h4>
+                    <p>عرض وادارة اكواد الخصم الترويجية. يمكنك اضافة اكواد جديدة، تحديد نسبة الخصم او المبلغ، ربطها بمتاجر محددة او جميع المتاجر، والتحكم في حالة التفعيل.</p>
+                </div>
+                <div class="rm-summary-stats">
+                    <div class="rm-stat"><span class="rm-stat-value" id="promoSummaryTotal">-</span><span class="rm-stat-label">اجمالي</span></div>
+                    <div class="rm-stat"><span class="rm-stat-value" id="promoSummaryActive">-</span><span class="rm-stat-label">فعال</span></div>
+                </div>
+            </div>
+
+            <!-- Mini Chart -->
+            <div class="row rm-mini-chart-row">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header card-header-info" style="text-align:right">
+                            <h4 class="card-title"><i class="material-icons">bar_chart</i> الاكواد حسب المتجر</h4>
+                        </div>
+                        <div class="card-body"><div class="rm-mini-chart"><canvas id="promoChartByStore"></canvas></div></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header card-header-success" style="text-align:right">
+                            <h4 class="card-title"><i class="material-icons">pie_chart</i> نشط مقابل غير نشط</h4>
+                        </div>
+                        <div class="card-body"><div class="rm-mini-chart"><canvas id="promoChartStatus"></canvas></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="rm-filter-bar">
+                <div class="row">
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2" style="text-align:center;">
                         <div class="text-center wow fadeInDown" style="text-align:left;">
                             <label class="mb-2"> </label>
-                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث</button>
+                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث <i class='material-icons'>search</i></button>
                         </div>
                     </div>
-                   @*  <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
                         <div class="text-center wow fadeInDown">
                             <label class="mb-2"> </label>
-                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#PromoCodeModal">اضافة  جديد <i class='material-icons'>add</i> </button>
+                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#PromoCodeModal">اضافة جديد <i class='material-icons'>add</i></button>
                         </div>
-                    </div> *@
+                    </div>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-12">
-                    <div class="card">
+                    <div class="card promo-card">
                         <div class="card-header card-header-primary" style="text-align:right">
-                            <h4 class="card-title ">برومو</h4>
+                            <h4 class="card-title">برومو</h4>
                             <p class="card-category">جدول لعرض برومو كود داخل التطبيق</p>
                         </div>
                         <div class="card-body">
-                            <div class="table-responsive" style="text-align: right;">
+                            <div class="table-responsive" style="text-align:right;">
                                 <table class="table table-hover">
-                                    <thead class=" ">
-                                        <tr>   
-                                            <th scope="col">اسم المطعم</th> 
-                                            <th scope="col">نسبة</th> 
-                                            <th scope="col">اسم البرومو</th> 
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">اسم المطعم</th>
+                                            <th scope="col">نسبة %</th>
+                                            <th scope="col">مبلغ الخصم</th>
+                                            <th scope="col">اسم البرومو</th>
+                                            <th scope="col">الحد الاقصى</th>
+                                            <th scope="col">المستخدم</th>
+                                            <th scope="col">النطاق</th>
+                                            <th scope="col">الحالة</th>
                                             <th scope="col"></th>
                                         </tr>
                                     </thead>
-                                    <tbody id="tablePromoCode">
-                                    </tbody>
+                                    <tbody id="tablePromoCode"></tbody>
                                 </table>
                             </div>
                         </div>
@@ -56,24 +100,48 @@
 
 <!-- Modal -->
 <div class="modal fade" id="PromoCodeModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content dark-edition">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
-                <button type="button" id="close1" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true" style="font-size:155%">&times;</span>
+                <h5 class="modal-title" id="exampleModalLabel">اضافة / تعديل برومو كود</h5>
+                <button type="button" id="close1" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <div class="row"> 
-                    <div class="form-group col-md-12  alignright">
+                <div class="row">
+                    <div class="form-group col-md-6 alignright">
                         <label class="text-primary">اسم البرومو</label>
-                        <input type="text" id="PromoName" autocomplete="off" name="PromoName" class="form-control alignright" placeholder="اكتب اسم البرومو" />
-                    </div> 
-                    <div class="form-group col-md-12  alignright">
-                        <label class="text-primary">نسبة</label>
-                        <input type="text" id="Percentage" autocomplete="off" name="Percentage" class="form-control alignright" placeholder="اكتب النسبة " />
-                    </div> 
+                        <input type="text" id="PromoName" autocomplete="off" class="form-control alignright" placeholder="اكتب اسم البرومو" />
+                    </div>
+                    <div class="form-group col-md-6 alignright">
+                        <label class="text-primary">نسبة الخصم %</label>
+                        <input type="number" id="Percentage" autocomplete="off" class="form-control alignright" placeholder="اكتب النسبة" />
+                    </div>
+                    <div class="form-group col-md-6 alignright">
+                        <label class="text-primary">مبلغ الخصم (دينار)</label>
+                        <input type="number" id="DiscountAmount" autocomplete="off" class="form-control alignright" placeholder="مبلغ ثابت للخصم (اختياري)" />
+                    </div>
+                    <div class="form-group col-md-6 alignright">
+                        <label class="text-primary">الحد الاقصى للاستخدام</label>
+                        <input type="number" id="MaxOrders" autocomplete="off" class="form-control alignright" placeholder="0 = غير محدود" />
+                    </div>
+                    <div class="form-group col-md-6 alignright">
+                        <label class="text-primary">المطعم</label>
+                        <select id="RestaurantIdPromo" class="form-control alignright">
+                            <option value="0">اختر المطعم</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-3 alignright" style="padding-top:30px">
+                        <label>
+                            <input type="checkbox" id="IsForAllStores" /> لجميع المتاجر
+                        </label>
+                    </div>
+                    <div class="form-group col-md-3 alignright" style="padding-top:30px">
+                        <label>
+                            <input type="checkbox" id="IsActivePromo" checked /> فعال
+                        </label>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -83,44 +151,73 @@
         </div>
     </div>
 </div>
+
 <div id="mydiv">
     <script>
-
-        $("#close").on("click", (e) => {
-            e.preventDefault();
-            aftersavePromoCode();
-        });
-        $("#close1").on("click", (e) => {
-            e.preventDefault();
-            aftersavePromoCode();
-        });
-        $("#search-btn").on("click", (e) => {
-            RefreshPromoCode();
-        });
+        $("#close").on("click", (e) => { e.preventDefault(); aftersavePromoCode(); });
+        $("#close1").on("click", (e) => { e.preventDefault(); aftersavePromoCode(); });
+        $("#search-btn").on("click", (e) => { RefreshPromoCode(); });
 
         $(document).ready(function () {
             RefreshPromoCode();
-        });
-        $("#save").on("click", (e) => {
-            e.preventDefault();  
-            if ($("#PromoName").val() === "" || $("#PromoName").val().trim() === "") {
-                md.showNotification("رجاءا ادخل اسم البرومو ");
-                return;
-            } 
-            if ($("#Percentage").val() === "" || $("#Percentage").val().trim() === "") {
-                md.showNotification("رجاءا ادخل  النسبة ");
-                return;
-            } 
-            var data = new FormData();
-            data.append('PromoCodeId', _PromoCodeId);
-            data.append('Percentage', $("#Percentage").val());
-            data.append('PromoName', $("#PromoName").val());
-            call_ajax_withfile("POST", "PromoCode/Post", data, aftersavePromoCode); 
+            loadRestaurantsForPromo();
         });
 
+        function loadRestaurantsForPromo() {
+            call_ajax("GET", "Restaurant/GetAll", { Name: '' }, function (data) {
+                if (!data) return;
+                var sel = $('#RestaurantIdPromo');
+                sel.find('option:not(:first)').remove();
+                data.forEach(function (r) {
+                    sel.append('<option value="' + r.restaurantId + '">' + r.name + '</option>');
+                });
+            });
+        }
+
+        $("#save").on("click", (e) => {
+            e.preventDefault();
+            if ($("#PromoName").val() === "" || $("#PromoName").val().trim() === "") {
+                md.showNotification("رجاءا ادخل اسم البرومو"); return;
+            }
+            var data = new FormData();
+            data.append('PromoCodeId', _PromoCodeId);
+            data.append('Percentage', $("#Percentage").val() || 0);
+            data.append('PromoName', $("#PromoName").val());
+            data.append('DiscountAmount', $("#DiscountAmount").val() || 0);
+            data.append('MaxOrders', $("#MaxOrders").val() || 0);
+            data.append('RestaurantId', $("#RestaurantIdPromo").val() || 0);
+            data.append('IsForAllStores', $("#IsForAllStores").is(':checked'));
+            data.append('IsActive', $("#IsActivePromo").is(':checked'));
+            call_ajax_withfile("POST", "PromoCode/Post", data, aftersavePromoCode);
+        });
     </script>
 </div>
 
-
-
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    var promoCharts = {};
+    function loadPromoCharts() {
+        call_ajax("GET", "PromoCode/GetAll", null, function (data) {
+            if (!data) return;
+            $('#promoSummaryTotal').text(data.length);
+            var activeCount = data.filter(p => p.isActive).length;
+            var inactiveCount = data.length - activeCount;
+            $('#promoSummaryActive').text(activeCount);
+            if (promoCharts['status']) promoCharts['status'].destroy();
+            promoCharts['status'] = new Chart(document.getElementById('promoChartStatus'), {
+                type: 'doughnut', data: { labels: ['فعال', 'غير فعال'], datasets: [{ data: [activeCount, inactiveCount], backgroundColor: ['rgba(0,230,118,0.7)', 'rgba(255,82,82,0.7)'], borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff', font: { family: 'Tajawal' } } } } }
+            });
+            var storeMap = {};
+            data.forEach(function (p) { var s = p.restaurantName || 'جميع المتاجر'; storeMap[s] = (storeMap[s] || 0) + 1; });
+            var entries = Object.entries(storeMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
+            var palette = ['rgba(124,77,255,0.7)', 'rgba(0,176,255,0.7)', 'rgba(0,200,83,0.7)', 'rgba(255,145,0,0.7)', 'rgba(255,23,68,0.7)', 'rgba(0,191,165,0.7)', 'rgba(255,171,64,0.7)', 'rgba(156,39,176,0.7)'];
+            if (promoCharts['store']) promoCharts['store'].destroy();
+            promoCharts['store'] = new Chart(document.getElementById('promoChartByStore'), {
+                type: 'bar', data: { labels: entries.map(e => e[0]), datasets: [{ label: 'عدد الاكواد', data: entries.map(e => e[1]), backgroundColor: palette.slice(0, entries.length), borderRadius: 8, borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.08)' } }, y: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.08)' } } } }
+            });
+        });
+    }
+    $(document).ready(function () { setTimeout(loadPromoCharts, 500); });
+</script>

@@ -21,59 +21,30 @@
   <link href="~/lib/assets/css/material-dashboard.css?v=2.1.0" rel="stylesheet" />
   <!-- CSS Just for demo purpose, don't include it in your project -->
   <link href="~/lib/assets/demo/demo.css" rel="stylesheet" />
+  <link href="~/css/romana-theme.css" rel="stylesheet" asp-append-version="true" />
 </head>
-<body style="font-family: 'Tajawal';"  class="dark-edition">
-    
-   <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script> 
+<body style="font-family: 'Tajawal';" >
+
+    <!-- Core JS loaded FIRST so inline scripts in views can use $ -->
+    <script src="~/lib/assets/js/core/jquery.min.js"></script>
+    <script src="~/lib/assets/js/core/popper.min.js"></script>
+    <script src="~/lib/assets/js/core/bootstrap-material-design.min.js"></script>
+    <script src="~/lib/assets/js/plugins/bootstrap-notify.js"></script>
+    <script src="~/lib/assets/demo/demo.js"></script>
+
        <!-- CUT FROM HERE --> 
-       
+
   <div class="wrapper " >
-       
+
         <div>
         @RenderBody()
         </div>
-          </div>
-       
-    <script src="~/js/site.js" asp-append-version="true"></script> 
-    <script src="~/js/Carousel.js" asp-append-version="true"></script>
-    <script src="~/js/Admin.js" asp-append-version="true"></script>
-    <script src="~/js/RestaurantSubCategories.js" asp-append-version="true"></script>
-    <script src="~/js/SubCategories.js" asp-append-version="true"></script>
-    <script src="~/js/PromoCode.js" asp-append-version="true"></script>
-    <script src="~/js/CodeRes.js" asp-append-version="true"></script>
-    <script src="~/js/Restaurant.js" asp-append-version="true"></script> 
-    <script src="~/js/Products.js" asp-append-version="true"></script>
-    <script src="~/js/Categories.js" asp-append-version="true"></script>
-    <script src="~/js/Orders.js" asp-append-version="true"></script>
-    <script src="~/js/Stars.js" asp-append-version="true"></script>
-    <script src="~/js/City.js" asp-append-version="true"></script>
-    <script src="~/js/RestaurantCity.js" asp-append-version="true"></script>
-    <script src="~/js/Countries.js" asp-append-version="true"></script>
-    <script src="~/js/Users.js" asp-append-version="true"></script>
-    <script src="~/js/SaleMan.js" asp-append-version="true"></script>
-    <script src="~/js/Delivery.js" asp-append-version="true"></script>
-    <script src="~/js/ReportRes.js" asp-append-version="true"></script>
-    <script src="~/js/Question.js" asp-append-version="true"></script>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script> 
+  </div>
 
-    <!--   Core JS Files   -->
-      <script src="~/lib/assets/js/core/jquery.min.js"></script>
-      <script src="~/lib/assets/js/core/popper.min.js"></script>
-      <script src="~/lib/assets/js/core/bootstrap-material-design.min.js"></script>
-      <script src="https://unpkg.com/default-passive-events"></script>
-      <script src="~/lib/assets/js/plugins/perfect-scrollbar.jquery.min.js"></script>
-      <!-- Place this tag in your head or just before your close body tag. -->
-      <script async defer src="https://buttons.github.io/buttons.js"></script> 
-      <!-- Chartist JS -->
-      <script src="~/lib/assets/js/plugins/chartist.min.js"></script>
-      <!--  Notifications Plugin    -->
-      <script src="~/lib/assets/js/plugins/bootstrap-notify.js"></script>
-      <!-- Control Center for Material Dashboard: parallax effects, scripts for the example pages etc -->
-      <script src="~/lib/assets/js/material-dashboard.js?v=2.1.0"></script>
-      <!-- Material Dashboard DEMO methods, don't include it in your project! -->
-      <script src="~/lib/assets/demo/demo.js"></script>
-   
+    <script src="~/js/site.js" asp-append-version="true"></script> 
+    <script src="~/js/Admin.js" asp-append-version="true"></script>
+    <script src="~/js/rm-performance.js" asp-append-version="true"></script>
+    <script src="~/lib/assets/js/material-dashboard.js?v=2.1.0"></script>
+
 </body>
 </html>

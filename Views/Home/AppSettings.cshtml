@@ -1,0 +1,197 @@
+@{
+    ViewData["Title"] = "اعدادات النظام";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .settings-card {
+        animation: fadeInUp 0.6s ease-out;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .settings-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    }
+    @@keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .current-value {
+        font-size: 1.8rem;
+        font-weight: 900;
+        color: #4caf50;
+        animation: pulse 2s infinite;
+    }
+    @@keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.03); }
+        100% { transform: scale(1); }
+    }
+    .calc-result {
+        background: rgba(76, 175, 80, 0.1);
+        border: 1px solid #4caf50;
+        border-radius: 12px;
+        padding: 15px;
+        margin-top: 10px;
+        display: none;
+    }
+</style>
+
+<div class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Price Per KM -->
+            <div class="col-lg-6">
+                <div class="card settings-card" style="animation-delay:0.1s">
+                    <div class="card-header card-header-warning card-header-icon" style="text-align:right">
+                        <div class="card-icon"><i class="material-icons">speed</i></div>
+                        <h4 class="card-title">سعر الكيلومتر</h4>
+                    </div>
+                    <div class="card-body" style="text-align:right">
+                        <p>السعر الحالي: <span class="current-value" id="currentPricePerKm">0</span> د.ع</p>
+                        <div class="form-group">
+                            <label class="text-primary">السعر الجديد للكيلومتر</label>
+                            <input type="number" id="newPricePerKm" class="form-control" placeholder="ادخل السعر" />
+                        </div>
+                        <button class="btn btn-warning" id="btnUpdatePricePerKm">
+                            <i class="material-icons">save</i> تحديث سعر الكيلومتر
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Default Order Cost -->
+            <div class="col-lg-6">
+                <div class="card settings-card" style="animation-delay:0.2s">
+                    <div class="card-header card-header-success card-header-icon" style="text-align:right">
+                        <div class="card-icon"><i class="material-icons">monetization_on</i></div>
+                        <h4 class="card-title">كلفة التوصيل الافتراضية</h4>
+                    </div>
+                    <div class="card-body" style="text-align:right">
+                        <p>الكلفة الحالية: <span class="current-value" id="currentDefaultCost">0</span> د.ع</p>
+                        <div class="form-group">
+                            <label class="text-primary">الكلفة الجديدة</label>
+                            <input type="number" id="newDefaultCost" class="form-control" placeholder="ادخل الكلفة" />
+                        </div>
+                        <button class="btn btn-success" id="btnUpdateDefaultCost">
+                            <i class="material-icons">save</i> تحديث كلفة التوصيل
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delivery Cost Calculator -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card settings-card" style="animation-delay:0.3s">
+                    <div class="card-header card-header-info card-header-icon" style="text-align:right">
+                        <div class="card-icon"><i class="material-icons">place</i></div>
+                        <h4 class="card-title">حاسبة كلفة التوصيل بالموقع</h4>
+                    </div>
+                    <div class="card-body" style="text-align:right">
+                        <div class="row">
+                            <div class="form-group col-6">
+                                <label class="text-primary">خط عرض المتجر</label>
+                                <input type="number" step="any" id="calcStoreLat" class="form-control" placeholder="Lat" />
+                            </div>
+                            <div class="form-group col-6">
+                                <label class="text-primary">خط طول المتجر</label>
+                                <input type="number" step="any" id="calcStoreLng" class="form-control" placeholder="Lng" />
+                            </div>
+                            <div class="form-group col-6">
+                                <label class="text-primary">خط عرض الزبون</label>
+                                <input type="number" step="any" id="calcCustLat" class="form-control" placeholder="Lat" />
+                            </div>
+                            <div class="form-group col-6">
+                                <label class="text-primary">خط طول الزبون</label>
+                                <input type="number" step="any" id="calcCustLng" class="form-control" placeholder="Lng" />
+                            </div>
+                        </div>
+                        <button class="btn btn-info btn-block" id="btnCalcByLocation">
+                            <i class="material-icons">calculate</i> حساب الكلفة
+                        </button>
+                        <div class="calc-result" id="resultByLocation">
+                            <p>المسافة: <strong id="resDistLoc">0</strong> كم</p>
+                            <p>سعر الكم: <strong id="resPriceLoc">0</strong> د.ع</p>
+                            <p>الكلفة الكلية: <strong id="resTotalLoc" style="color:#4caf50; font-size:1.5rem">0</strong> د.ع</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card settings-card" style="animation-delay:0.4s">
+                    <div class="card-header card-header-primary card-header-icon" style="text-align:right">
+                        <div class="card-icon"><i class="material-icons">straighten</i></div>
+                        <h4 class="card-title">حاسبة كلفة التوصيل بالمسافة</h4>
+                    </div>
+                    <div class="card-body" style="text-align:right">
+                        <div class="form-group">
+                            <label class="text-primary">المسافة بالكيلومتر</label>
+                            <input type="number" step="any" id="calcDistKm" class="form-control" placeholder="ادخل المسافة" />
+                        </div>
+                        <button class="btn btn-primary btn-block" id="btnCalcByKm">
+                            <i class="material-icons">calculate</i> حساب الكلفة
+                        </button>
+                        <div class="calc-result" id="resultByKm">
+                            <p>المسافة: <strong id="resDistKm">0</strong> كم</p>
+                            <p>سعر الكم: <strong id="resPriceKm">0</strong> د.ع</p>
+                            <p>الكلفة الكلية: <strong id="resTotalKm" style="color:#4caf50; font-size:1.5rem">0</strong> د.ع</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="mydiv">
+    <script>
+        $(document).ready(function () {
+            call_ajax("GET", "AppSettings/Get", null, fillSettings);
+        });
+
+        function fillSettings(data) {
+            $('#currentPricePerKm').text(data.pricePerKm);
+            $('#currentDefaultCost').text(data.defaultOrderCost);
+            $('#newPricePerKm').val(data.pricePerKm);
+            $('#newDefaultCost').val(data.defaultOrderCost);
+        }
+
+        $('#btnUpdatePricePerKm').on('click', function () {
+            call_ajax("POST", "AppSettings/UpdatePricePerKm", { pricePerKm: $('#newPricePerKm').val() }, function () {
+                call_ajax("GET", "AppSettings/Get", null, fillSettings);
+            });
+        });
+
+        $('#btnUpdateDefaultCost').on('click', function () {
+            call_ajax("POST", "AppSettings/UpdateDefaultOrderCost", { defaultOrderCost: $('#newDefaultCost').val() }, function () {
+                call_ajax("GET", "AppSettings/Get", null, fillSettings);
+            });
+        });
+
+        $('#btnCalcByLocation').on('click', function () {
+            var params = {
+                storeLat: $('#calcStoreLat').val(),
+                storeLng: $('#calcStoreLng').val(),
+                customerLat: $('#calcCustLat').val(),
+                customerLng: $('#calcCustLng').val()
+            };
+            call_ajax("GET", "AppSettings/GetDeliveryCostByLocation", params, function (data) {
+                $('#resDistLoc').text(data.distanceKm);
+                $('#resPriceLoc').text(data.pricePerKm);
+                $('#resTotalLoc').text(data.totalCost);
+                $('#resultByLocation').fadeIn(400);
+            });
+        });
+
+        $('#btnCalcByKm').on('click', function () {
+            call_ajax("GET", "AppSettings/GetDeliveryCostByKm", { distanceKm: $('#calcDistKm').val() }, function (data) {
+                $('#resDistKm').text(data.distanceKm);
+                $('#resPriceKm').text(data.pricePerKm);
+                $('#resTotalKm').text(data.totalCost);
+                $('#resultByKm').fadeIn(400);
+            });
+        });
+    </script>
+</div>

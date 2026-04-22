@@ -9,41 +9,70 @@
     <div class="content dark-edition">
         <div class="container-fluid">
 
-            <div class="container alignright" style="margin:2% 0;">
+            <!-- Page Summary -->
+            <div class="rm-page-summary">
+                <div class="rm-summary-icon bg-green"><i class="material-icons">shopping_cart</i></div>
+                <div class="rm-summary-body">
+                    <h4>ادارة الطلبات</h4>
+                    <p>متابعة وادارة جميع الطلبات الواردة من الزبائن. يمكنك البحث بالرقم او اسم المطعم، تصفية حسب التاريخ والمحافظة، وتصدير البيانات الى ملف اكسل.</p>
+                </div>
+                <div class="rm-summary-stats">
+                    <div class="rm-stat"><span class="rm-stat-value" id="ordSummaryTotal">-</span><span class="rm-stat-label">اجمالي</span></div>
+                    <div class="rm-stat"><span class="rm-stat-value" id="ordSummaryAmount">-</span><span class="rm-stat-label">المبيعات</span></div>
+                </div>
+            </div>
+
+            <!-- Mini Charts -->
+            <div class="row rm-mini-chart-row">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header card-header-success" style="text-align:right">
+                            <h4 class="card-title"><i class="material-icons">trending_up</i> الطلبات اليومية</h4>
+                        </div>
+                        <div class="card-body"><div class="rm-mini-chart"><canvas id="ordChartDaily"></canvas></div></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header card-header-info" style="text-align:right">
+                            <h4 class="card-title"><i class="material-icons">pie_chart</i> الطلبات حسب المحافظة</h4>
+                        </div>
+                        <div class="card-body"><div class="rm-mini-chart"><canvas id="ordChartByCountry"></canvas></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="rm-filter-bar">
                 <div class="row">
-                    <div class="col-lg-6 col-md-6 col-sm-12 ">
+                    <div class="col-lg-4 col-md-6 col-sm-12 ">
                         <label class="mb-2">رقم الطلب</label>
                         <input type="text" id="OrderNo" name="OrderNo" class="form-control alignright" placeholder="ابحث عن رقم الطلب" />
                     </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12 ">
+                    <div class="col-lg-4 col-md-6 col-sm-12 ">
                         <label class="mb-2">اسم المطعم</label>
                         <input type="text" id="RestaurantName" name="RestaurantName" class="form-control alignright" placeholder="ابحث عن اسم المطعم" />
                     </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12 ">
-                        <label class="mb-2">تاريخ الى</label>
-                        <input type="date" name="dateto" id="dateto" class="form-control alignright" />
-                    </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12 ">
+                    <div class="col-lg-4 col-md-6 col-sm-12 ">
                         <label class="mb-2">تاريخ من</label>
                         <input type="date" name="datefrom" id="datefrom" class="form-control alignright" />
                     </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12 ">
-                            <p>اختيار المحافظة</p>
-                            <select class="form-control text-right" style="background-color: #1a2035;" name="CountriesId" id="CountriesId">
-                            </select>
-                        </div> 
-                    <div class="col-lg-4 col-md-2 col-sm-2 col-xs-2">
-                        <div class="text-center wow fadeInDown" style="text-align:left;">
-                            <label class="mb-2"></label>
-                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث</button>
-                        </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12 ">
+                        <label class="mb-2">تاريخ الى</label>
+                        <input type="date" name="dateto" id="dateto" class="form-control alignright" />
                     </div>
-
-                    <div class="col-lg-4 col-md-2 col-sm-2 col-xs-2">
-                        <div class="text-center wow fadeInDown">
-                            <label class="mb-2"> </label>
-                            <button type="button" id="execel-btn" class="btn btn-success btnwidth" style="text-align:center; width:100%;">اكسل<i class='material-icons'>add</i> </button>
-                        </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12 ">
+                        <p>اختيار المحافظة</p>
+                        <select class="form-control text-right" name="CountriesId" id="CountriesId">
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-6">
+                        <label class="mb-2"></label>
+                        <button type="button" id="search-btn" class="btn btn-info btn-block">بحث <i class='material-icons'>search</i></button>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-6">
+                        <label class="mb-2"> </label>
+                        <button type="button" id="execel-btn" class="btn btn-success btn-block">اكسل <i class='material-icons'>file_download</i></button>
                     </div>
                 </div>
             </div>
@@ -92,20 +121,20 @@
     </div>
 </div>
 
-<!-- Modal -->
+<!-- Modal Details -->
 <div class="modal fade" id="OrdersDetailsModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content dark-edition">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">تفاصيل الطلب</h5>
-                <button type="button" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true" style="font-size:155%">&times;</span>
+                <h5 class="modal-title" id="exampleModalLabel">تفاصيل الطلب <span id="detailOrderNo" class="badge-all"></span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
                 <div class="row">
-                    <table class="table  table-responsive   table-hover table-bordered text-center">
-                        <thead class=" ">
+                    <table class="table table-responsive table-hover table-bordered text-center">
+                        <thead>
                             <tr>
                                 <th scope="col">الكمية</th>
                                 <th scope="col">السعر</th>
@@ -118,6 +147,26 @@
                         <tbody id="tableOrdersDetail">
                         </tbody>
                     </table>
+                </div>
+                <!-- Add product to order section -->
+                <hr>
+                <h6 style="text-align:right;font-weight:700;"><i class="material-icons" style="vertical-align:middle;">add_circle</i> اضافة منتج للطلب</h6>
+                <div class="row" style="direction:rtl;">
+                    <div class="form-group col-md-4">
+                        <label>رقم المنتج (ProductsId)</label>
+                        <input type="number" id="addDetailProductId" class="form-control" placeholder="رقم المنتج" />
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label>السعر</label>
+                        <input type="number" step="0.01" id="addDetailPrice" class="form-control" placeholder="السعر" />
+                    </div>
+                    <div class="form-group col-md-3">
+                        <label>الكمية</label>
+                        <input type="number" id="addDetailCount" class="form-control" placeholder="الكمية" value="1" />
+                    </div>
+                    <div class="form-group col-md-2" style="display:flex;align-items:flex-end;">
+                        <button type="button" class="btn btn-success btn-block" id="addDetailBtn">اضافة <i class="material-icons">add</i></button>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -159,6 +208,70 @@
             window.open("/Orders/GetExcelAll?OrderNo=" + $("#OrderNo").val() + "&RestaurantName=" + $("#RestaurantName").val() + "&datefrom=" +
                 $("#datefrom").val() + "&dateto=" + $("#dateto").val() + "&CountriesId=" + $("#CountriesId").val() );
         });
+
+        // Add product to existing order
+        $("#addDetailBtn").on("click", function (e) {
+            e.preventDefault();
+            var prodId = parseInt($("#addDetailProductId").val());
+            var price = parseFloat($("#addDetailPrice").val());
+            var count = parseInt($("#addDetailCount").val());
+            if (!prodId || prodId <= 0) { md.showNotification("ادخل رقم المنتج"); return; }
+            if (!price || price <= 0) { md.showNotification("ادخل السعر"); return; }
+            if (!count || count <= 0) { md.showNotification("ادخل الكمية"); return; }
+            var detail = { OrderId: _id, ProductsId: prodId, Price: price, Count: count, Notes2: "" };
+            $.ajax({
+                method: "POST",
+                url: "/Orders/AddOrderDetail",
+                contentType: "application/json",
+                data: JSON.stringify(detail),
+                headers: { 'Authorization': 'Bearer ' + getCookie("token2") },
+                success: function (resp) {
+                    if (resp.success) {
+                        md.showNotification("تم اضافة المنتج بنجاح");
+                        OrderDetail(_id);
+                        $("#addDetailProductId").val('');
+                        $("#addDetailPrice").val('');
+                        $("#addDetailCount").val(1);
+                    } else {
+                        md.showNotification(resp.msg || "حدث خطأ");
+                    }
+                },
+                error: function () { md.showNotification("حدث خطأ عند الاتصال"); }
+            });
+        });
     </script>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    var ordCharts = {};
+    function loadOrdCharts() {
+        var df = $('#datefrom').val(), dt = $('#dateto').val();
+        call_ajax("GET", "Orders/GetAll", { OrderNo: '', RestaurantName: '', datefrom: df, dateto: dt, CountriesId: 0, state: 0 }, function (data) {
+            if (!data) return;
+            $('#ordSummaryTotal').text(data.length.toLocaleString());
+            var totalAmt = 0;
+            data.forEach(function (o) { totalAmt += o.netAmount || 0; });
+            $('#ordSummaryAmount').text(Math.round(totalAmt).toLocaleString());
+            var dailyMap = {};
+            data.forEach(function (o) { var d = new Date(o.orderDate).toLocaleDateString('ar-IQ'); dailyMap[d] = (dailyMap[d] || 0) + 1; });
+            var keys = Object.keys(dailyMap).slice(-14);
+            if (ordCharts['daily']) ordCharts['daily'].destroy();
+            ordCharts['daily'] = new Chart(document.getElementById('ordChartDaily'), {
+                type: 'bar', data: { labels: keys, datasets: [{ label: 'عدد الطلبات', data: keys.map(k => dailyMap[k]), backgroundColor: 'rgba(0,230,118,0.6)', borderColor: '#00e676', borderWidth: 2, borderRadius: 6 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff', font: { family: 'Tajawal' } } } }, scales: { x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.08)' } }, y: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.08)' } } } }
+            });
+            var countryMap = {};
+            data.forEach(function (o) { var c = o.countriesName || 'غير محدد'; countryMap[c] = (countryMap[c] || 0) + 1; });
+            var cEntries = Object.entries(countryMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
+            var palette = ['rgba(0,176,255,0.7)','rgba(124,77,255,0.7)','rgba(0,200,83,0.7)','rgba(255,145,0,0.7)','rgba(255,23,68,0.7)','rgba(0,191,165,0.7)','rgba(255,171,64,0.7)','rgba(156,39,176,0.7)'];
+            if (ordCharts['country']) ordCharts['country'].destroy();
+            ordCharts['country'] = new Chart(document.getElementById('ordChartByCountry'), {
+                type: 'doughnut', data: { labels: cEntries.map(c => c[0]), datasets: [{ data: cEntries.map(c => c[1]), backgroundColor: palette.slice(0, cEntries.length), borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff', font: { family: 'Tajawal' } } } } }
+            });
+        });
+    }
+    $(document).ready(function () { setTimeout(loadOrdCharts, 500); });
+</script>
 

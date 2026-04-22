@@ -8,12 +8,24 @@
     <div class="content dark-edition">
         <div class="container-fluid">
 
-            <div class="container alignright" style="margin:2% 0;">
+            <!-- Page Summary -->
+            <div class="rm-page-summary">
+                <div class="rm-summary-icon bg-teal"><i class="material-icons">qr_code</i></div>
+                <div class="rm-summary-body">
+                    <h4>ادارة كودات المطاعم</h4>
+                    <p>عرض وادارة الكودات المخصصة للمطاعم. يمكنك اضافة كودات جديدة والتحكم في توفرها لربطها بالمتاجر المسجلة في النظام.</p>
+                </div>
+                <div class="rm-summary-stats">
+                    <div class="rm-stat"><span class="rm-stat-value" id="codeSummaryTotal">-</span><span class="rm-stat-label">اجمالي</span></div>
+                </div>
+            </div>
+
+            <div class="rm-filter-bar">
                 <div class="row"> 
                     <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2" style="text-align: center;">
                         <div class="text-center wow fadeInDown" style="text-align:left;">
                             <label class="mb-2"> </label>
-                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث</button>
+                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث <i class='material-icons'>search</i></button>
                         </div>
                     </div>
                     <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
@@ -59,8 +71,8 @@
         <div class="modal-content dark-edition">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
-                <button type="button" id="close1" style="margin-left:10%;" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true" style="font-size:155%">&times;</span>
+                <button type="button" id="close1" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
@@ -105,7 +117,10 @@
         });
 
         $(document).ready(function () {
-            RefreshCodeRes();
+            call_ajax("GET", "CodeRes/GetAll", null, function(data) {
+                filltableCodeRes(data);
+                if (data) { $('#codeSummaryTotal').text(data.length); }
+            });
         });
         $("#save").on("click", (e) => {
             e.preventDefault();

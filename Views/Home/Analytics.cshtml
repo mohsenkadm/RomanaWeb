@@ -1,0 +1,421 @@
+@{
+    ViewData["Title"] = "تحليل البيانات";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .analytics-card {
+        animation: fadeInUp 0.6s ease-out;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .analytics-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+    }
+    @@keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(30px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @@keyframes slideInLeft {
+        from { opacity: 0; transform: translateX(-40px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    @@keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    .chart-container {
+        animation: slideInLeft 0.8s ease-out;
+        position: relative;
+        height: 350px;
+    }
+    .stat-number {
+        font-size: 2.2rem;
+        font-weight: 900;
+        animation: pulse 2s infinite;
+    }
+    .filter-section {
+        animation: fadeInUp 0.4s ease-out;
+        background: rgba(255,255,255,0.05);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
+    }
+    .analytics-card .card {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    .promo-analytics-table {
+        animation: fadeInUp 1s ease-out;
+    }
+    .badge-active { background: #4caf50; color: #fff; padding: 4px 12px; border-radius: 20px; }
+    .badge-inactive { background: #f44336; color: #fff; padding: 4px 12px; border-radius: 20px; }
+</style>
+
+<div class="content">
+    <div class="container-fluid">
+        <!-- Time Filter -->
+        <div class="filter-section">
+            <div class="row align-items-end">
+                <div class="col-lg-3 col-md-4">
+                    <div class="form-group" style="text-align:right">
+                        <label class="text-primary">من تاريخ</label>
+                        <input type="date" id="dateFrom" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-4">
+                    <div class="form-group" style="text-align:right">
+                        <label class="text-primary">الى تاريخ</label>
+                        <input type="date" id="dateTo" class="form-control" />
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4">
+                    <button class="btn btn-info btn-block" id="btnFilter" style="margin-top:10px;">
+                        <i class="material-icons">search</i> تحليل
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row">
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="analytics-card" style="animation-delay:0.1s">
+                    <div class="card card-stats">
+                        <div class="card-header card-header-warning card-header-icon">
+                            <div class="card-icon"><i class="material-icons">shopping_cart</i></div>
+                            <p class="card-category">اجمالي الطلبات</p>
+                            <h3 class="card-title stat-number" id="anTotalOrders">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="analytics-card" style="animation-delay:0.2s">
+                    <div class="card card-stats">
+                        <div class="card-header card-header-success card-header-icon">
+                            <div class="card-icon"><i class="material-icons">attach_money</i></div>
+                            <p class="card-category">اجمالي المبيعات</p>
+                            <h3 class="card-title stat-number" id="anTotalSales">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="analytics-card" style="animation-delay:0.3s">
+                    <div class="card card-stats">
+                        <div class="card-header card-header-info card-header-icon">
+                            <div class="card-icon"><i class="material-icons">local_offer</i></div>
+                            <p class="card-category">اجمالي الخصومات</p>
+                            <h3 class="card-title stat-number" id="anTotalDiscounts">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="analytics-card" style="animation-delay:0.4s">
+                    <div class="card card-stats">
+                        <div class="card-header card-header-danger card-header-icon">
+                            <div class="card-icon"><i class="material-icons">local_shipping</i></div>
+                            <p class="card-category">اجمالي التوصيل</p>
+                            <h3 class="card-title stat-number" id="anTotalDelivery">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card analytics-card" style="animation-delay:0.5s">
+                    <div class="card-header card-header-primary" style="text-align:right">
+                        <h4 class="card-title">الطلبات حسب المطعم</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartOrdersByRestaurant"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card analytics-card" style="animation-delay:0.6s">
+                    <div class="card-header card-header-success" style="text-align:right">
+                        <h4 class="card-title">المبيعات اليومية</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartDailySales"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Promo Code Analytics -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card analytics-card" style="animation-delay:0.7s">
+                    <div class="card-header card-header-info" style="text-align:right">
+                        <h4 class="card-title">تحليل البرومو كود</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartPromoUsage"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card analytics-card" style="animation-delay:0.8s">
+                    <div class="card-header card-header-warning" style="text-align:right">
+                        <h4 class="card-title">كلفة التوصيل حسب المنطقة</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="chartDeliveryCost"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Promo Code Table -->
+        <div class="row promo-analytics-table">
+            <div class="col-md-12">
+                <div class="card analytics-card">
+                    <div class="card-header card-header-primary" style="text-align:right">
+                        <h4 class="card-title">تفاصيل البرومو كود</h4>
+                        <p class="card-category">احصائيات استخدام اكواد الخصم</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive" style="text-align:right">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>اسم البرومو</th>
+                                        <th>المطعم</th>
+                                        <th>النسبة %</th>
+                                        <th>مبلغ الخصم</th>
+                                        <th>الحد الاقصى</th>
+                                        <th>المستخدم</th>
+                                        <th>نسبة الاستخدام</th>
+                                        <th>الحالة</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablePromoAnalytics"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<div id="mydiv">
+    <script>
+        var chartInstances = {};
+
+        $(document).ready(function () {
+            var today = new Date();
+            var monthAgo = new Date();
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            $('#dateFrom').val(monthAgo.toISOString().split('T')[0]);
+            $('#dateTo').val(today.toISOString().split('T')[0]);
+            loadAnalytics();
+        });
+
+        $('#btnFilter').on('click', function () {
+            loadAnalytics();
+        });
+
+        function loadAnalytics() {
+            var dateFrom = $('#dateFrom').val();
+            var dateTo = $('#dateTo').val();
+
+            // Load order analytics
+            call_ajax("GET", "Orders/GetAll", {
+                OrderNo: '', RestaurantName: '', datefrom: dateFrom, dateto: dateTo, CountriesId: 0, state: 0
+            }, fillOrderAnalytics);
+
+            // Load promo analytics
+            call_ajax("GET", "PromoCode/GetAnalytics", {
+                dateFrom: dateFrom, dateTo: dateTo
+            }, fillPromoAnalytics);
+
+            // Load delivery analytics
+            call_ajax("GET", "Delivery/GetAll", {
+                Name: '', CountriesId: 0, RestaurantName: '', datefrom: dateFrom, dateto: dateTo, No: 0
+            }, fillDeliveryAnalytics);
+        }
+
+        function fillOrderAnalytics(data) {
+            if (!data) return;
+
+            var totalOrders = data.length;
+            var totalSales = 0;
+            var totalDiscounts = 0;
+            var restaurantMap = {};
+            var dailyMap = {};
+
+            data.forEach(function (order) {
+                totalSales += order.netAmount || 0;
+                totalDiscounts += order.totalDiscount || 0;
+
+                // By restaurant
+                var rName = order.restaurantName || 'غير محدد';
+                restaurantMap[rName] = (restaurantMap[rName] || 0) + 1;
+
+                // By date
+                var d = new Date(order.orderDate).toLocaleDateString('ar-IQ');
+                dailyMap[d] = (dailyMap[d] || 0) + (order.netAmount || 0);
+            });
+
+            $('#anTotalOrders').text(totalOrders.toLocaleString());
+            $('#anTotalSales').text(Math.round(totalSales).toLocaleString() + ' د.ع');
+            $('#anTotalDiscounts').text(Math.round(totalDiscounts).toLocaleString() + ' د.ع');
+
+            // Chart: Orders by restaurant (top 10)
+            var sortedRes = Object.entries(restaurantMap).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            renderChart('chartOrdersByRestaurant', 'bar', {
+                labels: sortedRes.map(r => r[0]),
+                datasets: [{
+                    label: 'عدد الطلبات',
+                    data: sortedRes.map(r => r[1]),
+                    backgroundColor: generateColors(sortedRes.length, 0.7),
+                    borderColor: generateColors(sortedRes.length, 1),
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            }, { indexAxis: 'y' });
+
+            // Chart: Daily sales
+            var dailyKeys = Object.keys(dailyMap).slice(-30);
+            renderChart('chartDailySales', 'line', {
+                labels: dailyKeys,
+                datasets: [{
+                    label: 'المبيعات اليومية (د.ع)',
+                    data: dailyKeys.map(k => dailyMap[k]),
+                    borderColor: '#4caf50',
+                    backgroundColor: 'rgba(76,175,80,0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointHoverRadius: 8
+                }]
+            });
+        }
+
+        function fillPromoAnalytics(data) {
+            if (!data) return;
+
+            $('#tablePromoAnalytics').empty();
+            var promoNames = [];
+            var promoUsage = [];
+            var promoColors = [];
+
+            data.forEach(function (p, i) {
+                var statusBadge = p.isActive
+                    ? '<span class="badge-active">فعال</span>'
+                    : '<span class="badge-inactive">غير فعال</span>';
+                var usagePct = p.maxOrders > 0 ? p.usagePercentage + '%' : '-';
+
+                var row = '<tr style="animation: fadeInUp ' + (0.1 * i) + 's ease-out">' +
+                    '<td>' + p.promoName + '</td>' +
+                    '<td>' + (p.restaurantName || 'الكل') + '</td>' +
+                    '<td>' + p.percentage + '%</td>' +
+                    '<td>' + p.discountAmount + ' د.ع</td>' +
+                    '<td>' + (p.maxOrders > 0 ? p.maxOrders : 'غير محدود') + '</td>' +
+                    '<td>' + p.usedOrders + '</td>' +
+                    '<td>' + usagePct + '</td>' +
+                    '<td>' + statusBadge + '</td></tr>';
+                $('#tablePromoAnalytics').append(row);
+
+                promoNames.push(p.promoName);
+                promoUsage.push(p.usedOrders);
+                promoColors.push(generateColors(1, 0.7)[0]);
+            });
+
+            renderChart('chartPromoUsage', 'doughnut', {
+                labels: promoNames.slice(0, 8),
+                datasets: [{
+                    data: promoUsage.slice(0, 8),
+                    backgroundColor: generateColors(Math.min(promoNames.length, 8), 0.7),
+                    borderWidth: 2
+                }]
+            });
+        }
+
+        function fillDeliveryAnalytics(data) {
+            if (!data) return;
+
+            var totalDelivery = 0;
+            var cityMap = {};
+
+            data.forEach(function (d) {
+                totalDelivery += d.costDelivery || 0;
+                var city = d.cityName || 'غير محدد';
+                cityMap[city] = (cityMap[city] || 0) + (d.costDelivery || 0);
+            });
+
+            $('#anTotalDelivery').text(Math.round(totalDelivery).toLocaleString() + ' د.ع');
+
+            var sortedCities = Object.entries(cityMap).sort((a, b) => b[1] - a[1]).slice(0, 8);
+            renderChart('chartDeliveryCost', 'polarArea', {
+                labels: sortedCities.map(c => c[0]),
+                datasets: [{
+                    data: sortedCities.map(c => Math.round(c[1])),
+                    backgroundColor: generateColors(sortedCities.length, 0.6)
+                }]
+            });
+        }
+
+        function renderChart(canvasId, type, data, extraOpts) {
+            if (chartInstances[canvasId]) {
+                chartInstances[canvasId].destroy();
+            }
+            var ctx = document.getElementById(canvasId);
+            if (!ctx) return;
+            var opts = {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 1500, easing: 'easeOutQuart' },
+                plugins: {
+                    legend: { labels: { color: '#fff', font: { family: 'Tajawal' } } }
+                },
+                scales: {}
+            };
+            if (type === 'bar' || type === 'line') {
+                opts.scales = {
+                    x: { ticks: { color: '#aaa', font: { family: 'Tajawal' } }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                    y: { ticks: { color: '#aaa', font: { family: 'Tajawal' } }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                };
+            }
+            if (extraOpts) Object.assign(opts, extraOpts);
+
+            chartInstances[canvasId] = new Chart(ctx, { type: type, data: data, options: opts });
+        }
+
+        function generateColors(count, alpha) {
+            var palette = [
+                'rgba(156,39,176,' + alpha + ')',
+                'rgba(33,150,243,' + alpha + ')',
+                'rgba(76,175,80,' + alpha + ')',
+                'rgba(255,152,0,' + alpha + ')',
+                'rgba(244,67,54,' + alpha + ')',
+                'rgba(0,188,212,' + alpha + ')',
+                'rgba(255,235,59,' + alpha + ')',
+                'rgba(121,85,72,' + alpha + ')',
+                'rgba(63,81,181,' + alpha + ')',
+                'rgba(233,30,99,' + alpha + ')'
+            ];
+            var colors = [];
+            for (var i = 0; i < count; i++) colors.push(palette[i % palette.length]);
+            return colors;
+        }
+    </script>
+</div>

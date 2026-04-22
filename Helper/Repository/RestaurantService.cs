@@ -86,7 +86,7 @@ namespace RomanaWeb.Helper.Repository
             Restaurant.IsDelete= false;
             Restaurant.IsTop= false;
             Restaurant.StarCount= 0;
-            Restaurant.CostDelivery = 0;
+            Restaurant.CostDelivery = 3000;
             Restaurant.Code= "";
             Restaurant.Password= Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password!);
             await _context.Restaurant.AddAsync(Restaurant);

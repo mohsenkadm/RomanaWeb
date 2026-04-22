@@ -177,5 +177,58 @@ namespace RomanaWeb.Controllers
             }
         }
         #endregion
+
+        #region Validate PromoCode
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> ValidatePromoCode(string promoName, int restaurantId)
+        {
+            try
+            {
+                ResObj res = await _PromoCodeService.ValidatePromoCode(promoName, restaurantId);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "PromoCodeController => ValidatePromoCode");
+                return Response(false, "حدث خطأ اثناء عملية التحقق");
+            }
+        }
+        #endregion
+
+        #region Apply PromoCode to order
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> ApplyPromoCode(string promoName, int restaurantId, decimal orderTotal)
+        {
+            try
+            {
+                ResObj res = await _PromoCodeService.ApplyPromoCode(promoName, restaurantId, orderTotal);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "PromoCodeController => ApplyPromoCode");
+                return Response(false, "حدث خطأ اثناء عملية تطبيق الخصم");
+            }
+        }
+        #endregion
+
+        #region PromoCode Analytics
+        [HttpGet]
+        public async Task<IActionResult> GetAnalytics(DateTime dateFrom, DateTime dateTo)
+        {
+            try
+            {
+                ResObj res = await _PromoCodeService.GetAnalytics(dateFrom, dateTo);
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "PromoCodeController => GetAnalytics");
+                return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion
     }
 }

@@ -95,52 +95,23 @@ var listviews = [
     { view: 'Home/Login', index: 1 },
 ];
 function NextNavicationViews() {
-    if (indexviews >= listviews.length) return;
-    indexviews = indexviews + 1;
-    var view = listviews[indexviews - 1].view;
-    call_Action(view, 1);
+    window.history.back();
 }
 function PrevNavicationViews() {
-    if (indexviews == 1) return;
-    indexviews = indexviews - 1;
-    var view = listviews[indexviews - 1].view;
-    call_Action(view, 2);
+    window.history.forward();
 }
 
 function call_Action(url, fromnav = 0) {
     var userToken = getCookie("token2");
-    mouseevent("progress");
-    $.ajax({
-        method: 'GET',
-        url: "/" + url,
-        cache: true, async: true,
-        headers: {
-            'Authorization': `Bearer ${userToken}`,
-        },
-        success: (respons) => {
-            if (fromnav == 0) {
-                var lastindex = listviews[listviews.length - 1].index + 1;
-                var newObj = { view: url, index: lastindex };
-                listviews.push(newObj);
-                indexviews = indexviews + 1;
-            }
-            $('.loader').fadeIn();
-            mouseevent("default");
-            var from = respons.indexOf("<!-- CUT FROM HERE -->");
-            document.body.innerHTML = respons.substring(from, respons.length - 18);
-            window.scrollTo(0, 0);
-            var mydiv = document.getElementById("mydiv");
-            var scripts = mydiv.getElementsByTagName("script");
-
-            for (var i = 0; i < scripts.length; i++) { 
-                eval(scripts[i].innerText);
-            }
-
-            call_ajax("GET", "Admin/GetPermissionForLayout", null, filllayout);
-            $('.loader').fadeOut();
-        }
-    });
-
+    // Token/cookie security check - redirect to login if no token for protected pages
+    var publicPages = ['home/login', 'home/loginforres', 'do'];
+    var isPublic = publicPages.some(p => url.toLowerCase().indexOf(p) >= 0);
+    if (!isPublic && (!userToken || userToken.trim() === '')) {
+        window.location.href = '/Home/Login';
+        return;
+    }
+    // Real URL navigation instead of AJAX partial loading
+    window.location.href = '/' + url;
 }
 function mouseevent(type) {
     $("body").css("cursor", type);

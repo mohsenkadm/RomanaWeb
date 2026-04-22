@@ -1,0 +1,287 @@
+@{
+    ViewData["Title"] = "التقييمات الشاملة";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="container-fluid" style="direction:rtl;">
+
+        <!-- Page Summary -->
+        <div class="rm-page-summary">
+            <div class="rm-summary-icon bg-orange"><i class="material-icons">star_rate</i></div>
+            <div class="rm-summary-body">
+                <h4>ادارة التقييمات الشاملة</h4>
+                <p>عرض تقييمات الزبائن للمتاجر والمناديب مع رسوم بيانية تفصيلية. يمكنك البحث وتصفية النتائج ومراجعة التعليقات.</p>
+            </div>
+            <div class="rm-summary-stats">
+                <div class="rm-stat"><span class="rm-stat-value" id="ratTotalStore">-</span><span class="rm-stat-label">تقييمات المتاجر</span></div>
+                <div class="rm-stat"><span class="rm-stat-value" id="ratTotalDriver">-</span><span class="rm-stat-label">تقييمات المناديب</span></div>
+                <div class="rm-stat"><span class="rm-stat-value" id="ratAvgAll">-</span><span class="rm-stat-label">المعدل العام</span></div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row rm-mini-chart-row">
+            <div class="col-lg-3">
+                <div class="card">
+                    <div class="card-header" style="background:#fff !important;border-bottom:1px solid #e2e8f0;text-align:right;">
+                        <h4 class="card-title" style="color:#1e293b;"><i class="material-icons" style="vertical-align:middle;color:#d97706;margin-left:6px;">bar_chart</i> توزيع تقييمات المتاجر</h4>
+                    </div>
+                    <div class="card-body"><div class="rm-mini-chart"><canvas id="ratStoreDistChart"></canvas></div></div>
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <div class="card">
+                    <div class="card-header" style="background:#fff !important;border-bottom:1px solid #e2e8f0;text-align:right;">
+                        <h4 class="card-title" style="color:#1e293b;"><i class="material-icons" style="vertical-align:middle;color:#059669;margin-left:6px;">pie_chart</i> افضل المتاجر</h4>
+                    </div>
+                    <div class="card-body"><div class="rm-mini-chart"><canvas id="ratStoreTopChart"></canvas></div></div>
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <div class="card">
+                    <div class="card-header" style="background:#fff !important;border-bottom:1px solid #e2e8f0;text-align:right;">
+                        <h4 class="card-title" style="color:#1e293b;"><i class="material-icons" style="vertical-align:middle;color:#0891b2;margin-left:6px;">bar_chart</i> توزيع تقييمات المناديب</h4>
+                    </div>
+                    <div class="card-body"><div class="rm-mini-chart"><canvas id="ratDriverDistChart"></canvas></div></div>
+                </div>
+            </div>
+            <div class="col-lg-3">
+                <div class="card">
+                    <div class="card-header" style="background:#fff !important;border-bottom:1px solid #e2e8f0;text-align:right;">
+                        <h4 class="card-title" style="color:#1e293b;"><i class="material-icons" style="vertical-align:middle;color:#4f46e5;margin-left:6px;">pie_chart</i> افضل المناديب</h4>
+                    </div>
+                    <div class="card-body"><div class="rm-mini-chart"><canvas id="ratDriverTopChart"></canvas></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Store Ratings Section -->
+        <div class="rm-filter-bar">
+            <div class="row">
+                <div class="col-lg-6">
+                    <label class="mb-2">بحث عن اسم المطعم</label>
+                    <input type="text" class="form-control" id="ratStoreSearch" placeholder="اكتب اسم المطعم">
+                </div>
+                <div class="col-lg-2">
+                    <label class="mb-2"> </label>
+                    <button type="button" id="ratStoreSearchBtn" class="btn btn-info btn-block">بحث <i class="material-icons">search</i></button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header" style="background:#fff !important;border-bottom:1px solid #e2e8f0;text-align:right;">
+                        <h4 class="card-title" style="color:#1e293b;"><i class="material-icons" style="vertical-align:middle;color:#d97706;margin-left:6px;">store</i> تقييمات المتاجر</h4>
+                        <p class="card-category" style="color:#94a3b8;">تقييمات وتعليقات الزبائن على المتاجر</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive" style="text-align:right;">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>النجمات</th>
+                                        <th>التعليق</th>
+                                        <th>اسم المستخدم</th>
+                                        <th>اسم المطعم</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ratStoreTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Driver Ratings Section -->
+        <div class="rm-filter-bar" style="margin-top:20px;">
+            <div class="row">
+                <div class="col-lg-6">
+                    <label class="mb-2">بحث عن اسم المندوب</label>
+                    <input type="text" class="form-control" id="ratDriverSearch" placeholder="اكتب اسم المندوب">
+                </div>
+                <div class="col-lg-2">
+                    <label class="mb-2"> </label>
+                    <button type="button" id="ratDriverSearchBtn" class="btn btn-info btn-block">بحث <i class="material-icons">search</i></button>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header" style="background:#fff !important;border-bottom:1px solid #e2e8f0;text-align:right;">
+                        <h4 class="card-title" style="color:#1e293b;"><i class="material-icons" style="vertical-align:middle;color:#0891b2;margin-left:6px;">delivery_dining</i> تقييمات المناديب</h4>
+                        <p class="card-category" style="color:#94a3b8;">تقييمات وتعليقات الزبائن على المناديب</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive" style="text-align:right;">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>النجمات</th>
+                                        <th>التعليق</th>
+                                        <th>اسم المستخدم</th>
+                                        <th>اسم المندوب</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ratDriverTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<div id="mydiv">
+    <script>
+        var ratCharts = {};
+
+        function renderStarsHtml(count) {
+            var html = '';
+            for (var i = 1; i <= 5; i++) {
+                html += '<i class="material-icons" style="font-size:16px;color:' + (i <= count ? '#f59e0b' : '#e2e8f0') + ';">star</i>';
+            }
+            return html;
+        }
+
+        // ============ STORE RATINGS ============
+        function loadStoreRatings() {
+            var name = $('#ratStoreSearch').val() || '';
+            call_ajax("GET", "Stars/GetAll", { RestaurantName: name, index: 1 }, function (data) {
+                if (!data) data = [];
+                $('#ratTotalStore').text(data.length);
+
+                // Fill table
+                $('#ratStoreTable').empty();
+                $.each(data, function (i, item) {
+                    var rows = '<tr>' +
+                        '<td>' + renderStarsHtml(item.starsCount) + '</td>' +
+                        '<td>' + (item.comments || '') + '</td>' +
+                        '<td>' + (item.userName || '-') + '</td>' +
+                        '<td>' + (item.restaurantName || '-') + '</td>' +
+                        '<td><button type="button" class="btn btn-danger btn-sm" onclick="deleteStoreRating(' + item.starsId + ')">حذف</button></td>' +
+                        '</tr>';
+                    $('#ratStoreTable').append(rows);
+                });
+
+                // Distribution chart
+                var dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+                var sum = 0;
+                data.forEach(function (s) { var v = s.starsCount || 0; sum += v; if (v >= 1 && v <= 5) dist[v]++; });
+
+                if (ratCharts['storeDist']) ratCharts['storeDist'].destroy();
+                ratCharts['storeDist'] = new Chart(document.getElementById('ratStoreDistChart'), {
+                    type: 'bar',
+                    data: { labels: ['1 ⭐', '2 ⭐', '3 ⭐', '4 ⭐', '5 ⭐'], datasets: [{ label: 'عدد', data: [dist[1], dist[2], dist[3], dist[4], dist[5]], backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#059669'], borderRadius: 8 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } }, y: { ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } } } }
+                });
+
+                // Top stores chart
+                var resMap = {};
+                data.forEach(function (s) {
+                    var rn = s.restaurantName || 'غير محدد';
+                    if (!resMap[rn]) resMap[rn] = { total: 0, count: 0 };
+                    resMap[rn].total += (s.starsCount || 0);
+                    resMap[rn].count++;
+                });
+                var topRes = Object.entries(resMap).map(function (e) { return { name: e[0], avg: e[1].total / e[1].count }; }).sort(function (a, b) { return b.avg - a.avg; }).slice(0, 6);
+                var pal = ['rgba(79,70,229,0.75)', 'rgba(8,145,178,0.75)', 'rgba(5,150,105,0.75)', 'rgba(217,119,6,0.75)', 'rgba(220,38,38,0.75)', 'rgba(13,148,136,0.75)'];
+                if (ratCharts['storeTop']) ratCharts['storeTop'].destroy();
+                ratCharts['storeTop'] = new Chart(document.getElementById('ratStoreTopChart'), {
+                    type: 'doughnut',
+                    data: { labels: topRes.map(function (r) { return r.name; }), datasets: [{ data: topRes.map(function (r) { return r.avg.toFixed(1); }), backgroundColor: pal.slice(0, topRes.length), borderWidth: 2 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#475569', font: { family: 'Tajawal', size: 12 } } } } }
+                });
+
+                updateAvgAll(data.length, sum);
+            });
+        }
+
+        function deleteStoreRating(id) {
+            if (!confirm("هل تريد حذف هذا التقييم؟")) return;
+            call_ajax("DELETE", "Stars/Delete", { Id: id }, loadStoreRatings);
+        }
+
+        // ============ DRIVER RATINGS ============
+        var _driverSum = 0, _driverCount = 0;
+        function loadDriverRatings() {
+            var name = $('#ratDriverSearch').val() || '';
+            call_ajax("GET", "DriverStars/GetAll", { SaleManName: name }, function (data) {
+                if (!data) data = [];
+                $('#ratTotalDriver').text(data.length);
+                _driverCount = data.length;
+                _driverSum = 0;
+
+                $('#ratDriverTable').empty();
+                $.each(data, function (i, item) {
+                    _driverSum += (item.starsCount || 0);
+                    var rows = '<tr>' +
+                        '<td>' + renderStarsHtml(item.starsCount) + '</td>' +
+                        '<td>' + (item.comments || '') + '</td>' +
+                        '<td>' + (item.userName || '-') + '</td>' +
+                        '<td>' + (item.saleManName || '-') + '</td>' +
+                        '<td><button type="button" class="btn btn-danger btn-sm" onclick="deleteDriverRating(' + item.driverStarsId + ')">حذف</button></td>' +
+                        '</tr>';
+                    $('#ratDriverTable').append(rows);
+                });
+
+                // Distribution chart
+                var dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+                data.forEach(function (s) { var v = s.starsCount || 0; if (v >= 1 && v <= 5) dist[v]++; });
+
+                if (ratCharts['driverDist']) ratCharts['driverDist'].destroy();
+                ratCharts['driverDist'] = new Chart(document.getElementById('ratDriverDistChart'), {
+                    type: 'bar',
+                    data: { labels: ['1 ⭐', '2 ⭐', '3 ⭐', '4 ⭐', '5 ⭐'], datasets: [{ label: 'عدد', data: [dist[1], dist[2], dist[3], dist[4], dist[5]], backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#059669'], borderRadius: 8 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } }, y: { ticks: { color: '#64748b' }, grid: { color: '#f1f5f9' } } } }
+                });
+
+                // Top drivers chart
+                var drvMap = {};
+                data.forEach(function (s) {
+                    var dn = s.saleManName || 'غير محدد';
+                    if (!drvMap[dn]) drvMap[dn] = { total: 0, count: 0 };
+                    drvMap[dn].total += (s.starsCount || 0);
+                    drvMap[dn].count++;
+                });
+                var topDrv = Object.entries(drvMap).map(function (e) { return { name: e[0], avg: e[1].total / e[1].count }; }).sort(function (a, b) { return b.avg - a.avg; }).slice(0, 6);
+                var dpal = ['rgba(8,145,178,0.75)', 'rgba(79,70,229,0.75)', 'rgba(217,119,6,0.75)', 'rgba(5,150,105,0.75)', 'rgba(220,38,38,0.75)', 'rgba(13,148,136,0.75)'];
+                if (ratCharts['driverTop']) ratCharts['driverTop'].destroy();
+                ratCharts['driverTop'] = new Chart(document.getElementById('ratDriverTopChart'), {
+                    type: 'doughnut',
+                    data: { labels: topDrv.map(function (r) { return r.name; }), datasets: [{ data: topDrv.map(function (r) { return r.avg.toFixed(1); }), backgroundColor: dpal.slice(0, topDrv.length), borderWidth: 2 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#475569', font: { family: 'Tajawal', size: 12 } } } } }
+                });
+            });
+        }
+
+        function deleteDriverRating(id) {
+            if (!confirm("هل تريد حذف هذا التقييم؟")) return;
+            call_ajax("DELETE", "DriverStars/Delete", { Id: id }, loadDriverRatings);
+        }
+
+        var _storeSum = 0, _storeCount = 0;
+        function updateAvgAll(sCount, sSum) {
+            _storeCount = sCount; _storeSum = sSum;
+            var totalCount = _storeCount + _driverCount;
+            var totalSum = _storeSum + _driverSum;
+            $('#ratAvgAll').text(totalCount > 0 ? (totalSum / totalCount).toFixed(1) : '-');
+        }
+
+        // ============ INIT ============
+        $(document).ready(function () {
+            loadStoreRatings();
+            loadDriverRatings();
+        });
+        $('#ratStoreSearchBtn').on('click', function () { loadStoreRatings(); });
+        $('#ratDriverSearchBtn').on('click', function () { loadDriverRatings(); });
+    </script>
+</div>

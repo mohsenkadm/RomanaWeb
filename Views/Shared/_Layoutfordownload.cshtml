@@ -1,39 +1,41 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>تطبيق رمانة</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="~/css/romana-theme.css" rel="stylesheet" asp-append-version="true" />
 </head>
-<body style="font-family: 'Tajawal'; background-color:rgba(180,25,33,255);">
-    <header style="background-color:white;">
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm  border-bottom box-shadow mb-3">
+<body style="font-family: 'Tajawal', 'Inter', sans-serif; background: var(--rm-bg-primary);">
+    <header style="background:#fff;box-shadow:var(--rm-shadow);">
+        <nav class="navbar navbar-expand-sm">
             <div class="container">
-                <a class="navbar-brand" href="#">
-                    <img src="~/images/logo.png" width="180" height="90" alt="">
+                <a class="navbar-brand" href="#" style="display:inline-flex;align-items:center;gap:10px;">
+                    <img src="~/images/logo.png" width="72" height="36" alt="logo" style="object-fit:contain;" />
+                    <span style="font-weight:800;color:var(--rm-text);font-size:1.1rem;">تطبيق رمانة</span>
                 </a>
-                <a class="navbar-brand text-black" style="font-size: 24px; color:white;">تطبيق رمانة</a>
             </div>
         </nav>
     </header>
     <div class="container">
         <main role="main" class="pb-3">
-            @RenderBody()
+            <div class="rm-download-card">
+                @RenderBody()
+            </div>
         </main>
-    </div> 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2024 - تطبيق رمانة
-        </div>
+    </div>
+    <footer class="text-center" style="color:var(--rm-text-muted);font-size:0.85rem;padding:18px 0;">
+        &copy; @DateTime.Now.Year — تطبيق رمانة
     </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/rm-performance.js" asp-append-version="true"></script>
 
     @RenderSection("Scripts", required: false)
 </body>

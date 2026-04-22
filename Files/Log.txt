@@ -238,3 +238,219 @@ LogDT = 3/4/2026 11:46:09 PM
 
 ********************************************** 
 
+LogDT = 4/17/2026 2:44:21 AM 
+ LogMsg = PromoCodeController => GetAnalytics 
+ LogDesc = Msg=PromoCodeController => GetAnalytics;Ex.Msg=Invalid column name 'DiscountAmount'.
+Invalid column name 'IsActive'.
+Invalid column name 'IsForAllStores'.
+Invalid column name 'MaxOrders'.
+Invalid column name 'UsedOrders'.; 
+
+********************************************** 
+
+LogDT = 4/17/2026 2:44:21 AM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DiscountAmount'.; 
+
+********************************************** 
+
+LogDT = 4/17/2026 2:44:26 AM 
+ LogMsg = PromoCodeController => GetAnalytics 
+ LogDesc = Msg=PromoCodeController => GetAnalytics;Ex.Msg=Invalid column name 'DiscountAmount'.
+Invalid column name 'IsActive'.
+Invalid column name 'IsForAllStores'.
+Invalid column name 'MaxOrders'.
+Invalid column name 'UsedOrders'.; 
+
+********************************************** 
+
+LogDT = 4/17/2026 2:44:26 AM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DiscountAmount'.; 
+
+********************************************** 
+
+LogDT = 4/17/2026 2:45:29 AM 
+ LogMsg = AppSettingsController => Get 
+ LogDesc = Msg=AppSettingsController => Get;Ex.Msg=Invalid object name 'dbo.AppSettings'.; 
+
+********************************************** 
+
+LogDT = 4/17/2026 2:45:29 AM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'dbo'.; 
+
+********************************************** 
+
+LogDT = 4/17/2026 2:45:37 AM 
+ LogMsg = AppSettingsController => GetDeliveryCostByKm 
+ LogDesc = Msg=AppSettingsController => GetDeliveryCostByKm;Ex.Msg=Invalid object name 'dbo.AppSettings'.; 
+
+********************************************** 
+
+LogDT = 4/17/2026 2:45:37 AM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'dbo'.; 
+
+********************************************** 
+
+LogDT = 4/17/2026 1:33:04 PM 
+ LogMsg = PromoCodeController => GetAnalytics 
+ LogDesc = Msg=PromoCodeController => GetAnalytics;Ex.Msg=Invalid column name 'DiscountAmount'.
+Invalid column name 'IsActive'.
+Invalid column name 'IsForAllStores'.
+Invalid column name 'MaxOrders'.
+Invalid column name 'UsedOrders'.; 
+
+********************************************** 
+
+LogDT = 4/17/2026 1:33:04 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DiscountAmount'.; 
+
+********************************************** 
+
+LogDT = 4/17/2026 1:42:45 PM 
+ LogMsg = PromoCodeController => GetAnalytics 
+ LogDesc = Msg=PromoCodeController => GetAnalytics;Ex.Msg=Invalid column name 'DiscountAmount'.
+Invalid column name 'IsActive'.
+Invalid column name 'IsForAllStores'.
+Invalid column name 'MaxOrders'.
+Invalid column name 'UsedOrders'.; 
+
+********************************************** 
+
+LogDT = 4/17/2026 1:42:45 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DiscountAmount'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 2:30:20 PM 
+ LogMsg = AppSettingsController => Get 
+ LogDesc = Msg=AppSettingsController => Get;Ex.Msg=Invalid object name 'dbo.AppSettings'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 2:30:20 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'dbo'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 2:30:53 PM 
+ LogMsg = PromoCodeController => GetAnalytics 
+ LogDesc = Msg=PromoCodeController => GetAnalytics;Ex.Msg=Invalid column name 'DiscountAmount'.
+Invalid column name 'IsActive'.
+Invalid column name 'IsForAllStores'.
+Invalid column name 'MaxOrders'.
+Invalid column name 'UsedOrders'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 2:30:53 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DiscountAmount'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 3:09:25 PM 
+ LogMsg = PromoCodeController => GetAnalytics 
+ LogDesc = Msg=PromoCodeController => GetAnalytics;Ex.Msg=Invalid column name 'DiscountAmount'.
+Invalid column name 'IsActive'.
+Invalid column name 'IsForAllStores'.
+Invalid column name 'MaxOrders'.
+Invalid column name 'UsedOrders'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 3:09:25 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DiscountAmount'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 3:57:20 PM 
+ LogMsg = AppSettingsController => Get 
+ LogDesc = Msg=AppSettingsController => Get;Ex.Msg=Invalid object name 'dbo.AppSettings'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 3:57:20 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'dbo'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 3:57:34 PM 
+ LogMsg = AppSettingsController => Get 
+ LogDesc = Msg=AppSettingsController => Get;Ex.Msg=Invalid object name 'dbo.AppSettings'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 3:57:34 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'dbo'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 3:58:55 PM 
+ LogMsg = AppSettingsController => Get 
+ LogDesc = Msg=AppSettingsController => Get;Ex.Msg=Invalid object name 'dbo.AppSettings'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 3:58:55 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'dbo'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 5:00:03 PM 
+ LogMsg = PromoCodeController => GetAnalytics 
+ LogDesc = Msg=PromoCodeController => GetAnalytics;Ex.Msg=Invalid column name 'DiscountAmount'.
+Invalid column name 'IsActive'.
+Invalid column name 'IsForAllStores'.
+Invalid column name 'MaxOrders'.
+Invalid column name 'UsedOrders'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 5:00:03 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DiscountAmount'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 5:00:24 PM 
+ LogMsg = PromoCodeController => GetAnalytics 
+ LogDesc = Msg=PromoCodeController => GetAnalytics;Ex.Msg=Invalid column name 'DiscountAmount'.
+Invalid column name 'IsActive'.
+Invalid column name 'IsForAllStores'.
+Invalid column name 'MaxOrders'.
+Invalid column name 'UsedOrders'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 5:00:24 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DiscountAmount'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 5:00:35 PM 
+ LogMsg = PromoCodeController => GetAnalytics 
+ LogDesc = Msg=PromoCodeController => GetAnalytics;Ex.Msg=Invalid column name 'DiscountAmount'.
+Invalid column name 'IsActive'.
+Invalid column name 'IsForAllStores'.
+Invalid column name 'MaxOrders'.
+Invalid column name 'UsedOrders'.; 
+
+********************************************** 
+
+LogDT = 4/18/2026 5:00:35 PM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'DiscountAmount'.; 
+
+********************************************** 
+

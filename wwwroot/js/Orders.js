@@ -47,7 +47,7 @@ function filltableOrders(data) {
             "<td>" + item.categoriesName + "</td>" +
             "<td>" + item.orderDate + "</td>" +
             "<td>" + item.orderNo + "</td>"+
-            "  <td>  <button type='button' class='btn btn-info' onclick='OrderDetailForRes(" + item.orderId + ")'  data-toggle='modal' data-target='#OrdersDetailsModal'>تفاصيل الطلب</button></td></tr>";
+            "  <td>  <button type='button' class='btn btn-info' onclick='OrderDetail(" + item.orderId + ")'  data-toggle='modal' data-target='#OrdersDetailsModal'>تفاصيل الطلب</button></td></tr>";
 
               $('#tableOrders').append(rows); 
         $('#IsDone' + item.orderId).attr('checked', item.isDone);

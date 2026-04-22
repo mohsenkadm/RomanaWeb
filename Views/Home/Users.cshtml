@@ -8,7 +8,21 @@
     <div class="content dark-edition">
         <div class="container-fluid">
 
-            <div class="container alignright" style="margin:2% 0;">
+            <!-- Page Summary -->
+            <div class="rm-page-summary">
+                <div class="rm-summary-icon bg-orange"><i class="material-icons">people</i></div>
+                <div class="rm-summary-body">
+                    <h4>ادارة الزبائن</h4>
+                    <p>عرض وادارة جميع الزبائن المسجلين في التطبيق. يمكنك اضافة زبائن جدد، تعديل بياناتهم، تفعيل او تعطيل حساباتهم، ومراجعة معلومات التواصل والعناوين.</p>
+                </div>
+                <div class="rm-summary-stats">
+                    <div class="rm-stat"><span class="rm-stat-value" id="userSummaryTotal">-</span><span class="rm-stat-label">اجمالي</span></div>
+                    <div class="rm-stat"><span class="rm-stat-value" id="userSummaryActive">-</span><span class="rm-stat-label">نشط</span></div>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="rm-filter-bar">
                 <div class="row">
                     <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
                         <div class="text-center wow fadeInDown">
@@ -25,6 +39,9 @@
                             <label class="mb-2"> </label>
                             <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث <i class='material-icons'>search</i>  </button>
                         </div>
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-12" style="padding-top:24px;">
+                        <span class="rm-total-badge"><i class="material-icons">people</i> <span id="userTotalCount">0</span> زبون</span>
                     </div>
                 </div>
             </div>
@@ -71,8 +88,8 @@
         <div class="modal-content dark-edition">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
-                <button type="button" style="margin-left:10%;" id="close1" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true" style="font-size:155%">&times;</span>
+                <button type="button" id="close1" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
@@ -134,7 +151,15 @@
         });
         $(document).ready(function () {
             var obj = { Name: $("#Namese").val() }
-            call_ajax("GET", "Users/GetAll", null, filltableUsers);
+            call_ajax("GET", "Users/GetAll", null, function(data) {
+                filltableUsers(data);
+                if (data) {
+                    $('#userSummaryTotal').text(data.length);
+                    $('#userTotalCount').text(data.length);
+                    var active = data.filter(u => u.isActive).length;
+                    $('#userSummaryActive').text(active);
+                }
+            });
         });
         $("#save").on("click", (e) => {
             e.preventDefault();

@@ -3,49 +3,96 @@
     Layout = "~/Views/Shared/_LayoutForLogin.cshtml";
 }
 
-<div class="container formlogin" style="margin: 10% auto;">
-    <div class="card alignright">
-        <div class="card-header card-header-info alignright">
-            <h4 class="card-title">تسجيل الدخول</h4>
-            <p class="card-category">املأ الحقول لتسجيل الدخول الى النظام</p>
-        </div>
-        <div class="card-body alignright">
-            <div class="form-group   alignright">
-                <label class="text-primary" style="width:100% ">رقم المستخدم</label>
-                <input type="text" id="UserName" autocomplete="off" name="UserName" class="form-control alignright" placeholder="اكتب رقم المستخدم" />
-            </div>
-            <div class="form-group   alignright">
-                <label class="text-primary" style="width:100% ">كلمة المرور</label>
-                <input type="text" id="Password" autocomplete="off" name="Password" class="form-control alignright" placeholder="اكتب كلمة المرور" />
-            </div>
-            <button type="button" id="login-btn" class="btn btn-primary btn-animated">تسجيل دخول</button>
+<div class="rm-login-page">
+    <!-- Animated background shapes -->
+    <div class="rm-login-bg">
+        <div class="rm-login-shape rm-login-shape-1"></div>
+        <div class="rm-login-shape rm-login-shape-2"></div>
+        <div class="rm-login-shape rm-login-shape-3"></div>
+    </div>
 
+    <!-- Centered card -->
+    <div class="rm-login-card">
+        <!-- Logo -->
+        <div class="rm-login-card-logo">
+            <i class="material-icons">storefront</i>
+        </div>
+
+        <h1 class="rm-login-card-title">نظام رمانة</h1>
+        <p class="rm-login-card-sub">أدخل بياناتك للوصول إلى لوحة التحكم</p>
+
+        <!-- Username -->
+        <div class="rm-login-field">
+            <div class="rm-login-field-icon"><i class="material-icons">person_outline</i></div>
+            <div class="rm-login-field-body">
+                <label for="UserName">رقم المستخدم</label>
+                <input type="text" id="UserName" autocomplete="off" name="UserName" placeholder="اكتب رقم المستخدم" />
+            </div>
+        </div>
+
+        <!-- Password -->
+        <div class="rm-login-field">
+            <div class="rm-login-field-icon"><i class="material-icons">lock_outline</i></div>
+            <div class="rm-login-field-body">
+                <label for="Password">كلمة المرور</label>
+                <input type="password" id="Password" autocomplete="off" name="Password" placeholder="اكتب كلمة المرور" />
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="button" id="login-btn" class="rm-login-btn">
+            دخول
+            <i class="material-icons">arrow_back</i>
+        </button>
+
+        <!-- Footer -->
+        <div class="rm-login-card-footer">
+            © @DateTime.Now.Year تطبيق رمانة — جميع الحقوق محفوظة
         </div>
     </div>
 </div>
+
 <div id="mydiv">
     <script>
-
-
         function after_login(token) {
             setCookie("token2", token.token, 0.5);
             call_Action("home/index");
         }
-        $("#login-btn").on("click", (e) => {
-            e.preventDefault();
+
+        function doLogin() {
+            var btn = document.getElementById('login-btn');
             var object = {
                 AdminNo: $("#UserName").val(),
                 password: $("#Password").val(),
             };
-            if (object.AdminNo === "" || object.AdminNo.trim() === "") {
+            if (!object.AdminNo || !object.AdminNo.trim()) {
                 md.showNotification("يرجى ادخال رقم المستخدم");
                 return;
             }
-            else if (object.password === "" || object.password.trim() === "") {
+            if (!object.password || !object.password.trim()) {
                 md.showNotification("يرجى ادخال كلمة المرور");
                 return;
             }
-            call_ajax("POST", "Admin/Login", object, after_login);
+            btn.classList.add('rm-login-btn--loading');
+            btn.disabled = true;
+            call_ajax("POST", "Admin/Login", object, function (token) {
+                btn.classList.remove('rm-login-btn--loading');
+                btn.disabled = false;
+                after_login(token);
+            });
+            // Re-enable after timeout in case of error
+            setTimeout(function () { btn.classList.remove('rm-login-btn--loading'); btn.disabled = false; }, 5000);
+        }
+
+        $("#login-btn").on("click", function (e) { e.preventDefault(); doLogin(); });
+        $("#UserName, #Password").on("keypress", function (e) { if (e.which === 13) doLogin(); });
+
+        // Focus animation
+        $(".rm-login-field input").on("focus", function () {
+            $(this).closest(".rm-login-field").addClass("rm-login-field--focus");
+        }).on("blur", function () {
+            $(this).closest(".rm-login-field").removeClass("rm-login-field--focus");
         });
     </script>
 </div>
+

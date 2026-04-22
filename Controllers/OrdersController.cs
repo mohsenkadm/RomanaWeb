@@ -709,5 +709,115 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
+        #region Modify Order - Delete old details and add new ones
+        [HttpPost]
+        public async Task<IActionResult> ModifyOrder(int OrderId, [FromBody] List<OrderDetail> newDetails)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.ModifyOrder(OrderId, newDetails);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => ModifyOrder");
+                return Response(false, "حدث خطا اثناء عملية تعديل الطلب");
+            }
+        }
+        #endregion
+
+        #region Add single product to existing order
+        [HttpPost]
+        public async Task<IActionResult> AddOrderDetail([FromBody] OrderDetail detail)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.AddOrderDetail(detail);
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => AddOrderDetail");
+                return Response(false, "حدث خطا اثناء عملية اضافة المنتج");
+            }
+        }
+        #endregion
+
+        #region Get Nearby Driver Orders (for mobile app)
+        [AllowAnonymous]
+        [HttpGet("Orders/GetNearbyDriverOrders/{SaleManId},{Lat},{Lng},{RadiusKm}")]
+        public async Task<IActionResult> GetNearbyDriverOrders(int SaleManId, double Lat, double Lng, double RadiusKm)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.GetNearbyDriverOrders(SaleManId, Lat, Lng, RadiusKm);
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => GetNearbyDriverOrders");
+                return Response(false, "حدث خطا اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion
+
+        #region Approve Order By SaleMan (driver claims order)
+        [HttpPost("Orders/ApproveOrderBySaleMan/{OrderId},{SaleManId}")]
+        public async Task<IActionResult> ApproveOrderBySaleMan(int OrderId, int SaleManId)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.ApproveOrderBySaleMan(OrderId, SaleManId);
+                if (!res.success)
+                    return Response(res.success, res.msg);
+
+                Orders orders = (Orders)res.data;
+
+                // Notify the restaurant
+                List<string> ids = new List<string>();
+                ids.Add(orders.RestaurantId.ToString());
+                string driverName = await _OrdersService.GetSaleManPersonById(SaleManId);
+                Notification notification = new Notification
+                {
+                    Title = "مندوب جديد",
+                    Details = $"المندوب {driverName} قبل توصيل الطلب رقم {orders.OrderNo}",
+                    DateInsert = Key.DateTimeIQ,
+                    ResId = orders.RestaurantId,
+                    UserId = 0,
+                    SaleManId = 0,
+                    Images = ""
+                };
+                await _noteService.Post(notification);
+                try { await OneSignalSenderRes(notification.Title, notification.Details, ids); }
+                catch { }
+
+                // Notify the user
+                List<string> userIds = new List<string>();
+                userIds.Add(orders.UserId.ToString());
+                string userName = await _OrdersService.GetNamePersonById(orders.UserId);
+                Notification userNotif = new Notification
+                {
+                    Title = "طلبك",
+                    Details = $"مرحبا {userName}، المندوب {driverName} في الطريق اليك لتوصيل طلبك رقم {orders.OrderNo}",
+                    DateInsert = Key.DateTimeIQ,
+                    UserId = orders.UserId,
+                    ResId = 0,
+                    SaleManId = 0,
+                    Images = ""
+                };
+                await _noteService.Post(userNotif);
+                try { await OneSignalSenderUser(userNotif.Title, userNotif.Details, userIds); }
+                catch { }
+
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => ApproveOrderBySaleMan");
+                return Response(false, "حدث خطا اثناء عملية قبول الطلب");
+            }
+        }
+        #endregion
+
     }
 }

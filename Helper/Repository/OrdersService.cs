@@ -94,11 +94,17 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> Post(Orders orders)
         {
-                             
+
             var checkshop = await _context.Restaurant.FirstOrDefaultAsync(i=>i.RestaurantId==orders.RestaurantId );
             if (checkshop == null)
             {
                 return Result.Return(false,"اسم المطعم غير موجود");
+            }
+
+            // Verify order cost / delivery cost
+            if (orders.CostDelivery == null || orders.CostDelivery < 0)
+            {
+                orders.CostDelivery = checkshop.CostDelivery ?? 3000;
             }
 
             var lastorder = await _context.Orders.AsSplitQuery().AsNoTracking().OrderBy(i=>i.OrderId).LastOrDefaultAsync();
@@ -299,6 +305,126 @@ namespace RomanaWeb.Helper.Repository
             var item= await _context.SaleMan.Where(i => i.SaleManId == SaleManId).FirstOrDefaultAsync();
             if (item == null) return "";
             else return item.Name;
+        }
+
+        public async Task<ResObj> ModifyOrder(int orderId, List<OrderDetail> newDetails)
+        {
+            var order = await GetOrdersById(orderId);
+            if (order == null)
+                return Result.Return(false, "الطلب غير موجود");
+
+            // Delete old details
+            var oldDetails = await GetOrdersDetailById(orderId);
+            foreach (var d in oldDetails)
+            {
+                _context.Entry(d).State = EntityState.Deleted;
+            }
+            await _context.SaveChangesAsync();
+
+            // Add new details
+            double total = 0;
+            foreach (var d in newDetails)
+            {
+                d.OrderId = orderId;
+                total += d.Price * d.Count;
+            }
+            await _context.OrderDetail.AddRangeAsync(newDetails);
+
+            // Update order totals
+            order.Total = total;
+            order.NetAmount = total - order.TotalDiscount;
+            _context.Entry(order).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Result.Return(true, "تم تعديل الطلب بنجاح", order);
+        }
+
+        public async Task<ResObj> AddOrderDetail(OrderDetail detail)
+        {
+            var order = await GetOrdersById(detail.OrderId);
+            if (order == null)
+                return Result.Return(false, "الطلب غير موجود");
+
+            await _context.OrderDetail.AddAsync(detail);
+
+            // Update order totals
+            order.Total += detail.Price * detail.Count;
+            order.NetAmount = order.Total - order.TotalDiscount;
+            _context.Entry(order).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Result.Return(true, "تم اضافة المنتج بنجاح", detail);
+        }
+
+        public async Task<ResObj> GetNearbyDriverOrders(int saleManId, double lat, double lng, double radiusKm)
+        {
+            // Get pending orders (approved but no driver assigned yet)
+            var pendingOrders = await _context.Orders
+                .Where(o => o.IsApporve && !o.IsDone && !o.IsCancel && (o.SaleManId == null || o.SaleManId == 0))
+                .ToListAsync();
+
+            // Get restaurant locations and filter by distance
+            var nearbyOrders = new List<Orders>();
+            foreach (var order in pendingOrders)
+            {
+                var restaurant = await _context.Restaurant
+                    .Where(r => r.RestaurantId == order.RestaurantId)
+                    .FirstOrDefaultAsync();
+
+                if (restaurant != null &&
+                    double.TryParse(restaurant.Lat, out double rLat) &&
+                    double.TryParse(restaurant.Long, out double rLng))
+                {
+                    double distance = CalculateDistance(lat, lng, rLat, rLng);
+                    if (distance <= radiusKm)
+                    {
+                        order.RestaurantName = restaurant.Name;
+                        order.Lat = restaurant.Lat;
+                        order.Long = restaurant.Long;
+                        nearbyOrders.Add(order);
+                    }
+                }
+            }
+
+            return Result.Return(true, nearbyOrders);
+        }
+
+        public async Task<ResObj> ApproveOrderBySaleMan(int orderId, int saleManId)
+        {
+            var order = await GetOrdersById(orderId);
+            if (order == null)
+                return Result.Return(false, "الطلب غير موجود");
+
+            // Check if another driver already took this order
+            if (order.SaleManId != null && order.SaleManId > 0 && order.SaleManId != saleManId)
+                return Result.Return(false, "تم قبول الطلب من قبل مندوب آخر");
+
+            if (order.IsSaleManApprove == true)
+                return Result.Return(false, "تم قبول الطلب من قبل مندوب آخر");
+
+            order.SaleManId = saleManId;
+            order.IsSaleManApprove = true;
+            order.IsSaleManCancel = false;
+
+            _context.Entry(order).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Result.Return(true, "تم قبول الطلب بنجاح", order);
+        }
+
+        /// <summary>
+        /// Haversine formula to calculate distance between two GPS coordinates in km
+        /// </summary>
+        private static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+        {
+            const double R = 6371; // Earth's radius in km
+            double dLat = (lat2 - lat1) * Math.PI / 180;
+            double dLon = (lon2 - lon1) * Math.PI / 180;
+            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                       Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180) *
+                       Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c;
         }
     }
 }

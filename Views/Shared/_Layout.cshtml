@@ -13,41 +13,28 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" /> 
   <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
   <!--     Fonts and icons     -->
-  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:400,700|Material+Icons" />
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <!-- CSS Files -->
   <link href="~/lib/assets/css/material-dashboard.css?v=2.1.0" rel="stylesheet" />
   <!-- CSS Just for demo purpose, don't include it in your project -->
   <link href="~/lib/assets/demo/demo.css" rel="stylesheet" />
+  <link href="~/css/romana-theme.css" rel="stylesheet" asp-append-version="true" />
 </head>
-<body style="font-family: 'Tajawal'; " class="dark-edition"> 
-    <script src="~/js/site.js" asp-append-version="true"></script> 
-    <script src="~/js/Carousel.js" asp-append-version="true"></script> 
-    <script src="~/js/Admin.js" asp-append-version="true"></script> 
-    <script src="~/js/SubCategories.js" asp-append-version="true"></script>
-    <script src="~/js/PromoCode.js" asp-append-version="true"></script>
-    <script src="~/js/CodeRes.js" asp-append-version="true"></script>
-    <script src="~/js/Restaurant.js" asp-append-version="true"></script> 
-    <script src="~/js/RestaurantSubCategories.js" asp-append-version="true"></script>
-    <script src="~/js/RestaurantCity.js" asp-append-version="true"></script> 
-    <script src="~/js/Categories.js" asp-append-version="true"></script>
-    <script src="~/js/Products.js" asp-append-version="true"></script>
-    <script src="~/js/Orders.js" asp-append-version="true"></script>
-    <script src="~/js/Stars.js" asp-append-version="true"></script>
-    <script src="~/js/City.js" asp-append-version="true"></script>
-    <script src="~/js/Countries.js" asp-append-version="true"></script>
-    <script src="~/js/Users.js" asp-append-version="true"></script>
-    <script src="~/js/SaleMan.js" asp-append-version="true"></script>
-    <script src="~/js/Delivery.js" asp-append-version="true"></script>
-    <script src="~/js/ReportRes.js" asp-append-version="true"></script>
-    <script src="~/js/Question.js" asp-append-version="true"></script>
+<body style="font-family: 'Tajawal', 'Inter', sans-serif; direction: rtl; ">
+    <!--  Core JS loaded FIRST so inline scripts in views can use $ -->
+    <script src="~/lib/assets/js/core/jquery.min.js"></script>
+    <script src="~/lib/assets/js/core/popper.min.js"></script>
+    <script src="~/lib/assets/js/core/bootstrap-material-design.min.js"></script>
+    <script src="~/lib/assets/js/plugins/bootstrap-notify.js"></script>
+    <script src="~/lib/assets/demo/demo.js"></script>
 
     <!-- CUT FROM HERE --> 
-       
+
   <div class="wrapper ">
     <header>
-       <div class="sidebar" data-color="purple" data-background-color="black" data-image="/lib/assets/img/sidebar-2.jpg">
+       <div class="sidebar" data-color="purple" data-background-color="white">
       <!--
         Tip 1: You can change the color of the sidebar using: data-color="purple | azure | green | orange | danger"
 
@@ -58,8 +45,8 @@
                         نظام ادارة تطبيق رمانة
         </a>
                     <div class="row text-center" style="width:200px">
-                        <button type="button" rel='tooltip' title='' class='btn btn-primary col' onclick="NextNavicationViews()"><i class='material-icons'>arrow_back</i> </button>
-                        <button type="button" rel='tooltip' title='' class='btn btn-primary col' onclick="PrevNavicationViews()"><i class='material-icons'>arrow_forward</i> </button>
+                        <button type="button" rel='tooltip' title='رجوع' class='btn btn-primary col' onclick="window.history.back()"><i class='material-icons'>arrow_back</i> </button>
+                        <button type="button" rel='tooltip' title='تقدم' class='btn btn-primary col' onclick="window.history.forward()"><i class='material-icons'>arrow_forward</i> </button>
                     </div>
         </div>
       <div class="sidebar-wrapper">
@@ -67,15 +54,21 @@
                     </ul>
       </div>
     </div> 
-     
+
     </header>
-     
+
      <div class="main-panel">
       <!-- Navbar -->
       <nav class="navbar navbar-expand-lg navbar-transparent navbar-absolute fixed-top " id="navigation-example">
         <div class="container-fluid">
           <div class="navbar-wrapper">
             <a class="navbar-brand" href="javascript:void(0)">@ViewData["Title"]</a>
+          </div>
+          <div class="d-none d-md-flex" style="gap:10px;align-items:center;margin-right:auto;">
+              <span class="rm-avatar" title="المسؤول">
+                  <span class="rm-avatar-img">م</span>
+                  <span>المسؤول</span>
+              </span>
           </div>
           <button class="navbar-toggler" type="button" data-toggle="collapse" aria-controls="navigation-index" aria-expanded="false" aria-label="Toggle navigation" data-target="#navigation-example">
             <span class="sr-only">Toggle navigation</span>
@@ -89,26 +82,48 @@
             @RenderBody() 
       </div>  
   </div>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- App JS (after jQuery is already loaded above) -->
     <script src="~/js/site.js" asp-append-version="true"></script>
-    
-      <!--   Core JS Files   -->
-      <script src="~/lib/assets/js/core/jquery.min.js"></script>
-      <script src="~/lib/assets/js/core/popper.min.js"></script>
-      <script src="~/lib/assets/js/core/bootstrap-material-design.min.js"></script>
-      <script src="https://unpkg.com/default-passive-events"></script>
-      <script src="~/lib/assets/js/plugins/perfect-scrollbar.jquery.min.js"></script>
-      <!-- Place this tag in your head or just before your close body tag. -->
-      <script async defer src="https://buttons.github.io/buttons.js"></script> 
-      <!-- Chartist JS -->
-      <script src="~/lib/assets/js/plugins/chartist.min.js"></script>
-      <!--  Notifications Plugin    -->
-      <script src="~/lib/assets/js/plugins/bootstrap-notify.js"></script>
-      <!-- Control Center for Material Dashboard: parallax effects, scripts for the example pages etc -->
-      <script src="~/lib/assets/js/material-dashboard.js?v=2.1.0"></script>
-      <!-- Material Dashboard DEMO methods, don't include it in your project! -->
-      <script src="~/lib/assets/demo/demo.js"></script>
-   
+    <script src="~/js/rm-performance.js" asp-append-version="true"></script>
+    <script src="~/js/Admin.js" asp-append-version="true"></script>
+    <script src="~/js/Carousel.js" asp-append-version="true"></script>
+    <script src="~/js/SubCategories.js" asp-append-version="true"></script>
+    <script src="~/js/PromoCode.js" asp-append-version="true"></script>
+    <script src="~/js/CodeRes.js" asp-append-version="true"></script>
+    <script src="~/js/Restaurant.js" asp-append-version="true"></script>
+    <script src="~/js/RestaurantSubCategories.js" asp-append-version="true"></script>
+    <script src="~/js/RestaurantCity.js" asp-append-version="true"></script>
+    <script src="~/js/Categories.js" asp-append-version="true"></script>
+    <script src="~/js/Products.js" asp-append-version="true"></script>
+    <script src="~/js/Orders.js" asp-append-version="true"></script>
+    <script src="~/js/Stars.js" asp-append-version="true"></script>
+    <script src="~/js/City.js" asp-append-version="true"></script>
+    <script src="~/js/Countries.js" asp-append-version="true"></script>
+    <script src="~/js/Users.js" asp-append-version="true"></script>
+    <script src="~/js/SaleMan.js" asp-append-version="true"></script>
+    <script src="~/js/Delivery.js" asp-append-version="true"></script>
+    <script src="~/js/ReportRes.js" asp-append-version="true"></script>
+    <script src="~/js/Question.js" asp-append-version="true"></script>
+    <script src="~/js/Analytics.js" asp-append-version="true"></script>
+
+    <!-- Material Dashboard plugins -->
+    <script src="https://unpkg.com/default-passive-events"></script>
+    <script src="~/lib/assets/js/plugins/perfect-scrollbar.jquery.min.js"></script>
+    <script src="~/lib/assets/js/plugins/chartist.min.js"></script>
+    <script src="~/lib/assets/js/material-dashboard.js?v=2.1.0"></script>
+    <script>
+        $(document).ready(function () {
+            // Load sidebar navigation
+            call_ajax("GET", "Admin/GetPermissionForLayout", null, filllayout);
+
+            // Fix modal stacking: move all modals to <body> so they escape
+            // the .main-panel stacking context that traps them under the backdrop
+            $('.modal').each(function () {
+                $(this).appendTo('body');
+            });
+        });
+    </script>
+
 </body>
 </html>

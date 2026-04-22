@@ -131,8 +131,20 @@ namespace RomanaWeb.Controllers
         public IActionResult GetReportRes()
         {
             return View();
+        }
+        public IActionResult Analytics()
+        {
+            return View();
+        }
+        public IActionResult AppSettings()
+        {
+            return View();
         }                          
         public IActionResult Questions()
+        {
+            return View();
+        }
+        public IActionResult Ratings()
         {
             return View();
         }

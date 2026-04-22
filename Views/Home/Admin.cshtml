@@ -6,7 +6,20 @@
 <div class="content">
     <div class="content dark-edition">
         <div class="container-fluid">
-            <div class="container alignright" style="margin:2% 0;">
+
+            <!-- Page Summary -->
+            <div class="rm-page-summary">
+                <div class="rm-summary-icon bg-red"><i class="material-icons">admin_panel_settings</i></div>
+                <div class="rm-summary-body">
+                    <h4>ادارة مستخدمي لوحة التحكم</h4>
+                    <p>عرض وادارة المستخدمين المسؤولين عن لوحة التحكم. يمكنك اضافة مستخدمين جدد، تعديل بياناتهم، وادارة صلاحياتهم للوصول الى اقسام النظام المختلفة.</p>
+                </div>
+                <div class="rm-summary-stats">
+                    <div class="rm-stat"><span class="rm-stat-value" id="adminSummaryTotal">-</span><span class="rm-stat-label">اجمالي</span></div>
+                </div>
+            </div>
+
+            <div class="rm-filter-bar">
                 <div class="row">
                     <div class="col-lg-6 col-md-6 col-sm-12 ">
                         <label class="mb-2">بحث عن الاسم</label>
@@ -62,8 +75,8 @@
         <div class="modal-content dark-edition">
             <div class="modal-header">
                 <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
-                <button type="button" style="margin-left:10%;" id="close1" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true" style="font-size:155%">&times;</span>
+                <button type="button" id="close1" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
@@ -129,7 +142,10 @@
 
         
         $(document).ready(function () { 
-            RefreshAdmin();
+            call_ajax("GET", "Admin/GetAll", null, function(data) {
+                filltableAdmin(data);
+                if (data) { $('#adminSummaryTotal').text(data.length); }
+            });
         });
         $("#close1").on("click", (e) => {
             e.preventDefault();

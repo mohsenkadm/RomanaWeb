@@ -2,154 +2,268 @@
     ViewData["Title"] = "لوحة التحكم";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<div class="content">
+
+<style>
+    .dash-card {
+        animation: dashFadeIn 0.45s ease-out both;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .dash-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+    .dash-card:nth-child(1) { animation-delay: 0.03s; }
+    .dash-card:nth-child(2) { animation-delay: 0.06s; }
+    .dash-card:nth-child(3) { animation-delay: 0.09s; }
+    .dash-card:nth-child(4) { animation-delay: 0.12s; }
+    .dash-card:nth-child(5) { animation-delay: 0.15s; }
+    .dash-card:nth-child(6) { animation-delay: 0.18s; }
+    .dash-card:nth-child(7) { animation-delay: 0.21s; }
+    @@keyframes dashFadeIn {
+        from { opacity: 0; transform: translateY(16px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @@keyframes countUp {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .card-title { animation: countUp 0.6s ease-out; }
+    .dash-chart-card {
+        animation: dashFadeIn 0.6s ease-out both;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    .dash-chart-container {
+        position: relative;
+        height: 280px;
+    }
+</style>
+
+<div class="content" style="direction:rtl;">
     <div class="container-fluid">
-        <div class="row">
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
-                <div class="card card-stats">
-                    <div class="card-header card-header-warning card-header-icon">
-                        <div class="card-icon">
-                            <i class="material-icons">person</i>
-                        </div>
-                        <p class="card-category">عدد الزبائن</p>
-                        <h3 class="card-title" id="CountUser">
-                        </h3>
-                    </div>
-                    <div class="card-footer">
-                        <div class="stats">
-                            <i class="material-icons text-warning">person</i>
-                        </div>
-                    </div>
+        <!-- Welcome Banner -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div style="background:linear-gradient(135deg,#4f46e5,#6366f1);border-radius:16px;padding:28px 32px;color:#fff;animation:dashFadeIn 0.4s ease-out;">
+                    <h4 style="font-weight:800;margin:0 0 6px 0;font-size:1.3rem;"><i class="material-icons" style="vertical-align:middle;margin-left:8px;">dashboard</i>مرحباً بك في لوحة التحكم</h4>
+                    <p style="margin:0;opacity:0.85;font-size:0.92rem;">إليك ملخص سريع لأهم الإحصائيات والبيانات في النظام</p>
                 </div>
             </div>
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+        </div>
+        <div class="row">
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
+                <div class="card card-stats">
+                    <div class="card-header card-header-warning card-header-icon">
+                        <div class="card-icon"><i class="material-icons">person</i></div>
+                        <p class="card-category">عدد الزبائن</p>
+                        <h3 class="card-title" id="CountUser"></h3>
+                    </div>
+                    <div class="card-footer"><div class="stats"><i class="material-icons text-warning">person</i></div></div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
                 <div class="card card-stats">
                     <div class="card-header card-header-success card-header-icon">
-                        <div class="card-icon">
-                            <i class="material-icons">person</i>
-                        </div>
+                        <div class="card-icon"><i class="material-icons">store</i></div>
                         <p class="card-category">عدد المطاعم</p>
                         <h3 class="card-title" id="CountRes"></h3>
                     </div>
-
-                    <div class="card-footer">
-                        <div class="stats">
-                            <i class="material-icons text-success">person</i>
-                        </div>
-                    </div>
-                </div>
-            </div> 
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
-                <div class="card card-stats">
-                    <div class="card-header card-header-warning card-header-icon">
-                        <div class="card-icon">
-                            <i class="material-icons">person</i>
-                        </div>
-                        <p class="card-category">عدد الاقسام</p>
-                        <h3 class="card-title" id="CountCateg">
-                        </h3>
-                    </div>
-                    <div class="card-footer">
-                        <div class="stats">
-                            <i class="material-icons text-warning">person</i>
-                        </div>
-                    </div>
+                    <div class="card-footer"><div class="stats"><i class="material-icons text-success">store</i></div></div>
                 </div>
             </div>
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
                 <div class="card card-stats">
-                    <div class="card-header card-header-success card-header-icon">
-                        <div class="card-icon">
-                            <i class="material-icons">person</i>
-                        </div>
+                    <div class="card-header card-header-info card-header-icon">
+                        <div class="card-icon"><i class="material-icons">category</i></div>
+                        <p class="card-category">عدد الاقسام</p>
+                        <h3 class="card-title" id="CountCateg"></h3>
+                    </div>
+                    <div class="card-footer"><div class="stats"><i class="material-icons text-info">category</i></div></div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
+                <div class="card card-stats">
+                    <div class="card-header card-header-primary card-header-icon">
+                        <div class="card-icon"><i class="material-icons">list</i></div>
                         <p class="card-category">عدد الاصناف</p>
                         <h3 class="card-title" id="CountSubCateg"></h3>
                     </div>
-
-                    <div class="card-footer">
-                        <div class="stats">
-                            <i class="material-icons text-success">person</i>
-                        </div>
-                    </div>
+                    <div class="card-footer"><div class="stats"><i class="material-icons text-primary">list</i></div></div>
                 </div>
-            </div> 
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
+                <div class="card card-stats">
+                    <div class="card-header card-header-danger card-header-icon">
+                        <div class="card-icon"><i class="material-icons">inventory_2</i></div>
+                        <p class="card-category">عدد المنتجات</p>
+                        <h3 class="card-title" id="CountProd"></h3>
+                    </div>
+                    <div class="card-footer"><div class="stats"><i class="material-icons text-danger">inventory_2</i></div></div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
+                <div class="card card-stats">
+                    <div class="card-header card-header-success card-header-icon">
+                        <div class="card-icon"><i class="material-icons">shopping_cart</i></div>
+                        <p class="card-category">عدد الطلبات</p>
+                        <h3 class="card-title" id="CountOrder"></h3>
+                    </div>
+                    <div class="card-footer"><div class="stats"><i class="material-icons text-success">shopping_cart</i></div></div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
                 <div class="card card-stats">
                     <div class="card-header card-header-warning card-header-icon">
-                        <div class="card-icon">
-                            <i class="material-icons">person</i>
-                        </div>
-                        <p class="card-category">عدد المنتجات</p>
-                        <h3 class="card-title" id="CountProd">
-                        </h3>
+                        <div class="card-icon"><i class="material-icons">attach_money</i></div>
+                        <p class="card-category">مبلغ الطلبات</p>
+                        <h3 class="card-title" id="PriceSale"></h3>
                     </div>
-                    <div class="card-footer">
-                        <div class="stats">
-                            <i class="material-icons text-warning">person</i>
+                    <div class="card-footer"><div class="stats"><i class="material-icons text-warning">attach_money</i></div></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard Charts -->
+        <div class="row mt-3">
+            <div class="col-lg-8">
+                <div class="card dash-chart-card" style="animation-delay:0.4s">
+                    <div class="card-header" style="background:#fff !important;border-bottom:1px solid #e2e8f0;text-align:right;">
+                        <h4 class="card-title" style="color:#1e293b;"><i class="material-icons" style="vertical-align:middle;color:#4f46e5;margin-left:6px;">trending_up</i> ملخص الطلبات الاخيرة</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="dash-chart-container">
+                            <canvas id="dashRecentOrders"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
-                <div class="card card-stats">
-                    <div class="card-header card-header-success card-header-icon">
-                        <div class="card-icon">
-                            <i class="material-icons">person</i>
-                        </div>
-                        <p class="card-category">عدد الطلبات</p>
-                        <h3 class="card-title" id="CountOrder"></h3>
+            <div class="col-lg-4">
+                <div class="card dash-chart-card" style="animation-delay:0.5s">
+                    <div class="card-header" style="background:#fff !important;border-bottom:1px solid #e2e8f0;text-align:right;">
+                        <h4 class="card-title" style="color:#1e293b;"><i class="material-icons" style="vertical-align:middle;color:#0891b2;margin-left:6px;">pie_chart</i> توزيع الاقسام</h4>
                     </div>
-
-                    <div class="card-footer">
-                        <div class="stats">
-                            <i class="material-icons text-success">person</i>
+                    <div class="card-body">
+                        <div class="dash-chart-container">
+                            <canvas id="dashCategoriesPie"></canvas>
                         </div>
                     </div>
                 </div>
-            </div> 
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
-                <div class="card card-stats">
-                    <div class="card-header card-header-success card-header-icon">
-                        <div class="card-icon">
-                            <i class="material-icons">person</i>
-                        </div>
-                        <p class="card-category">مبلغ الطلبات</p>
-                        <h3 class="card-title" id="PriceSale"></h3>
-                    </div>
-
-                    <div class="card-footer">
-                        <div class="stats">
-                            <i class="material-icons text-success">person</i>
-                        </div>
-                    </div>
-                </div>
-            </div> 
+            </div>
         </div>
     </div>
 </div>
-<div class="container-fluid">
-    <div class="copyright float-right" id="date">
-        © 2023
-        , made with <i class="material-icons">favorite</i> by
-        <a href="#">Developer mohsen</a> for a better web.
+
+<div class="container-fluid" style="direction:rtl;">
+    <div class="text-center py-3" id="date" style="color:#94a3b8;font-size:0.82rem;">
+        © 2024 رمانة — صُنع بـ <i class="material-icons" style="font-size:14px;vertical-align:middle;color:#dc2626;">favorite</i> بواسطة
+        <a href="#" style="color:#4f46e5;text-decoration:none;">Developer Mohsen</a>
     </div>
 </div>
 
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <div id="mydiv">
     <script>
+        var dashCharts = {};
+
         $(document).ready(function () {
             call_ajax("GET", "Home/GetCountForMain", null, filldatacount);
+            loadDashCharts();
         });
+
         function filldatacount(data) {
-           $("#CountUser").html(data.countUser);
-           $("#CountRes").html(data.countRes);
-            $("#CountCateg").html(data.countCateg);
-            $("#CountSubCateg").html(data.countSubCateg);
-            $("#CountProd").html(data.countProd);
-            $("#CountUsers").html(data.countUsers);
-            $("#PriceSale").html(data.priceSale);
-            $("#CountOrder").html(data.countOrder);
+            animateCount('#CountUser', data.countUser);
+            animateCount('#CountRes', data.countRes);
+            animateCount('#CountCateg', data.countCateg);
+            animateCount('#CountSubCateg', data.countSubCateg);
+            animateCount('#CountProd', data.countProd);
+            animateCount('#CountOrder', data.countOrder);
+            $('#PriceSale').html(data.priceSale);
+        }
+
+        function animateCount(selector, target) {
+            var num = parseInt(target) || 0;
+            var el = $(selector);
+            var current = 0;
+            var step = Math.max(1, Math.floor(num / 40));
+            var timer = setInterval(function () {
+                current += step;
+                if (current >= num) {
+                    current = num;
+                    clearInterval(timer);
+                }
+                el.text(current.toLocaleString());
+            }, 30);
+        }
+
+        function loadDashCharts() {
+            var today = new Date();
+            var monthAgo = new Date();
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            var df = monthAgo.toISOString().split('T')[0];
+            var dt = today.toISOString().split('T')[0];
+
+            call_ajax("GET", "Orders/GetAll", {
+                OrderNo: '', RestaurantName: '', datefrom: df, dateto: dt, CountriesId: 0, state: 0
+            }, function (data) {
+                if (!data) return;
+                var dailyMap = {};
+                data.forEach(function (o) {
+                    var d = new Date(o.orderDate).toLocaleDateString('ar-IQ');
+                    dailyMap[d] = (dailyMap[d] || 0) + 1;
+                });
+                var keys = Object.keys(dailyMap).slice(-14);
+                renderDashChart('dashRecentOrders', 'bar', {
+                    labels: keys,
+                    datasets: [{
+                        label: 'عدد الطلبات',
+                        data: keys.map(k => dailyMap[k]),
+                         backgroundColor: 'rgba(79,70,229,0.15)',
+                        borderColor: '#4f46e5',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                });
+            });
+
+            call_ajax("GET", "Restaurant/GetAll", { Name: '' }, function (data) {
+                if (!data) return;
+                var catMap = {};
+                data.forEach(function (r) {
+                    var cat = r.categoriesName || 'غير محدد';
+                    catMap[cat] = (catMap[cat] || 0) + 1;
+                });
+                var cats = Object.entries(catMap).sort((a, b) => b[1] - a[1]).slice(0, 6);
+                var palette = [
+                    'rgba(79,70,229,0.75)', 'rgba(8,145,178,0.75)', 'rgba(5,150,105,0.75)',
+                    'rgba(217,119,6,0.75)', 'rgba(220,38,38,0.75)', 'rgba(13,148,136,0.75)'
+                ];
+                renderDashChart('dashCategoriesPie', 'doughnut', {
+                    labels: cats.map(c => c[0]),
+                    datasets: [{
+                        data: cats.map(c => c[1]),
+                        backgroundColor: palette.slice(0, cats.length),
+                        borderWidth: 2
+                    }]
+                });
+            });
+        }
+
+        function renderDashChart(id, type, data) {
+            if (dashCharts[id]) dashCharts[id].destroy();
+            var ctx = document.getElementById(id);
+            if (!ctx) return;
+            var opts = {
+                responsive: true, maintainAspectRatio: false,
+                animation: { duration: 1200, easing: 'easeOutQuart' },
+                plugins: { legend: { labels: { color: '#475569', font: { family: 'Tajawal', size: 13 } } } }
+            };
+            if (type === 'bar' || type === 'line') {
+                opts.scales = {
+                    x: { ticks: { color: '#64748b', font: { family: 'Tajawal' } }, grid: { color: '#e2e8f0' } },
+                    y: { ticks: { color: '#64748b', font: { family: 'Tajawal' } }, grid: { color: '#f1f5f9' } }
+                };
+            }
+            dashCharts[id] = new Chart(ctx, { type: type, data: data, options: opts });
         }
     </script>
 </div>

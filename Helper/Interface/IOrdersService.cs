@@ -26,5 +26,9 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> PostUser(Users users);
         Task<string> GetNamePersonById(int userId);
         Task<string> GetSaleManPersonById(int SaleManId);
+        Task<ResObj> ModifyOrder(int orderId, List<OrderDetail> newDetails);
+        Task<ResObj> AddOrderDetail(OrderDetail detail);
+        Task<ResObj> GetNearbyDriverOrders(int saleManId, double lat, double lng, double radiusKm);
+        Task<ResObj> ApproveOrderBySaleMan(int orderId, int saleManId);
     }
 }

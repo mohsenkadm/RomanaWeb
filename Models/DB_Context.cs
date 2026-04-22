@@ -41,6 +41,8 @@ namespace RomanaWeb.Model
             modelBuilder.ApplyConfiguration(new ImagesMap());        
             modelBuilder.ApplyConfiguration(new DeliveryMap());        
             modelBuilder.ApplyConfiguration(new QuestionsMap());        
+            modelBuilder.ApplyConfiguration(new AppSettingsMap());        
+            modelBuilder.ApplyConfiguration(new DriverStarsMap());        
         }
                                       
         public DbSet<Users> Users { get; set; }         
@@ -66,5 +68,7 @@ namespace RomanaWeb.Model
         public DbSet<Images> Images { get; set; }           
         public DbSet<Delivery> Delivery { get; set; }           
         public DbSet<Questions> Questions { get; set; }           
+        public DbSet<AppSettings> AppSettings { get; set; }           
+        public DbSet<DriverStars> DriverStars { get; set; }           
     }
 }

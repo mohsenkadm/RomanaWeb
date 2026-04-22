@@ -1,34 +1,65 @@
 ﻿
 @{
-    ViewData["Title"] = "Stars";
+    ViewData["Title"] = "التقييمات";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
- 
- 
 
 <div class="content">
     <div class="content dark-edition">
         <div class="container-fluid">
-            <div class="container alignright" style="margin:2% 0;">
 
-                <div class="row">
-                    <div class="col-lg-6 col-md-6 col-sm-12 " style="text-align: center;">
-                        <label class="mb-2"> بحث عن  اسم المطعم </label>
-                        <input type="text" class="form-control alignright" placeholder="اكتب اسم المطعم " name="RestaurantName" id="RestaurantName">
+            <!-- Page Summary -->
+            <div class="rm-page-summary">
+                <div class="rm-summary-icon bg-orange"><i class="material-icons">star_rate</i></div>
+                <div class="rm-summary-body">
+                    <h4>ادارة التقييمات</h4>
+                    <p>عرض ومتابعة تقييمات وتعليقات الزبائن على المتاجر. يمكنك البحث بأسم المطعم ومراجعة التقييمات وحذف التعليقات غير المناسبة.</p>
+                </div>
+                <div class="rm-summary-stats">
+                    <div class="rm-stat"><span class="rm-stat-value" id="starsSummaryTotal">-</span><span class="rm-stat-label">اجمالي</span></div>
+                    <div class="rm-stat"><span class="rm-stat-value" id="starsSummaryAvg">-</span><span class="rm-stat-label">معدل التقييم</span></div>
+                </div>
+            </div>
+
+            <!-- Mini Chart -->
+            <div class="row rm-mini-chart-row">
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header card-header-warning" style="text-align:right">
+                            <h4 class="card-title"><i class="material-icons">bar_chart</i> توزيع التقييمات</h4>
+                        </div>
+                        <div class="card-body"><div class="rm-mini-chart"><canvas id="starsChartDist"></canvas></div></div>
                     </div>
-                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2" style="text-align: center;">
+                </div>
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-header card-header-success" style="text-align:right">
+                            <h4 class="card-title"><i class="material-icons">pie_chart</i> افضل المتاجر تقييماً</h4>
+                        </div>
+                        <div class="card-body"><div class="rm-mini-chart"><canvas id="starsChartTop"></canvas></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="rm-filter-bar">
+                <div class="row">
+                    <div class="col-lg-6 col-md-6 col-sm-12">
+                        <label class="mb-2">بحث عن اسم المطعم</label>
+                        <input type="text" class="form-control alignright" placeholder="اكتب اسم المطعم" name="RestaurantName" id="RestaurantName">
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
                         <div class="text-center wow fadeInDown" style="text-align:left;">
                             <label class="mb-2"> </label>
-                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث</button>
+                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث <i class='material-icons'>search</i></button>
                         </div>
                     </div>
-
                     <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
                         <div class="text-center wow fadeInDown">
                             <label class="mb-2"> </label>
-                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#SubCategoriesModal">اضافة  جديد <i class='material-icons'>add</i> </button>
+                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#SubCategoriesModal">اضافة جديد <i class='material-icons'>add</i></button>
                         </div>
-                    </div> 
+                    </div>
                 </div>
             </div>
 
@@ -36,8 +67,8 @@
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header card-header-primary" style="text-align:right">
-                            <h4 class="card-title ">المنتجات</h4>
-                            <p class="card-category">جدول لعرض المنتجات داخل التطبيق</p>
+                            <h4 class="card-title">التقييمات</h4>
+                            <p class="card-category">جدول لعرض تقييمات الزبائن داخل التطبيق</p>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive" style="text-align: right;">
@@ -116,5 +147,40 @@
     </script>
 </div>
 
-
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    var starsCharts = {};
+    function loadStarsCharts() {
+        call_ajax("GET", "Stars/GetAll", { RestaurantName: '', index: 1 }, function (data) {
+            if (!data || !data.length) return;
+            $('#starsSummaryTotal').text(data.length);
+            var sum = 0;
+            var dist = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            var resMap = {};
+            data.forEach(function (s) {
+                var v = s.starsCount || s.count || 0;
+                sum += v;
+                if (v >= 1 && v <= 5) dist[v]++;
+                var rn = s.restaurantName || 'غير محدد';
+                if (!resMap[rn]) resMap[rn] = { total: 0, count: 0 };
+                resMap[rn].total += v;
+                resMap[rn].count++;
+            });
+            $('#starsSummaryAvg').text((sum / data.length).toFixed(1));
+            var palette = ['#ff5252', '#ff9100', '#ffab40', '#40c4ff', '#00e676'];
+            if (starsCharts['dist']) starsCharts['dist'].destroy();
+            starsCharts['dist'] = new Chart(document.getElementById('starsChartDist'), {
+                type: 'bar', data: { labels: ['1 ⭐', '2 ⭐', '3 ⭐', '4 ⭐', '5 ⭐'], datasets: [{ label: 'عدد التقييمات', data: [dist[1], dist[2], dist[3], dist[4], dist[5]], backgroundColor: palette, borderRadius: 8, borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.08)' } }, y: { ticks: { color: '#aaa' }, grid: { color: 'rgba(255,255,255,0.08)' } } } }
+            });
+            var topRes = Object.entries(resMap).map(function (e) { return { name: e[0], avg: e[1].total / e[1].count }; }).sort(function (a, b) { return b.avg - a.avg; }).slice(0, 6);
+            var tPalette = ['rgba(0,230,118,0.7)', 'rgba(0,176,255,0.7)', 'rgba(124,77,255,0.7)', 'rgba(255,145,0,0.7)', 'rgba(255,23,68,0.7)', 'rgba(0,191,165,0.7)'];
+            if (starsCharts['top']) starsCharts['top'].destroy();
+            starsCharts['top'] = new Chart(document.getElementById('starsChartTop'), {
+                type: 'doughnut', data: { labels: topRes.map(function (r) { return r.name; }), datasets: [{ data: topRes.map(function (r) { return r.avg.toFixed(1); }), backgroundColor: tPalette.slice(0, topRes.length), borderWidth: 2 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff', font: { family: 'Tajawal' } } } } }
+            });
+        });
+    }
+    $(document).ready(function () { setTimeout(loadStarsCharts, 500); });
+</script>
