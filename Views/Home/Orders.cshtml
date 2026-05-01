@@ -254,7 +254,7 @@
             data.forEach(function (o) { totalAmt += o.netAmount || 0; });
             $('#ordSummaryAmount').text(Math.round(totalAmt).toLocaleString());
             var dailyMap = {};
-            data.forEach(function (o) { var d = new Date(o.orderDate).toLocaleDateString('ar-IQ'); dailyMap[d] = (dailyMap[d] || 0) + 1; });
+            data.forEach(function (o) { var d = new Date(o.orderDate).toLocaleDateString('en-GB'); dailyMap[d] = (dailyMap[d] || 0) + 1; });
             var keys = Object.keys(dailyMap).slice(-14);
             if (ordCharts['daily']) ordCharts['daily'].destroy();
             ordCharts['daily'] = new Chart(document.getElementById('ordChartDaily'), {

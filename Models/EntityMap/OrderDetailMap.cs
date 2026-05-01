@@ -15,7 +15,11 @@ namespace RomanaWeb.Models.EntityMap
             builder.Property(x => x.ProductsId).IsRequired(); 
             builder.Property(x => x.Price).IsRequired(); 
             builder.Property(x => x.Count).IsRequired();                
-            builder.Property(x => x.Notes2);                
+            builder.Property(x => x.Notes2);
+            builder.Property(x => x.SelectedSizeId);
+            builder.Property(x => x.SelectedSizeName);
+            builder.Property(x => x.SelectedSizePrice);
+            builder.Property(x => x.SelectedIngredients);
             builder.Ignore(x => x.ProductsName); 
             builder.Ignore(x => x.ProductsDetails); 
             builder.Ignore(x => x.ProductsImage);   

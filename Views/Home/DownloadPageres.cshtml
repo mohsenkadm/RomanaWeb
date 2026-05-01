@@ -1,39 +1,28 @@
 ﻿
 @{
-    ViewData["Title"] = "DownloadPageres";
+    ViewData["Title"] = "تحميل تطبيق رمانة متجر";
     Layout = "~/Views/Shared/_Layoutfordownload.cshtml";
 }
 
- 
-
-<style>
-    .fa-download:before {
-        content: "\f019";
-        margin-right: 10px;
-    }
-</style> 
-<br />
-<div class="clearfix row">
-    <div class="text-center col-sm-12 col-xl-12">
-        <div class="text-center" style="margin: 39px; font-size: 28px;">
-            <a>لتحميل تطبيق   رمانة متجر على جهاز الاندرويد</a>
-        </div>
-        <div class="text-center">
-            <a href="https://play.google.com/store/apps/details?id=com.alaman.rummanaflutterforres"> <img class="img-fluid" src="~/images/downloadandroid.png" alt="alternative" style="width:35%;"></a>
-         </div>
-    </div>
-</div>
-<br />
-<br />
-<div class="clearfix row">
-    <div class="text-center col-sm-12 col-xl-12">
-        <div class="text-center" style="margin: 39px; font-size: 28px;">
-            <a>لتحميل تطبيق   رمانة متجر على جهاز الايفون</a>
-        </div>
-        <div class="text-center">
-            <a href="https://apps.apple.com/us/app/%D8%B1%D9%85%D8%A7%D9%86%D8%A9-%D9%85%D8%B7%D8%A7%D8%B9%D9%85/id6475269008"> <img class="img-fluid" src="~/images/downloadios.png" alt="alternative" style="width:35%;"></a>
-
-        </div>
-    </div>
+<div class="dl-section-title">تطبيق رمانة متجر — للمطاعم</div>
+<div class="dl-store-row">
+    <a class="dl-store-btn"
+       href="https://play.google.com/store/apps/details?id=com.alaman.rummanaflutterforres"
+       target="_blank" rel="noopener">
+        <i class="fab fa-google-play"></i>
+        <span class="dl-btn-text">
+            <span class="dl-btn-sub">تحميل من</span>
+            <span class="dl-btn-main">Google Play</span>
+        </span>
+    </a>
+    <a class="dl-store-btn"
+       href="https://apps.apple.com/us/app/%D8%B1%D9%85%D8%A7%D9%86%D8%A9-%D9%85%D8%B7%D8%A7%D8%B9%D9%85/id6475269008"
+       target="_blank" rel="noopener">
+        <i class="fab fa-apple"></i>
+        <span class="dl-btn-text">
+            <span class="dl-btn-sub">تحميل من</span>
+            <span class="dl-btn-main">App Store</span>
+        </span>
+    </a>
 </div>
 

@@ -13,5 +13,6 @@ namespace RomanaWeb.Helper.Interface
         public Task<ResObj> ValidatePromoCode(string promoName, int restaurantId);
         public Task<ResObj> ApplyPromoCode(string promoName, int restaurantId, decimal orderTotal);
         public Task<ResObj> GetAnalytics(DateTime dateFrom, DateTime dateTo);
+        public Task<ResObj> GetStoreLiabilityReport(int? restaurantId, DateTime dateFrom, DateTime dateTo);
     }
 }

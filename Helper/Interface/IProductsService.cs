@@ -19,5 +19,15 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> DeleteImageForProd(int id);
         Task<ResObj> PostImages(Images images);
         Task<ResObj> GetImagesByProductsId(int Id);
+
+        // Product sizes
+        Task<ResObj> GetSizesByProductId(int productId);
+        Task<ResObj> PostSize(ProductSize size);
+        Task<ResObj> DeleteSize(int sizeId);
+
+        // Product ingredients
+        Task<ResObj> GetIngredientsByProductId(int productId);
+        Task<ResObj> PostIngredient(ProductIngredient ingredient);
+        Task<ResObj> DeleteIngredient(int ingredientId);
     }
 }

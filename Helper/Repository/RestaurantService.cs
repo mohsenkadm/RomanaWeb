@@ -121,20 +121,110 @@ namespace RomanaWeb.Helper.Repository
             {
                 Restaurant1.IsTop = Restaurant.IsTop;
             } 
-            Restaurant1.IsClosed = Restaurant.IsClosed;   
-            Restaurant1.IsStars = Restaurant.IsStars;   
-            Restaurant1.MinimumPrice = Restaurant.MinimumPrice;   
-            Restaurant1.Areaname = Restaurant.Areaname;   
-            Restaurant1.CategoriesId = Restaurant.CategoriesId;   
-            Restaurant1.CostDelivery = Restaurant.CostDelivery;   
-            Restaurant1.Insta = Restaurant.Insta;   
-            Restaurant1.Password = Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password!);    
+            Restaurant1.IsClosed = Restaurant.IsClosed;
+            // Section 1.3: rating toggle is admin-only. Merchant Update must NOT change IsStars.
+            // Section 1.1: delivery cost is admin-only. Merchant Update must NOT change CostDelivery.
+            // Section 1.1: MinimumPrice removed from store profile - do not write.
+            Restaurant1.Areaname = Restaurant.Areaname;
+            Restaurant1.CategoriesId = Restaurant.CategoriesId;
+            Restaurant1.Insta = Restaurant.Insta;
+            Restaurant1.Password = Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password!);
             _context.Entry(Restaurant1).State = EntityState.Modified;
             await _context.SaveChangesAsync();
               UserManager userManager = new UserManager() { Id = Restaurant1.RestaurantId, Name = Restaurant.Name };
             Restaurant.Token = JsonWebToken.GenerateToken(userManager);
             return Result.Return(true, "تم الحفظ بنجاح", Restaurant1);
-        }     
+        }
+
+        // Section 1.1 & 1.3: admin-only fields are settable here.
+        public async Task<ResObj> UpdateAdmin(Restaurant Restaurant)
+        {
+            Restaurant Restaurant1 = await GetRestaurantById(Restaurant.RestaurantId);
+            if (Restaurant1 is null)
+                return Result.Return(false, "حدث خطا اثناء عملية جلب البيانات");
+
+            Restaurant1.Name = Restaurant.Name;
+            Restaurant1.Details = Restaurant.Details;
+            Restaurant1.Address = Restaurant.Address;
+            if (Restaurant.Logo != null && Restaurant.Logo.Length > 0)
+                Restaurant1.Logo = Restaurant.Logo;
+            if (Restaurant.Background != null && Restaurant.Background.Length > 0)
+                Restaurant1.Background = Restaurant.Background;
+            Restaurant1.Phone = Restaurant.Phone;
+            Restaurant1.Lat = Restaurant.Lat;
+            Restaurant1.Long = Restaurant.Long;
+            Restaurant1.Whatsapp = Restaurant.Whatsapp;
+            Restaurant1.UserName = Restaurant.UserName;
+            Restaurant1.IsActive = Restaurant.IsActive;
+            Restaurant1.IsDelete = false;
+            if (Restaurant.IsTop != null) Restaurant1.IsTop = Restaurant.IsTop;
+            Restaurant1.IsClosed = Restaurant.IsClosed;
+            Restaurant1.IsStars = Restaurant.IsStars;          // admin-only
+            Restaurant1.CostDelivery = Restaurant.CostDelivery; // admin-only
+            Restaurant1.Areaname = Restaurant.Areaname;
+            Restaurant1.CategoriesId = Restaurant.CategoriesId;
+            Restaurant1.Insta = Restaurant.Insta;
+            Restaurant1.Password = Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password!);
+            _context.Entry(Restaurant1).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تم الحفظ بنجاح", Restaurant1);
+        }
+
+        // Section 1.2: fetch stores by user location, ordered by distance asc.
+        public async Task<ResObj> GetByUserLocation(double lat, double lng, double? radiusKm)
+        {
+            var stores = await _context.Restaurant.AsSplitQuery().AsNoTracking()
+                .Where(r => r.IsDelete == false && r.IsActive == true && r.IsApproved == true
+                            && r.Lat != null && r.Long != null && r.Lat != "" && r.Long != "")
+                .ToListAsync();
+
+            var withDistance = stores
+                .Select(r =>
+                {
+                    double sLat, sLng;
+                    if (!double.TryParse(r.Lat, out sLat) || !double.TryParse(r.Long, out sLng))
+                        return null;
+                    double distance = Haversine(lat, lng, sLat, sLng);
+                    // Section 2.3 / 9: hide CostDelivery on listing screens.
+                    r.CostDelivery = null;
+                    return new { Store = r, DistanceKm = Math.Round(distance, 2) };
+                })
+                .Where(x => x != null)
+                .Where(x => !radiusKm.HasValue || x!.DistanceKm <= radiusKm.Value)
+                .OrderBy(x => x!.DistanceKm)
+                .Select(x => new
+                {
+                    x!.Store.RestaurantId,
+                    x.Store.Name,
+                    x.Store.Logo,
+                    x.Store.Background,
+                    x.Store.Phone,
+                    x.Store.Address,
+                    x.Store.Lat,
+                    x.Store.Long,
+                    x.Store.Areaname,
+                    x.Store.CategoriesId,
+                    x.Store.IsClosed,
+                    x.Store.IsStars,
+                    x.Store.IsTop,
+                    distance_km = x.DistanceKm
+                })
+                .ToList();
+
+            return Result.Return(true, withDistance);
+        }
+
+        private static double Haversine(double lat1, double lng1, double lat2, double lng2)
+        {
+            const double R = 6371d;
+            double dLat = (lat2 - lat1) * Math.PI / 180d;
+            double dLng = (lng2 - lng1) * Math.PI / 180d;
+            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                       Math.Cos(lat1 * Math.PI / 180d) * Math.Cos(lat2 * Math.PI / 180d) *
+                       Math.Sin(dLng / 2) * Math.Sin(dLng / 2);
+            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c;
+        }
         public async Task UpdateCode(CodeRes code)
         {
             CodeRes? CodeRes1 = await _context.CodeRes.FirstOrDefaultAsync(i=>i.Code==code.Code);

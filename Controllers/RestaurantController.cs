@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using RomanaWeb.Classes;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Models.Entity;
@@ -22,13 +23,15 @@ namespace RomanaWeb.Controllers
         public readonly IMapper _mapper;
         public readonly IStorageServices _storageServices;     
         public readonly DB_Context _Context;
+        private readonly IConfiguration _config;
         #endregion
 
         #region Const
         public RestaurantController(
             ILoggerRepository logger,
             IRestaurantService RestaurantService,
-             IWebHostEnvironment hostEnvironment,   DB_Context dB_Context, IMapper mapper, IStorageServices storageServices)
+             IWebHostEnvironment hostEnvironment,   DB_Context dB_Context, IMapper mapper, IStorageServices storageServices,
+             IConfiguration config)
         {
             _logger = logger;
             _RestaurantService = RestaurantService;      
@@ -36,6 +39,7 @@ namespace RomanaWeb.Controllers
             _hostEnvironment = hostEnvironment;
             _mapper = mapper;
             _storageServices = storageServices;
+            _config = config;
         }
         #endregion         
 
@@ -59,14 +63,21 @@ namespace RomanaWeb.Controllers
         #endregion
 
 
-        #region GetAllForApp Info Restaurant 
+        #region GetAllForApp Info Restaurant (DEPRECATED - Section 1.2 / 9)
+        // Deprecated: use GetByUserLocation. Kept behind feature flag Stores:AllowFetchByCity.
         [AllowAnonymous]
+        [Obsolete("Use GetByUserLocation. Section 1.2.")]
         [HttpGet("GetAllForApp/{Name},{CategoriesId},{Long},{Lat},{CityId}")]
         public async Task<IActionResult> GetAllForApp(string? Name, int CategoriesId, double Long, double Lat,int? CityId=0)
         {
             try
             {
+                if (!_config.GetValue<bool>("Stores:AllowFetchByCity", false))
+                    return StatusCode(410, new { success = false, msg = "This endpoint is deprecated. Use /Restaurant/GetByUserLocation." });
+
+#pragma warning disable CS0618
                 ResObj res = await _RestaurantService.GetAllForApp(Name, CategoriesId,Long,Lat, CityId);
+#pragma warning restore CS0618
 
                 return Response(res.success, res.data);
             }
@@ -76,7 +87,25 @@ namespace RomanaWeb.Controllers
                 return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
             }
         }
-        #endregion  
+        #endregion
+
+        #region GetByUserLocation (Section 1.2)
+        [AllowAnonymous]
+        [HttpGet("Restaurant/GetByUserLocation")]
+        public async Task<IActionResult> GetByUserLocation([FromQuery] double lat, [FromQuery] double lng, [FromQuery] double? radius_km = null)
+        {
+            try
+            {
+                ResObj res = await _RestaurantService.GetByUserLocation(lat, lng, radius_km);
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantController => GetByUserLocation");
+                return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
+            }
+        }
+        #endregion
         #region GetAllForApp Info Restaurant              
         [HttpGet("GetCountForRes/{Id},{datefrom},{dateto}")]
         public async Task<IActionResult>  GetCountForRes(int Id, DateTime datefrom, DateTime dateto)
@@ -112,14 +141,20 @@ namespace RomanaWeb.Controllers
         }
         #endregion   
 
-        #region GetAllForApp Info Restaurant 
+        #region GetTopAllForApp Info Restaurant (DEPRECATED - Section 1.2 / 9)
         [AllowAnonymous]
+        [Obsolete("Use GetByUserLocation. Section 1.2.")]
         [HttpGet("GetTopAllForApp/{Long},{Lat},{CityId}")]
         public async Task<IActionResult> GetTopAllForApp(double Long, double Lat,int? CityId=0)
         {
             try
             {
+                if (!_config.GetValue<bool>("Stores:AllowFetchByCity", false))
+                    return StatusCode(410, new { success = false, msg = "This endpoint is deprecated. Use /Restaurant/GetByUserLocation." });
+
+#pragma warning disable CS0618
                 ResObj res = await _RestaurantService.GetTopAllForApp(Long,Lat, CityId);
+#pragma warning restore CS0618
 
                 return Response(res.success, res.data);
             }
@@ -129,7 +164,7 @@ namespace RomanaWeb.Controllers
                 return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
             }
         }
-        #endregion   
+        #endregion
 
 
         #region Get Info Restaurant 
@@ -173,12 +208,15 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
-        #region Set Restaurant SetIsStars
+        #region Set Restaurant SetIsStars (Section 1.3 - admin only)
         [HttpPost("Restaurant/SetIsStars/{Id}/{Stars}")]
         public async Task<IActionResult> SetIsStars(int Id, bool Stars)
         {
             try
             {
+                if (UserManager == null || !string.Equals(UserManager.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+                    return Response(false, "غير مصرح، تفعيل التقييم متاح للأدمن فقط");
+
                 ResObj res = await _RestaurantService.SetIsStars(Id, Stars);
                 if (res.success == false)
                 {
@@ -280,7 +318,8 @@ namespace RomanaWeb.Controllers
                 }
                 else
                 {
-                    res = await _RestaurantService.Update(Restaurant);
+                    // Section 1.1/1.3: admin path may change CostDelivery & IsStars.
+                    res = await _RestaurantService.UpdateAdmin(Restaurant);
                 }
                 return Response(res.success, res.msg, res.data);
             }

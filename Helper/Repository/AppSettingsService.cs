@@ -38,6 +38,11 @@ namespace RomanaWeb.Helper.Repository
             {
                 existing.PricePerKm = settings.PricePerKm;
                 existing.DefaultOrderCost = settings.DefaultOrderCost;
+                existing.MinChargeKmThreshold = settings.MinChargeKmThreshold;
+                existing.MinChargeAmount = settings.MinChargeAmount;
+                existing.RoundingMode = string.IsNullOrWhiteSpace(settings.RoundingMode) ? "Ceil" : settings.RoundingMode;
+                existing.ZoneMaxKm = settings.ZoneMaxKm;
+                existing.ZoneMinKm = settings.ZoneMinKm;
                 _context.Entry(existing).State = EntityState.Modified;
             }
             await _context.SaveChangesAsync();

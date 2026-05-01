@@ -54,8 +54,10 @@ namespace RomanaWeb.Helper.Repository
                     if (item.Password.Length > 0)
                         item.Password = Encyptmethod.DecryptStringFromBytes_Aes(item.Password);
             }
+
+           
             return Result.Return(true, SaleMan);
-        }    
+        }
         public async Task<ResObj> GetByRestaurantId(int RestaurantId)
         {                                                     
             List<SaleMan> SaleMan = await _context.SaleMan.AsSplitQuery().AsNoTracking().Where(i=>i.RestaurantId== RestaurantId && i.IsDelete==false).ToListAsync();
@@ -123,6 +125,25 @@ namespace RomanaWeb.Helper.Repository
         {
             SaleMan SaleMan = await GetSaleManById(Id);
              return Result.Return(true, SaleMan);
+        }
+
+        // Section 6 - flip the working/stopped flag.
+        public async Task<ResObj> SetAvailability(int Id, bool isAvailable)
+        {
+            var driver = await _context.SaleMan.FirstOrDefaultAsync(i => i.SaleManId == Id);
+            if (driver == null)
+                return Result.Return(false, "المندوب غير موجود");
+            if (driver.IsDelete == true)
+                return Result.Return(false, "حساب المندوب محذوف");
+
+            driver.IsAvailable = isAvailable;
+            driver.AvailabilityChangedAt = DateTime.UtcNow;
+            _context.Entry(driver).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Result.Return(true,
+                isAvailable ? "تم تفعيل حالة العمل" : "تم ايقاف حالة العمل",
+                new { driver.SaleManId, driver.IsAvailable, driver.AvailabilityChangedAt });
         }
               
     }

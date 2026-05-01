@@ -17,5 +17,7 @@ namespace RomanaWeb.Models.Entity
         public string? Background { get; set; }
         public bool? IsFree { get; set; }
         public List<Images> Images { get; set; }
+        public List<ProductSize>? Sizes { get; set; }
+        public List<ProductIngredient>? Ingredients { get; set; }
     }
 }

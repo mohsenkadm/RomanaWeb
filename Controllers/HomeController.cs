@@ -148,6 +148,10 @@ namespace RomanaWeb.Controllers
         {
             return View();
         }
+        public IActionResult Zones()
+        {
+            return View();
+        }
         [HttpGet("Do")]
         public IActionResult DownloadPageuser()
         {

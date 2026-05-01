@@ -60,10 +60,18 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                // Section 3: Promo codes are created by Admin only.
+                if (UserManager == null || !string.Equals(UserManager.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+                    return Response(false, "غير مصرح، هذه العملية للأدمن فقط");
 
-                if(PromoCode.RestaurantId==0) return Response(false, "يجب اختيار المطعم");
+                // Section 3.1: STORE-scoped promo codes require a store; GLOBAL ones don't.
+                if (!PromoCode.IsForAllStores && PromoCode.RestaurantId == 0)
+                    return Response(false, "يجب اختيار المطعم");
 
-                var rest = await _RestaurantService.GetById(PromoCode.RestaurantId);
+                if (!PromoCode.IsForAllStores)
+                {
+                    var rest = await _RestaurantService.GetById(PromoCode.RestaurantId);
+                }
 
                 ResObj res;
                 res = await _PromoCodeService.Post(PromoCode);
@@ -129,6 +137,9 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (UserManager == null || !string.Equals(UserManager.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+                    return Response(false, "غير مصرح، هذه العملية للأدمن فقط");
+
                 ResObj res = await _PromoCodeService.Delete(Id);
 
                 return Response(res.success, res.msg);

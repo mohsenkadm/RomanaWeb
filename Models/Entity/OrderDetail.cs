@@ -13,7 +13,12 @@ namespace RomanaWeb.Models.Entity
         public int ProductsId { get; set; }       
         public double Price { get; set; }
         public int Count { get; set; }                    
-        public string? Notes2 { get; set; }                    
+        public string? Notes2 { get; set; }
+        // Size & ingredients selected by the customer at order time
+        public int? SelectedSizeId { get; set; }
+        public string? SelectedSizeName { get; set; }
+        public double? SelectedSizePrice { get; set; }
+        public string? SelectedIngredients { get; set; } // comma-separated ingredient names                
         // for show
         public string ProductsName { get; set; }     
         public string ProductsDetails { get; set; }     

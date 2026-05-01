@@ -5,38 +5,309 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>تطبيق رمانة</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" />
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="~/css/romana-theme.css" rel="stylesheet" asp-append-version="true" />
+    <style>
+        /* =====================================================
+           DOWNLOAD PAGE — EXCLUSIVE STYLES (#b41921 theme)
+           ===================================================== */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body.download-page {
+            font-family: 'Tajawal', sans-serif;
+            background: #b41921 !important;
+            min-height: 100vh;
+            direction: rtl;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated background blobs */
+        .dl-bg-blob {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.18;
+            pointer-events: none;
+            z-index: 0;
+            animation: dlBlobFloat 8s ease-in-out infinite alternate;
+        }
+        .dl-bg-blob-1 { width: 520px; height: 520px; background: #fff; top: -120px; right: -120px; animation-duration: 9s; }
+        .dl-bg-blob-2 { width: 400px; height: 400px; background: #ff6b35; bottom: -80px; left: -80px; animation-duration: 11s; animation-delay: -3s; }
+        .dl-bg-blob-3 { width: 300px; height: 300px; background: #fff; top: 40%; left: 50%; transform: translateX(-50%); animation-duration: 7s; animation-delay: -5s; }
+
+        @@keyframes dlBlobFloat {
+            from { transform: translateY(0) scale(1); }
+            to   { transform: translateY(-30px) scale(1.06); }
+        }
+        .dl-bg-blob-3 {
+            animation-name: dlBlobFloat3;
+        }
+        @@keyframes dlBlobFloat3 {
+            from { transform: translateX(-50%) translateY(0) scale(1); }
+            to   { transform: translateX(-50%) translateY(-20px) scale(1.04); }
+        }
+
+        /* Particle dots */
+        .dl-particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .dl-dot {
+            position: absolute;
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.35);
+            animation: dlDotRise linear infinite;
+        }
+        @@keyframes dlDotRise {
+            0%   { transform: translateY(0) scale(1); opacity: 0.6; }
+            100% { transform: translateY(-100vh) scale(0.5); opacity: 0; }
+        }
+
+        /* Wrapper */
+        .dl-wrapper {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 16px 60px;
+        }
+
+        /* Header logo */
+        .dl-header {
+            text-align: center;
+            margin-bottom: 36px;
+            animation: dlFadeDown 0.7s ease-out both;
+        }
+        .dl-logo-wrap {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 96px; height: 96px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 28px;
+            backdrop-filter: blur(8px);
+            border: 2px solid rgba(255,255,255,0.35);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+            margin-bottom: 16px;
+            animation: dlBounceIn 0.9s cubic-bezier(0.34,1.56,0.64,1) both;
+            animation-delay: 0.2s;
+        }
+        .dl-logo-wrap img { width: 60px; height: 60px; object-fit: contain; }
+        .dl-title {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #fff;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 12px rgba(0,0,0,0.2);
+        }
+        .dl-subtitle {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.82);
+            margin-top: 6px;
+        }
+
+        /* Card */
+        .dl-card {
+            background: rgba(255,255,255,0.12);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 24px;
+            padding: 36px 32px;
+            width: 100%;
+            max-width: 680px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
+            animation: dlFadeUp 0.7s ease-out both;
+            animation-delay: 0.15s;
+        }
+
+        /* Section heading inside card */
+        .dl-section-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: rgba(255,255,255,0.95);
+            text-align: center;
+            margin-bottom: 22px;
+            position: relative;
+        }
+        .dl-section-title::after {
+            content: '';
+            display: block;
+            width: 48px; height: 3px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 2px;
+            margin: 8px auto 0;
+        }
+
+        /* Store buttons */
+        .dl-store-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            justify-content: center;
+            margin-bottom: 32px;
+        }
+        .dl-store-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255,255,255,0.95);
+            color: #b41921;
+            border: none;
+            border-radius: 16px;
+            padding: 14px 28px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.18);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.2s;
+            animation: dlStoreIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+        .dl-store-btn:nth-child(1) { animation-delay: 0.3s; }
+        .dl-store-btn:nth-child(2) { animation-delay: 0.45s; }
+        .dl-store-btn:hover {
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.28);
+            background: #fff;
+            color: #8b1219;
+            text-decoration: none;
+        }
+        .dl-store-btn i { font-size: 1.6rem; }
+        .dl-store-btn .dl-btn-text { display: flex; flex-direction: column; line-height: 1.2; }
+        .dl-store-btn .dl-btn-sub { font-size: 0.72rem; font-weight: 400; opacity: 0.7; }
+        .dl-store-btn .dl-btn-main { font-size: 1rem; font-weight: 800; }
+
+        /* Divider */
+        .dl-divider {
+            height: 1px;
+            background: rgba(255,255,255,0.2);
+            margin: 24px 0;
+        }
+
+        /* Social row */
+        .dl-social-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            justify-content: center;
+        }
+        .dl-social-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+            border-radius: 50px;
+            padding: 10px 22px;
+            font-family: 'Tajawal', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+            animation: dlFadeUp 0.5s ease-out both;
+        }
+        .dl-social-btn:nth-child(1) { animation-delay: 0.5s; }
+        .dl-social-btn:nth-child(2) { animation-delay: 0.62s; }
+        .dl-social-btn:nth-child(3) { animation-delay: 0.74s; }
+        .dl-social-btn:hover {
+            transform: translateY(-3px);
+            background: rgba(255,255,255,0.28);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+            color: #fff;
+            text-decoration: none;
+        }
+        .dl-social-btn i { font-size: 1.1rem; }
+
+        /* Footer */
+        .dl-footer {
+            color: rgba(255,255,255,0.55);
+            font-size: 0.82rem;
+            margin-top: 32px;
+            text-align: center;
+            animation: dlFadeUp 0.7s ease-out both;
+            animation-delay: 0.8s;
+        }
+
+        /* Keyframes */
+        @@keyframes dlFadeUp {
+            from { opacity: 0; transform: translateY(28px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @@keyframes dlFadeDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @@keyframes dlBounceIn {
+            0%   { opacity: 0; transform: scale(0.7); }
+            60%  { transform: scale(1.08); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        @@keyframes dlStoreIn {
+            0%   { opacity: 0; transform: scale(0.82) translateY(16px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        @@media (max-width: 480px) {
+            .dl-card { padding: 28px 18px; }
+            .dl-store-btn { padding: 12px 18px; }
+            .dl-title { font-size: 1.6rem; }
+        }
+    </style>
 </head>
-<body style="font-family: 'Tajawal', 'Inter', sans-serif; background: var(--rm-bg-primary);">
-    <header style="background:#fff;box-shadow:var(--rm-shadow);">
-        <nav class="navbar navbar-expand-sm">
-            <div class="container">
-                <a class="navbar-brand" href="#" style="display:inline-flex;align-items:center;gap:10px;">
-                    <img src="~/images/logo.png" width="72" height="36" alt="logo" style="object-fit:contain;" />
-                    <span style="font-weight:800;color:var(--rm-text);font-size:1.1rem;">تطبيق رمانة</span>
-                </a>
+<body class="download-page">
+
+    <!-- Animated background blobs -->
+    <div class="dl-bg-blob dl-bg-blob-1"></div>
+    <div class="dl-bg-blob dl-bg-blob-2"></div>
+    <div class="dl-bg-blob dl-bg-blob-3"></div>
+
+    <!-- Floating particles -->
+    <div class="dl-particles" id="dlParticles"></div>
+
+    <div class="dl-wrapper">
+        <div class="dl-header">
+            <div class="dl-logo-wrap">
+                <img src="~/images/logo.png" alt="رمانة" />
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            <div class="rm-download-card">
-                @RenderBody()
-            </div>
-        </main>
+            <div class="dl-title">تطبيق رمانة</div>
+            <div class="dl-subtitle">منصة الطعام الأولى في العراق</div>
+        </div>
+
+        <div class="dl-card">
+            @RenderBody()
+        </div>
+
+        <div class="dl-footer">&copy; @DateTime.Now.Year — تطبيق رمانة. جميع الحقوق محفوظة.</div>
     </div>
-    <footer class="text-center" style="color:var(--rm-text-muted);font-size:0.85rem;padding:18px 0;">
-        &copy; @DateTime.Now.Year — تطبيق رمانة
-    </footer>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/rm-performance.js" asp-append-version="true"></script>
-
+    <script>
+        // Generate floating particles
+        (function () {
+            var container = document.getElementById('dlParticles');
+            for (var i = 0; i < 22; i++) {
+                var d = document.createElement('div');
+                d.className = 'dl-dot';
+                var size = Math.random() * 5 + 3;
+                d.style.cssText = [
+                    'width:' + size + 'px',
+                    'height:' + size + 'px',
+                    'left:' + Math.random() * 100 + '%',
+                    'bottom:' + (Math.random() * 20 - 5) + '%',
+                    'animation-duration:' + (Math.random() * 8 + 6) + 's',
+                    'animation-delay:' + (Math.random() * -12) + 's',
+                    'opacity:' + (Math.random() * 0.4 + 0.15)
+                ].join(';');
+                container.appendChild(d);
+            }
+        })();
+    </script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

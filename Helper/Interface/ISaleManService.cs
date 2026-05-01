@@ -15,6 +15,9 @@ namespace RomanaWeb.Helper.Interface
         Task<SaleMan> GetSaleManById(int Id);
         Task<ResObj> GetById(int Id);       
         Task<ResObj> GetCountForSale(int Id, DateTime datefrom, DateTime dateto);
-       
+
+        // Section 6 - working/stopped toggle. When stopped (IsAvailable=false)
+        // the dispatcher will not push order notifications to this driver.
+        Task<ResObj> SetAvailability(int Id, bool isAvailable);
     }
 }

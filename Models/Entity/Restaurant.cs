@@ -29,6 +29,9 @@ namespace RomanaWeb.Models.Entity
         public bool? IsTop { get; set; }
         public bool? IsDelete { get; set; }
         public bool? IsApproved { get; set; }
+        // Section 1.1: minimum order amount removed from store profile.
+        // Column kept for backward compatibility; do not surface in new APIs.
+        [Obsolete("Removed from store profile per Section 1.1. Do not read/write from new APIs.")]
         public decimal MinimumPrice { get; set; }
         public string? Areaname { get; set; }
         public decimal? CostDelivery { get; set; }

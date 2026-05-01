@@ -55,6 +55,8 @@
                                                     <th scope="col">التفاصيل</th>
                                                     <th scope="col">الاسم</th>
                                                     <th scope="col">اسم المطعم</th>
+                                                    <th scope="col">الأحجام</th>
+                                                    <th scope="col">المكونات</th>
                                                     <th scope="col"></th>
                                                     <th scope="col"></th> 
                                                 </tr>
@@ -162,6 +164,87 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-dismiss="modal">اغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sizes Modal -->
+<div class="modal fade" id="SizesModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title">أحجام المنتج</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="form-group col-md-5 alignright">
+                        <label class="text-primary">اسم الحجم</label>
+                        <input type="text" id="NewSizeName" class="form-control alignright" placeholder="مثال: صغير / وسط / كبير" />
+                    </div>
+                    <div class="form-group col-md-5 alignright">
+                        <label class="text-primary">السعر الإضافي</label>
+                        <input type="number" id="NewSizePrice" class="form-control alignright" placeholder="0" min="0" step="any" />
+                    </div>
+                    <div class="form-group col-md-2 alignright">
+                        <label class="mb-2">&nbsp;</label>
+                        <button type="button" class="btn btn-success btn-block" onclick="addSize()">إضافة</button>
+                    </div>
+                </div>
+                <table class="table table-hover table-bordered text-center">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>الحجم</th>
+                            <th>السعر الإضافي</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableSizes"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ingredients Modal -->
+<div class="modal fade" id="IngredientsModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title">مكونات المنتج</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="form-group col-md-10 alignright">
+                        <label class="text-primary">اسم المكون</label>
+                        <input type="text" id="NewIngredientName" class="form-control alignright" placeholder="مثال: جبن / خس / طماطم" />
+                    </div>
+                    <div class="form-group col-md-2 alignright">
+                        <label class="mb-2">&nbsp;</label>
+                        <button type="button" class="btn btn-success btn-block" onclick="addIngredient()">إضافة</button>
+                    </div>
+                </div>
+                <table class="table table-hover table-bordered text-center">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>المكون</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableIngredients"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
             </div>
         </div>
     </div>

@@ -14,7 +14,10 @@ namespace RomanaWeb.Models.Entity
         public int? RestaurantId { get; set; }     
         [Required]
         [StringLength(int.MaxValue)]
-        public string? Comments { get; set; }    
+        public string? Comments { get; set; }
+        // Section 5.1: link rating to a single completed order (one rating per order).
+        public int? OrderId { get; set; }
+        public int? UserId { get; set; }
         public string? UserName { get; set; }
         public string? RestaurantName { get; set; }    
     }

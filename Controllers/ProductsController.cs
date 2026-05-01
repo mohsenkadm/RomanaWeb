@@ -304,5 +304,109 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
+        #region Product Sizes
+
+        [HttpGet("Products/GetSizesByProductId/{productId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetSizesByProductId(int productId)
+        {
+            try
+            {
+                ResObj res = await _ProductsService.GetSizesByProductId(productId);
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ProductsController => GetSizesByProductId");
+                return Response(false, "حدث خطأ اثناء جلب الأحجام");
+            }
+        }
+
+        [HttpPost("Products/PostSize")]
+        public async Task<IActionResult> PostSize([FromBody] ProductSize size)
+        {
+            try
+            {
+                if (size == null || size.ProductsId <= 0 || string.IsNullOrWhiteSpace(size.SizeName))
+                    return Response(false, "بيانات الحجم غير صحيحة");
+                ResObj res = await _ProductsService.PostSize(size);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ProductsController => PostSize");
+                return Response(false, "حدث خطأ اثناء حفظ الحجم");
+            }
+        }
+
+        [HttpDelete("Products/DeleteSize/{sizeId}")]
+        public async Task<IActionResult> DeleteSize(int sizeId)
+        {
+            try
+            {
+                ResObj res = await _ProductsService.DeleteSize(sizeId);
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ProductsController => DeleteSize");
+                return Response(false, "حدث خطأ اثناء حذف الحجم");
+            }
+        }
+
+        #endregion
+
+        #region Product Ingredients
+
+        [HttpGet("Products/GetIngredientsByProductId/{productId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetIngredientsByProductId(int productId)
+        {
+            try
+            {
+                ResObj res = await _ProductsService.GetIngredientsByProductId(productId);
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ProductsController => GetIngredientsByProductId");
+                return Response(false, "حدث خطأ اثناء جلب المكونات");
+            }
+        }
+
+        [HttpPost("Products/PostIngredient")]
+        public async Task<IActionResult> PostIngredient([FromBody] ProductIngredient ingredient)
+        {
+            try
+            {
+                if (ingredient == null || ingredient.ProductsId <= 0 || string.IsNullOrWhiteSpace(ingredient.IngredientName))
+                    return Response(false, "بيانات المكون غير صحيحة");
+                ResObj res = await _ProductsService.PostIngredient(ingredient);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ProductsController => PostIngredient");
+                return Response(false, "حدث خطأ اثناء حفظ المكون");
+            }
+        }
+
+        [HttpDelete("Products/DeleteIngredient/{ingredientId}")]
+        public async Task<IActionResult> DeleteIngredient(int ingredientId)
+        {
+            try
+            {
+                ResObj res = await _ProductsService.DeleteIngredient(ingredientId);
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ProductsController => DeleteIngredient");
+                return Response(false, "حدث خطأ اثناء حذف المكون");
+            }
+        }
+
+        #endregion
+
     }
 }

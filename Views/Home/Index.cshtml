@@ -4,32 +4,85 @@
 }
 
 <style>
-    .dash-card {
-        animation: dashFadeIn 0.45s ease-out both;
-        transition: transform 0.25s ease, box-shadow 0.25s ease;
+    /* === Beautified summary cards (Section: dashboard KPI redesign) === */
+    .rm-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+        margin-bottom: 22px;
     }
-    .dash-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    .rm-kpi {
+        position: relative;
+        border-radius: 18px;
+        padding: 22px 20px 18px;
+        color: #fff;
+        overflow: hidden;
+        box-shadow: 0 10px 24px rgba(15,23,42,.10);
+        animation: rmKpiIn .55s ease-out both;
+        transition: transform .25s ease, box-shadow .25s ease;
     }
-    .dash-card:nth-child(1) { animation-delay: 0.03s; }
-    .dash-card:nth-child(2) { animation-delay: 0.06s; }
-    .dash-card:nth-child(3) { animation-delay: 0.09s; }
-    .dash-card:nth-child(4) { animation-delay: 0.12s; }
-    .dash-card:nth-child(5) { animation-delay: 0.15s; }
-    .dash-card:nth-child(6) { animation-delay: 0.18s; }
-    .dash-card:nth-child(7) { animation-delay: 0.21s; }
-    @@keyframes dashFadeIn {
-        from { opacity: 0; transform: translateY(16px); }
-        to { opacity: 1; transform: translateY(0); }
+    .rm-kpi:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 30px rgba(15,23,42,.18);
     }
-    @@keyframes countUp {
-        from { opacity: 0; }
-        to { opacity: 1; }
+    .rm-kpi::after {
+        content: "";
+        position: absolute; inset: 0;
+        background: radial-gradient(circle at top left, rgba(255,255,255,.18), transparent 60%);
+        pointer-events: none;
     }
-    .card-title { animation: countUp 0.6s ease-out; }
+    .rm-kpi .rm-kpi-icon {
+        width: 52px; height: 52px;
+        border-radius: 14px;
+        background: rgba(255,255,255,.22);
+        display: inline-flex;
+        align-items: center; justify-content: center;
+        margin-bottom: 14px;
+        backdrop-filter: blur(4px);
+    }
+    .rm-kpi .rm-kpi-icon i { font-size: 28px; color: #fff; }
+    .rm-kpi .rm-kpi-label {
+        font-size: .88rem;
+        font-weight: 500;
+        opacity: .92;
+        margin: 0 0 6px 0;
+    }
+    .rm-kpi .rm-kpi-value {
+        font-size: 1.95rem;
+        font-weight: 800;
+        line-height: 1.1;
+        margin: 0;
+        letter-spacing: -.5px;
+    }
+    .rm-kpi .rm-kpi-sub {
+        margin-top: 10px;
+        font-size: .75rem;
+        opacity: .85;
+        display: flex; align-items: center; gap: 4px;
+    }
+    /* Color variants */
+    .rm-kpi-violet  { background: linear-gradient(135deg,#6366f1,#8b5cf6); }
+    .rm-kpi-emerald { background: linear-gradient(135deg,#10b981,#059669); }
+    .rm-kpi-cyan    { background: linear-gradient(135deg,#06b6d4,#0891b2); }
+    .rm-kpi-amber   { background: linear-gradient(135deg,#f59e0b,#d97706); }
+    .rm-kpi-rose    { background: linear-gradient(135deg,#f43f5e,#e11d48); }
+    .rm-kpi-sky     { background: linear-gradient(135deg,#0ea5e9,#0284c7); }
+    .rm-kpi-purple  { background: linear-gradient(135deg,#a855f7,#7e22ce); }
+
+    @@keyframes rmKpiIn {
+        from { opacity: 0; transform: translateY(18px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .rm-kpi:nth-child(1){ animation-delay:.05s }
+    .rm-kpi:nth-child(2){ animation-delay:.10s }
+    .rm-kpi:nth-child(3){ animation-delay:.15s }
+    .rm-kpi:nth-child(4){ animation-delay:.20s }
+    .rm-kpi:nth-child(5){ animation-delay:.25s }
+    .rm-kpi:nth-child(6){ animation-delay:.30s }
+    .rm-kpi:nth-child(7){ animation-delay:.35s }
+
     .dash-chart-card {
-        animation: dashFadeIn 0.6s ease-out both;
+        animation: rmKpiIn 0.6s ease-out both;
         border-radius: 14px;
         overflow: hidden;
     }
@@ -44,82 +97,56 @@
         <!-- Welcome Banner -->
         <div class="row mb-4">
             <div class="col-12">
-                <div style="background:linear-gradient(135deg,#4f46e5,#6366f1);border-radius:16px;padding:28px 32px;color:#fff;animation:dashFadeIn 0.4s ease-out;">
+                <div style="background:linear-gradient(135deg,#4f46e5,#6366f1);border-radius:16px;padding:28px 32px;color:#fff;animation:rmKpiIn 0.4s ease-out;">
                     <h4 style="font-weight:800;margin:0 0 6px 0;font-size:1.3rem;"><i class="material-icons" style="vertical-align:middle;margin-left:8px;">dashboard</i>مرحباً بك في لوحة التحكم</h4>
                     <p style="margin:0;opacity:0.85;font-size:0.92rem;">إليك ملخص سريع لأهم الإحصائيات والبيانات في النظام</p>
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
-                <div class="card card-stats">
-                    <div class="card-header card-header-warning card-header-icon">
-                        <div class="card-icon"><i class="material-icons">person</i></div>
-                        <p class="card-category">عدد الزبائن</p>
-                        <h3 class="card-title" id="CountUser"></h3>
-                    </div>
-                    <div class="card-footer"><div class="stats"><i class="material-icons text-warning">person</i></div></div>
-                </div>
+
+        <!-- Summary KPI cards -->
+        <div class="rm-summary-grid">
+            <div class="rm-kpi rm-kpi-amber">
+                <div class="rm-kpi-icon"><i class="material-icons">person</i></div>
+                <p class="rm-kpi-label">عدد الزبائن</p>
+                <h3 class="rm-kpi-value" id="CountUser">0</h3>
+                <div class="rm-kpi-sub"><i class="material-icons" style="font-size:14px">people</i> اجمالي المسجلين</div>
             </div>
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
-                <div class="card card-stats">
-                    <div class="card-header card-header-success card-header-icon">
-                        <div class="card-icon"><i class="material-icons">store</i></div>
-                        <p class="card-category">عدد المطاعم</p>
-                        <h3 class="card-title" id="CountRes"></h3>
-                    </div>
-                    <div class="card-footer"><div class="stats"><i class="material-icons text-success">store</i></div></div>
-                </div>
+            <div class="rm-kpi rm-kpi-emerald">
+                <div class="rm-kpi-icon"><i class="material-icons">store</i></div>
+                <p class="rm-kpi-label">عدد المطاعم</p>
+                <h3 class="rm-kpi-value" id="CountRes">0</h3>
+                <div class="rm-kpi-sub"><i class="material-icons" style="font-size:14px">storefront</i> المتاجر النشطة</div>
             </div>
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
-                <div class="card card-stats">
-                    <div class="card-header card-header-info card-header-icon">
-                        <div class="card-icon"><i class="material-icons">category</i></div>
-                        <p class="card-category">عدد الاقسام</p>
-                        <h3 class="card-title" id="CountCateg"></h3>
-                    </div>
-                    <div class="card-footer"><div class="stats"><i class="material-icons text-info">category</i></div></div>
-                </div>
+            <div class="rm-kpi rm-kpi-cyan">
+                <div class="rm-kpi-icon"><i class="material-icons">category</i></div>
+                <p class="rm-kpi-label">عدد الاقسام</p>
+                <h3 class="rm-kpi-value" id="CountCateg">0</h3>
+                <div class="rm-kpi-sub"><i class="material-icons" style="font-size:14px">label</i> التصنيفات</div>
             </div>
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
-                <div class="card card-stats">
-                    <div class="card-header card-header-primary card-header-icon">
-                        <div class="card-icon"><i class="material-icons">list</i></div>
-                        <p class="card-category">عدد الاصناف</p>
-                        <h3 class="card-title" id="CountSubCateg"></h3>
-                    </div>
-                    <div class="card-footer"><div class="stats"><i class="material-icons text-primary">list</i></div></div>
-                </div>
+            <div class="rm-kpi rm-kpi-violet">
+                <div class="rm-kpi-icon"><i class="material-icons">list</i></div>
+                <p class="rm-kpi-label">عدد الاصناف</p>
+                <h3 class="rm-kpi-value" id="CountSubCateg">0</h3>
+                <div class="rm-kpi-sub"><i class="material-icons" style="font-size:14px">format_list_bulleted</i> الاصناف الفرعية</div>
             </div>
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
-                <div class="card card-stats">
-                    <div class="card-header card-header-danger card-header-icon">
-                        <div class="card-icon"><i class="material-icons">inventory_2</i></div>
-                        <p class="card-category">عدد المنتجات</p>
-                        <h3 class="card-title" id="CountProd"></h3>
-                    </div>
-                    <div class="card-footer"><div class="stats"><i class="material-icons text-danger">inventory_2</i></div></div>
-                </div>
+            <div class="rm-kpi rm-kpi-rose">
+                <div class="rm-kpi-icon"><i class="material-icons">inventory_2</i></div>
+                <p class="rm-kpi-label">عدد المنتجات</p>
+                <h3 class="rm-kpi-value" id="CountProd">0</h3>
+                <div class="rm-kpi-sub"><i class="material-icons" style="font-size:14px">shopping_bag</i> اجمالي الاصناف</div>
             </div>
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
-                <div class="card card-stats">
-                    <div class="card-header card-header-success card-header-icon">
-                        <div class="card-icon"><i class="material-icons">shopping_cart</i></div>
-                        <p class="card-category">عدد الطلبات</p>
-                        <h3 class="card-title" id="CountOrder"></h3>
-                    </div>
-                    <div class="card-footer"><div class="stats"><i class="material-icons text-success">shopping_cart</i></div></div>
-                </div>
+            <div class="rm-kpi rm-kpi-sky">
+                <div class="rm-kpi-icon"><i class="material-icons">shopping_cart</i></div>
+                <p class="rm-kpi-label">عدد الطلبات</p>
+                <h3 class="rm-kpi-value" id="CountOrder">0</h3>
+                <div class="rm-kpi-sub"><i class="material-icons" style="font-size:14px">receipt_long</i> اجمالي الطلبات</div>
             </div>
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 dash-card">
-                <div class="card card-stats">
-                    <div class="card-header card-header-warning card-header-icon">
-                        <div class="card-icon"><i class="material-icons">attach_money</i></div>
-                        <p class="card-category">مبلغ الطلبات</p>
-                        <h3 class="card-title" id="PriceSale"></h3>
-                    </div>
-                    <div class="card-footer"><div class="stats"><i class="material-icons text-warning">attach_money</i></div></div>
-                </div>
+            <div class="rm-kpi rm-kpi-purple">
+                <div class="rm-kpi-icon"><i class="material-icons">attach_money</i></div>
+                <p class="rm-kpi-label">مبلغ الطلبات</p>
+                <h3 class="rm-kpi-value" id="PriceSale">0</h3>
+                <div class="rm-kpi-sub"><i class="material-icons" style="font-size:14px">payments</i> الايرادات</div>
             </div>
         </div>
 
@@ -208,7 +235,7 @@
                 if (!data) return;
                 var dailyMap = {};
                 data.forEach(function (o) {
-                    var d = new Date(o.orderDate).toLocaleDateString('ar-IQ');
+                    var d = new Date(o.orderDate).toLocaleDateString('en-GB');
                     dailyMap[d] = (dailyMap[d] || 0) + 1;
                 });
                 var keys = Object.keys(dailyMap).slice(-14);

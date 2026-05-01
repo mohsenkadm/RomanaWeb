@@ -271,7 +271,7 @@
                 restaurantMap[rName] = (restaurantMap[rName] || 0) + 1;
 
                 // By date
-                var d = new Date(order.orderDate).toLocaleDateString('ar-IQ');
+                var d = new Date(order.orderDate).toLocaleDateString('en-GB');
                 dailyMap[d] = (dailyMap[d] || 0) + (order.netAmount || 0);
             });
 

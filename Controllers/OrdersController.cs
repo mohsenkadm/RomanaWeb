@@ -398,12 +398,19 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
-        #region Set Order SetSaleManId
+        #region Set Order SetSaleManId (DEPRECATED - Section 4.2)
+        // Section 4.2: manual "assign driver" was removed from the order screen.
+        // Drivers self-accept via DriverDispatchController. This endpoint stays for
+        // legacy callers but returns 410 unless feature flag Drivers:AllowManualAssign is on.
         [HttpPost("Orders/SetSaleManId/{OrderId},{SaleManId}")]
-        public async Task<IActionResult> SetSaleManId(int OrderId,int SaleManId)    
+        public async Task<IActionResult> SetSaleManId(int OrderId,int SaleManId,
+            [FromServices] Microsoft.Extensions.Configuration.IConfiguration config)
         {
             try
             {
+                if (!config.GetValue<bool>("Drivers:AllowManualAssign", false))
+                    return StatusCode(410, new { success = false, msg = "Manual driver assignment is disabled. Drivers self-accept (Section 4.2)." });
+
                 ResObj res = await _OrdersService.SetSaleManId(OrderId,SaleManId);
                 if (res.success == false)
                 {
@@ -431,7 +438,7 @@ namespace RomanaWeb.Controllers
                 }
                 catch (Exception ex) { }
 
-              
+
                 return Response(res.success, res.msg);
             }
             catch (Exception ex)

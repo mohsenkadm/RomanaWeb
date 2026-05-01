@@ -188,6 +188,46 @@ namespace RomanaWeb.Controllers
             }
         }
         #endregion
-                 
+
+        // Section 6 - working/stopped toggle (admin or driver themselves).
+        // POST /SaleMan/SetAvailability?Id=12&isAvailable=false
+        // The dispatcher (DriverDispatchService) excludes drivers with IsAvailable=false.
+        #region SetAvailability
+        [HttpPost("SaleMan/SetAvailability")]
+        public async Task<IActionResult> SetAvailability(int Id, bool isAvailable)
+        {
+            try
+            {
+                if (Id <= 0) return Response(false, "معرف غير صالح");
+                ResObj res = await _SaleManService.SetAvailability(Id, isAvailable);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "SaleManController => SetAvailability => Id:" + Id);
+                return Response(false, "حدث خطأ اثناء تغيير الحالة");
+            }
+        }
+
+        // Convenience: a driver toggles their own availability from the mobile app.
+        // POST /SaleMan/ToggleMyAvailability?isAvailable=false
+        [HttpPost("SaleMan/ToggleMyAvailability")]
+        public async Task<IActionResult> ToggleMyAvailability(bool isAvailable)
+        {
+            try
+            {
+                int driverId = UserManager?.Id ?? 0;
+                if (driverId <= 0) return Response(false, "غير مصرح");
+                ResObj res = await _SaleManService.SetAvailability(driverId, isAvailable);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "SaleManController => ToggleMyAvailability");
+                return Response(false, "حدث خطأ اثناء تغيير الحالة");
+            }
+        }
+        #endregion
+
     }
 }

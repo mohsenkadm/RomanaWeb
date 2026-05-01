@@ -7,18 +7,22 @@ namespace RomanaWeb.Helper.Interface
     public interface IRestaurantService
     {
         Task<ResObj> Login(string UserName, string password);
+        [Obsolete("Section 1.2: replaced by GetByUserLocation. Gated by feature flag Stores:AllowFetchByCity.")]
         Task<ResObj> GetAllForApp(string? Name, int CategoriesId, double Long, double Lat,int? CityId);
         Task<ResObj> GetAll(string? Name);
         Task<ResObj> Post(Restaurant Restaurant);
         Task<ResObj> Update(Restaurant Restaurant);
+        Task<ResObj> UpdateAdmin(Restaurant Restaurant);
         Task<ResObj> Delete(int Id);
         Task<Restaurant> GetRestaurantById(int Id);
-        Task<ResObj> GetById(int Id);       
+        Task<ResObj> GetById(int Id);
         Task<ResObj> SetIsColsed(int id,bool stars);
         Task<ResObj> SetIsStars(int id,bool closed);
         Task<ResObj> SetIsApproved(int id);
         Task<ResObj> GetResNotApproveAll();
+        [Obsolete("Section 1.2: replaced by GetByUserLocation. Gated by feature flag Stores:AllowFetchByCity.")]
         Task<ResObj> GetTopAllForApp(double Long, double Lat, int? CityId);
+        Task<ResObj> GetByUserLocation(double lat, double lng, double? radiusKm);
         Task<ResObj> GetCountForRes(int Id, DateTime datefrom, DateTime dateto);
         Task<ResObj> CheckCode(string? code);
         Task<ResObj> UpdateLocationInfo(int id, double Long, double Lat);

@@ -112,6 +112,8 @@ namespace RomanaWeb.Helper.Repository
             Products items = await _prodService.GetEntityAsync("dbo.GetProductsById", new { Id});
             items.Images = await _context.Images.Where(i => i.ProductsId == Id).
                 AsNoTracking().AsSplitQuery().ToListAsync();
+            items.Sizes = await _context.ProductSize.Where(s => s.ProductsId == Id).AsNoTracking().ToListAsync();
+            items.Ingredients = await _context.ProductIngredient.Where(i => i.ProductsId == Id).AsNoTracking().ToListAsync();
             if (items != null)
             {
                 return Result.Return(true, items);
@@ -155,6 +157,54 @@ namespace RomanaWeb.Helper.Repository
         {
             List<Images> img = await _context.Images.Where(i => i.ProductsId == Id).ToListAsync();
             return Result.Return(true, img);
+        }
+
+        // --- Product Sizes ---
+
+        public async Task<ResObj> GetSizesByProductId(int productId)
+        {
+            var sizes = await _context.ProductSize.Where(s => s.ProductsId == productId).ToListAsync();
+            return Result.Return(true, sizes);
+        }
+
+        public async Task<ResObj> PostSize(ProductSize size)
+        {
+            await _context.ProductSize.AddAsync(size);
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تم الحفظ بنجاح", size.ProductSizeId);
+        }
+
+        public async Task<ResObj> DeleteSize(int sizeId)
+        {
+            var size = await _context.ProductSize.FirstOrDefaultAsync(s => s.ProductSizeId == sizeId);
+            if (size == null) return Result.Return(false, "السايز غير موجود");
+            _context.ProductSize.Remove(size);
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تم الحذف بنجاح");
+        }
+
+        // --- Product Ingredients ---
+
+        public async Task<ResObj> GetIngredientsByProductId(int productId)
+        {
+            var ingredients = await _context.ProductIngredient.Where(i => i.ProductsId == productId).ToListAsync();
+            return Result.Return(true, ingredients);
+        }
+
+        public async Task<ResObj> PostIngredient(ProductIngredient ingredient)
+        {
+            await _context.ProductIngredient.AddAsync(ingredient);
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تم الحفظ بنجاح", ingredient.ProductIngredientId);
+        }
+
+        public async Task<ResObj> DeleteIngredient(int ingredientId)
+        {
+            var ingredient = await _context.ProductIngredient.FirstOrDefaultAsync(i => i.ProductIngredientId == ingredientId);
+            if (ingredient == null) return Result.Return(false, "المكون غير موجود");
+            _context.ProductIngredient.Remove(ingredient);
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تم الحذف بنجاح");
         }
     }
 }

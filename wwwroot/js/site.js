@@ -89,6 +89,42 @@ function call_ajax(method, url, object, call_back_func) {
     });
 } 
 
+function call_ajax_json(method, url, object, call_back_func) {
+    var userToken = getCookie("token2");
+    mouseevent("progress");
+    $('.progress').fadeIn();
+    $.ajax({
+        method: method,
+        url: "/" + url,
+        contentType: "application/json",
+        data: JSON.stringify(object),
+        headers: {
+            'Authorization': `Bearer ${userToken}`,
+        },
+        success: (respons) => {
+            mouseevent("default");
+            $('.preloader').fadeOut();
+            if (respons.success) {
+                if (typeof (call_back_func) == 'function') {
+                    if (respons.data != undefined)
+                        call_back_func(respons.data);
+                    else
+                        call_back_func();
+                }
+                if (respons.msg != null && respons.msg != undefined)
+                    md.showNotification(respons.msg);
+            } else {
+                if (respons.msg != null && respons.msg != undefined)
+                    md.showNotification(respons.msg);
+            }
+        },
+        error: (e) => {
+            mouseevent("default");
+            $('.progress').fadeOut();
+            md.showNotification('حدث خطأ عند الأتصال');
+        }
+    });
+}
 
 var indexviews = 1;
 var listviews = [

@@ -2,6 +2,7 @@
 using RomanaWeb.Models.Entity;
 using RomanaWeb.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using RomanaWeb.Helper.Interface;
 using static NuGet.Packaging.PackagingConstants;
 
@@ -13,16 +14,22 @@ namespace RomanaWeb.Helper.Repository
         private readonly DB_Context _context;
         private readonly IDapperRepository<Orders> _OrdersRepository;
         private readonly IDapperRepository<OrderDetail> _OrderDetailRepository;
+        private readonly IDriverDispatchService _dispatch;
+        private readonly IConfiguration _config;
 
         public OrdersService(
             DB_Context context,
             IDapperRepository<Orders> orderRepository,
-            IDapperRepository<OrderDetail> OrderDetailRepository
+            IDapperRepository<OrderDetail> OrderDetailRepository,
+            IDriverDispatchService dispatch,
+            IConfiguration config
             )
         {
             _context = context;
             _OrdersRepository = orderRepository;
             _OrderDetailRepository = OrderDetailRepository;
+            _dispatch = dispatch;
+            _config = config;
         }
 
 
@@ -164,8 +171,25 @@ namespace RomanaWeb.Helper.Repository
 
             _context.Entry(orders).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+
+            // Section 6: auto-dispatch the approved order to nearby drivers (first-accept-wins).
+            // Gated by Dispatch:AutoDispatchOnOrderApprove (default true).
+            try
+            {
+                if (_config.GetValue<bool>("Dispatch:AutoDispatchOnOrderApprove", true)
+                    && (orders.SaleManId == null || orders.SaleManId == 0))
+                {
+                    double radius = _config.GetValue<double>("Dispatch:RadiusKm", 5d);
+                    await _dispatch.DispatchOrder(id, radius);
+                }
+            }
+            catch
+            {
+                // Dispatch failure must not roll back order approval.
+            }
+
             return Result.Return(true, "تمت الموافقة", orders);
-        }       
+        }
         public async Task<ResObj> SetIsSaleManApprove(int id)
         {
             var orders = await GetOrdersById(id);
@@ -354,6 +378,43 @@ namespace RomanaWeb.Helper.Repository
             await _context.SaveChangesAsync();
 
             return Result.Return(true, "تم اضافة المنتج بنجاح", detail);
+        }
+
+        // Section 4.1: cancel/delete the OLD order, then create & dispatch a NEW order
+        // with the updated items. Returns the new order so the caller can fan out
+        // notifications (merchant + driver if assigned) and re-quote pricing.
+        public async Task<ResObj> AdminReplaceOrder(int orderId, List<OrderDetail> newDetails)
+        {
+            var oldOrder = await GetOrdersById(orderId);
+            if (oldOrder == null) return Result.Return(false, "الطلب غير موجود");
+            if (newDetails == null || newDetails.Count == 0)
+                return Result.Return(false, "يجب اضافة منتجات للطلب الجديد");
+
+            // 1) Cancel the old order (soft-cancel; keep the row for accounting).
+            oldOrder.IsCancel = true;
+            oldOrder.IsApporve = false;
+            oldOrder.IsDone = false;
+            oldOrder.Notes = string.IsNullOrWhiteSpace(oldOrder.Notes)
+                ? "[Admin replaced this order]"
+                : oldOrder.Notes + Environment.NewLine + "[Admin replaced this order]";
+            _context.Entry(oldOrder).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            // 2) Build the replacement.
+            double total = newDetails.Sum(d => d.Price * d.Count);
+            var newOrder = new Orders
+            {
+                RestaurantId = oldOrder.RestaurantId,
+                UserId = oldOrder.UserId,
+                Total = total,
+                TotalDiscount = oldOrder.TotalDiscount,
+                NetAmount = total - oldOrder.TotalDiscount,
+                CostDelivery = oldOrder.CostDelivery,
+                PromoCode = oldOrder.PromoCode,
+                Notes = $"[Replacement of order #{oldOrder.OrderNo}]",
+                OrderDetails = newDetails
+            };
+            return await Post(newOrder);
         }
 
         public async Task<ResObj> GetNearbyDriverOrders(int saleManId, double lat, double lng, double radiusKm)

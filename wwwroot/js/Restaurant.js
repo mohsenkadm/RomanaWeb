@@ -28,10 +28,10 @@ function filltableRestaurant(data) {
     } 
     $.each(data, function (i, item) {
         var rows = "<tr>" +
-            "<td>" + item.insta + "</td>" +
+            "<td style='display:none'>" + item.insta + "</td>" +
             "<td>" + item.code + "</td>" +
             "<td>" + item.areaname + "</td>" +
-            "<td>" + item.costDelivery + "</td>" +
+            "<td style='display:none'>" + item.costDelivery + "</td>" +
             "<td>" + item.minimumPrice + "</td>" +
             "<td>" + item.lat + "</td>" +
             "<td>" + item.long + "</td>" +  
@@ -77,9 +77,9 @@ function filltableRestaurant(data) {
             "</label>" +
             "</div>" +
             "</td>" + 
-            "<td>" + item.whatsapp + "</td>" +   
+            "<td style='display:none'>" + item.whatsapp + "</td>" +   
             "<td>" + item.address + "</td>" +   
-            "<td>" + item.phone + "</td>" +
+            "<td style='display:none'>" + item.phone + "</td>" +
             "<td><img src='" + item.logo + "' alt='' border=3 height=50 width=50></img></td>" +
             "<td><img src='" + item.background + "' alt='' border=3 height=50 width=50></img></td>" +
             "<td>" + item.categoriesName + "</td>" +   

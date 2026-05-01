@@ -18,6 +18,17 @@ namespace RomanaWeb.Models.Entity
         public bool? IsDelete { get; set; }
         public int RestaurantId { get; set; }
         public string RestaurantName { get; set; }
+
+        // Driver "working/stopped" toggle. true = on shift, receives dispatch
+        // notifications. false = off shift, dispatcher will skip them.
+        // Default true so existing rows keep behaving as before.
+        public bool IsAvailable { get; set; } = true;
+        public DateTime? AvailabilityChangedAt { get; set; }
+
+        // Section 6: driver location heartbeat - used by proximity-based dispatch.
+        public string? Lat { get; set; }
+        public string? Long { get; set; }
+        public DateTime? LocationUpdatedAt { get; set; }
         // for total
         public decimal CountOrder { get; set; }
         public decimal NetAmount { get; set; }

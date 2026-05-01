@@ -14,7 +14,9 @@ namespace RomanaWeb.Model.EntityMap
             builder.Property(x => x.StarsCount).IsRequired();
             builder.Property(x => x.RestaurantId).IsRequired();   
             builder.Property(x => x.Comments).IsRequired();
-            builder.Ignore(x => x.UserName);        
+            builder.Property(x => x.OrderId);
+            builder.Property(x => x.UserId);
+            builder.Ignore(x => x.UserName);
             builder.Ignore(x => x.RestaurantName);
         }
     }

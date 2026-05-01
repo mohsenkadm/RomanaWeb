@@ -23,6 +23,8 @@ namespace RomanaWeb.Model.EntityMap
             builder.Ignore(x => x.Logo);            
             builder.Ignore(x => x.Background);            
             builder.Ignore(x => x.Images);            
+            builder.Ignore(x => x.Sizes);
+            builder.Ignore(x => x.Ingredients);
         }
     }
 }
