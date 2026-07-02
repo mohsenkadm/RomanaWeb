@@ -52,6 +52,64 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true, login);
         }
 
+        public async Task<ResObj> LoginSendOtp(string phone)
+        {
+            if (phone.Length != 11)
+                return Result.Return(false, "يجب كتابة رقم الهاتف 11 رقما");
+
+            var user = await _context.Users.FirstOrDefaultAsync(i => i.Phone == phone && i.IsDelete != true);
+            if (user == null)
+            {
+                user = new Users
+                {
+                    Name = phone,
+                    Phone = phone,
+                    Password = Encyptmethod.EncryptStringToBytes_Aes(Guid.NewGuid().ToString("N")),
+                    IsConfirm = false,
+                    IsActive = true,
+                    IsDelete = false,
+                    Code = "",
+                    CityId = 0,
+                    NumberSendOtp = 0,
+                    IsBlock = false
+                };
+                await _context.Users.AddAsync(user);
+                await _context.SaveChangesAsync();
+            }
+
+            if (user.IsBlock == true)
+                return Result.Return(false, "حسابك محظور، يرجى التواصل مع الادارة");
+            if (user.IsActive == false)
+                return Result.Return(false, "حسابك غير فعال");
+
+            string code = new Random().Next(1000, 9999).ToString();
+            return await _otpService.SendOtpToUserAsync(user, code);
+        }
+
+        public async Task<ResObj> LoginVerifyOtp(string phone, string code)
+        {
+            if (phone.Length != 11)
+                return Result.Return(false, "يجب كتابة رقم الهاتف 11 رقما");
+
+            var user = await _context.Users.FirstOrDefaultAsync(i => i.Phone == phone && i.IsDelete != true);
+            if (user == null)
+                return Result.Return(false, "الحساب غير موجود");
+            if (user.Code != code)
+                return Result.Return(false, "كود التحقق غير صحيح");
+            if (user.IsBlock == true)
+                return Result.Return(false, "حسابك محظور");
+
+            user.IsConfirm = true;
+            user.NumberSendOtp = 0;
+            _context.Entry(user).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            var userManager = new UserManager { Id = user.UserId, Name = user.Name, Role = "user" };
+            user.Token = JsonWebToken.GenerateToken(userManager);
+            user.Password = null;
+            return Result.Return(true, "تم تسجيل الدخول بنجاح", user);
+        }
+
         public async Task<ResObj> ForgatePassword(string Phone)
         {
             if(Phone.Length!=11)

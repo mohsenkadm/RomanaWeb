@@ -35,9 +35,9 @@ namespace RomanaWeb.Models.Entity
         public decimal MinimumPrice { get; set; }
         public string? Areaname { get; set; }
         public decimal? CostDelivery { get; set; }
-        public int CategoriesId { get; set; }
-        public string CategoriesName { get; set; }
-        public string Insta { get; set; }
+        public int? CategoriesId { get; set; }
+        public string? CategoriesName { get; set; }
+        public string? Insta { get; set; }
 
         // for total
         public int CountProducts { get; set; }

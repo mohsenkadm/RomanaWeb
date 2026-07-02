@@ -36,7 +36,7 @@ namespace RomanaWeb.Helper.Repository
               if (login.IsDelete == true)
                 return Result.Return(false, "حسابك   محذوف يرجى التواصل مع مدير التطببيق");
 
-            UserManager userManager = new UserManager() { Id = login.SaleManId, Name = login.Name };
+            UserManager userManager = new UserManager() { Id = login.SaleManId, Name = login.Name,Role= "sal" };
             login.Token = JsonWebToken.GenerateToken(userManager);   
             return Result.Return(true, login);
         }                                       
@@ -58,18 +58,6 @@ namespace RomanaWeb.Helper.Repository
            
             return Result.Return(true, SaleMan);
         }
-        public async Task<ResObj> GetByRestaurantId(int RestaurantId)
-        {                                                     
-            List<SaleMan> SaleMan = await _context.SaleMan.AsSplitQuery().AsNoTracking().Where(i=>i.RestaurantId== RestaurantId && i.IsDelete==false).ToListAsync();
-            foreach (SaleMan item in SaleMan)
-            {
-                if (item.Password != null)
-                    if (item.Password.Length > 0)
-                        item.Password = Encyptmethod.DecryptStringFromBytes_Aes(item.Password);
-            }
-            return Result.Return(true, SaleMan);
-        }                       
-
         public async Task<ResObj> Post(SaleMan SaleMan)
         {                                                                              
             var checkres = await _context.SaleMan.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.Phone!.Contains(SaleMan.Phone!));

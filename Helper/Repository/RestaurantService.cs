@@ -15,14 +15,17 @@ namespace RomanaWeb.Helper.Repository
     public class RestaurantService   : IRestaurantService,IRegisterScopped
     {
         public readonly IDapperRepository<Restaurant> _repository;
-        // cotext only apply scopped 
         private readonly DB_Context _context;
+        private readonly IDistanceService _distance;
 
         public RestaurantService(
-            DB_Context context, IDapperRepository<Restaurant> repository)
+            DB_Context context,
+            IDapperRepository<Restaurant> repository,
+            IDistanceService distance)
         {
             _context = context;
             _repository = repository;
+            _distance = distance;
         }
         public async Task<ResObj> Login(string UserName, string password)
         {
@@ -80,6 +83,9 @@ namespace RomanaWeb.Helper.Repository
         {                                                                              
             var checkres = await _context.Restaurant.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.Phone!.Contains(Restaurant.Phone!) && i.IsDelete==false);
             if (checkres != null) return Result.Return(false, "رقم الهاتف موجود سابقا");
+
+            if (!_distance.TryParseCoord(Restaurant.Lat, Restaurant.Long, out _, out _))
+                return Result.Return(false, "يجب تحديد موقع المطعم على الخريطة");
           
           //  Restaurant.IsApproved = false;
             Restaurant.IsClosed= false;
@@ -99,6 +105,12 @@ namespace RomanaWeb.Helper.Repository
             Restaurant Restaurant1 = await GetRestaurantById(Restaurant.RestaurantId);
             if (Restaurant1 is null)
                 return Result.Return(false, "حدث خطا اثناء عملية جلب البيانات");
+
+            if (!string.IsNullOrWhiteSpace(Restaurant.Lat) || !string.IsNullOrWhiteSpace(Restaurant.Long))
+            {
+                if (!_distance.TryParseCoord(Restaurant.Lat, Restaurant.Long, out _, out _))
+                    return Result.Return(false, "يجب تحديد موقع المطعم على الخريطة");
+            }
 
             Restaurant1.Name = Restaurant.Name;
             Restaurant1.Details = Restaurant.Details;

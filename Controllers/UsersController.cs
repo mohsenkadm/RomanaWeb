@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RomanaWeb.Classes;
+using System.Data;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Models.Entity;
 using RomanaWeb.Helper.Repository;
@@ -38,7 +40,41 @@ namespace RomanaWeb.Controllers
         }
         #endregion         
 
-        #region LoginUsers 
+        #region OTP Login (WhatsApp)
+        [AllowAnonymous]
+        [HttpPost("Users/Login/SendOtp/{Phone}")]
+        public async Task<IActionResult> LoginSendOtp(string Phone)
+        {
+            try
+            {
+                ResObj res = await _UsersService.LoginSendOtp(Phone);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "UsersController => LoginSendOtp");
+                return Response(false, "حدث خطأ اثناء ارسال الكود");
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("Users/Login/VerifyOtp/{Phone},{Code}")]
+        public async Task<IActionResult> LoginVerifyOtp(string Phone, string Code)
+        {
+            try
+            {
+                ResObj res = await _UsersService.LoginVerifyOtp(Phone, Code);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "UsersController => LoginVerifyOtp");
+                return Response(false, "حدث خطأ اثناء التحقق");
+            }
+        }
+        #endregion
+
+        #region LoginUsers (legacy password)
         [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> Login(string UserName, string password)
@@ -166,6 +202,68 @@ namespace RomanaWeb.Controllers
             {
                 await _logger.WriteAsync(ex, "UsersController => GetAll => name:");
                 return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
+            }
+        }
+
+        [HttpGet]
+        public async Task<FileResult> GetExcelAll(string? Name)
+        {
+            try
+            {
+                ResObj res = await _UsersService.GetAll(Name);
+                return GenerateExcel("report-users-" + Key.DateTimeIQ + ".xlsx", (List<Users>)res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "UsersController => GetExcelAll");
+                return null;
+            }
+        }
+
+        [NonAction]
+        private static FileResult GenerateExcel(string fileName, IEnumerable<Users> users)
+        {
+            DataTable dataTable = new DataTable("Users");
+            dataTable.Columns.AddRange(new DataColumn[]
+            {
+                new DataColumn("اسم الزبون"),
+                new DataColumn("رقم الهاتف"),
+                new DataColumn("العنوان"),
+                new DataColumn("تاكيد"),
+                new DataColumn("نشط"),
+                new DataColumn("كلمة المرور"),
+                new DataColumn("Lat"),
+                new DataColumn("Long"),
+                new DataColumn("اقرب نقطة دالة"),
+                new DataColumn("كود تاكيد"),
+            });
+
+            foreach (var u in users)
+            {
+                dataTable.Rows.Add(
+                    u.Name,
+                    u.Phone,
+                    u.Address,
+                    u.IsConfirm == true ? "نعم" : "لا",
+                    u.IsActive == true ? "نعم" : "لا",
+                    u.Password,
+                    u.Lat,
+                    u.Long,
+                    u.FunctionPoint,
+                    u.Code);
+            }
+
+            using (XLWorkbook wb = new XLWorkbook())
+            {
+                wb.Worksheets.Add(dataTable);
+                using MemoryStream stream = new MemoryStream();
+                wb.SaveAs(stream);
+                return new FileContentResult(
+                    stream.ToArray(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                {
+                    FileDownloadName = fileName
+                };
             }
         }
         #endregion                    

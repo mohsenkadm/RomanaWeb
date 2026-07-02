@@ -34,6 +34,7 @@
                                             <th scope="col">الرابط</th>
                                             <th scope="col">رابط الصورة</th>
                                             <th scope="col">المحافظة</th>
+                                            <th scope="col">نوع التطبيق</th>
                                             <th scope="col"></th>
                                         </tr>
                                     </thead>
@@ -80,6 +81,17 @@
                         <div class="form-group col-md-12 text-right">
                             <p>اختيار المحافظة</p>
                             <select class="form-control text-right" name="CountriesId" id="CountriesId">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="form-group col-md-12 text-right">
+                            <p>نوع التطبيق</p>
+                            <select class="form-control text-right" name="AppType" id="AppType">
+                                <option value="">اختر نوع التطبيق</option>
+                                <option value="1">تطبيق الزبون</option>
+                                <option value="2">تطبيق المتجر</option>
+                                <option value="3">تطبيق السائقين</option>
                             </select>
                         </div>
                     </div>
@@ -132,6 +144,12 @@
                 }
             }
 
+            var appType = $("#AppType").val();
+            if (!appType) {
+                md.showNotification("رجاءا اختر نوع التطبيق");
+                return;
+            }
+
             var IsShow = false;
             if ($('#IsShowca').is(":checked")) {
                 IsShow = true;
@@ -149,6 +167,7 @@
             }
 
             data.append('CountryId', $("#CountriesId").val());
+            data.append('AppType', appType);
             call_ajax_withfile("POST", "Carousel/Post", data, aftersaveCarousel);
         });
 

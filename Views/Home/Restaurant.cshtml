@@ -8,6 +8,14 @@
     <div class="content dark-edition">
         <div class="container-fluid">
 
+            <div class="rm-page-summary">
+                <div class="rm-summary-icon bg-emerald"><i class="material-icons">store</i></div>
+                <div class="rm-summary-body">
+                    <h4>إدارة المتاجر</h4>
+                    <p>عرض وتعديل بيانات المطاعم، التحكم بالحالة، وإدارة منتجات كل متجر من الجدول.</p>
+                </div>
+            </div>
+
             <div class="container alignright" style="margin:2% 0;">
                 <div class="row">
                     <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
@@ -27,6 +35,12 @@
                             <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث <i class='material-icons'>search</i>  </button>
                         </div>
                     </div>
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" id="excel-btn" class="btn btn-success btnwidth" style="text-align:center; width:100%;">اكسل <i class='material-icons'>file_download</i></button>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="row">
@@ -38,32 +52,16 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive" style="text-align: right;">
-                                <table class="table table-hover">
-                                    <thead class=" ">
-                                        <tr> 
-                                            <th scope="col" style="display:none">الانستا</th>
-                                            <th scope="col">كود</th>
-                                            <th scope="col">اسم المنطقة</th>
-                                            <th scope="col" style="display:none">كلفة التوصيل</th>
-                                            <th scope="col">اقل سعر</th>
-                                            <th scope="col">Lat</th>
-                                            <th scope="col">Long</th>
-                                            <th scope="col">كلمة المرور</th>
-                                            <th scope="col">اسم المستخدم</th>
-                                            <th scope="col">مفضلة</th>
-                                            <th scope="col">نشط</th>
-                                            <th scope="col">مفتوح</th>
-                                            <th scope="col">تقييم</th>
-                                            <th scope="col" style="display:none">رابط الواتساب</th>
-                                            <th scope="col">العنوان</th>
-                                            <th scope="col" style="display:none">رقم هاتف</th>
-                                            <th scope="col">لوكو</th>
-                                            <th scope="col">خلفية</th>
+                                <table class="table table-hover rm-rtl-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col" class="rm-actions-cell">إجراءات</th>
+                                            <th scope="col" class="rm-actions-cell">المنتجات</th>
+                                            <th scope="col">المتجر</th>
                                             <th scope="col">القسم</th>
-                                            <th scope="col">التفاصيل</th>
-                                            <th scope="col">الاسم</th>
-                                            <th scope="col"></th>
-                                            <th scope="col"></th> 
+                                            <th scope="col">العنوان</th>
+                                            <th scope="col">الحالة</th>
+                                            <th scope="col">فتح / إغلاق</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tableRestaurant">
@@ -155,7 +153,8 @@
                         <input type="file" placeholder="اختيار خلفية" class="form-control alignright" autocomplete="off" name="Background" id="Background" />
                     </div>
                     <div class="form-group col-md-6  alignright">
-                        <label class="text-primary">مفتوح</label>
+                        <label class="text-primary">المتجر مغلق</label>
+                        <small class="d-block text-muted mb-1">فعّل هذا الخيار لإغلاق المتجر أمام الزبائن</small>
                         <div class='form-check col-md-6  alignright'>
                             <label class='form-check-label'>
                                 <input class='form-check-input' type='checkbox' id='IsClosed'>
@@ -238,6 +237,10 @@
             e.preventDefault();
             RefreshRestaurant();
         });
+        $("#excel-btn").on("click", (e) => {
+            e.preventDefault();
+            window.open("/Restaurant/GetExcelAll?Name=" + encodeURIComponent($("#Namese").val() || ""));
+        });
         $(document).ready(function () { 
             call_ajax("GET", "Categories/GetAll", null, selectCategoriesId);
             RefreshRestaurant();
@@ -253,10 +256,10 @@
                 md.showNotification("رجاءا ادخل الاسم ");
                 return;
             }
-            if ($("#Phone").val() === "" || $("#Phone").val().trim() === "") {
-                md.showNotification("رجاءا ادخل رقم الهاتف ");
-                return;
-            } 
+            // if ($("#Phone").val() === "" || $("#Phone").val().trim() === "") {
+            //     md.showNotification("رجاءا ادخل رقم الهاتف ");
+            //     return;
+            // } 
             if ($("#UserName").val() === "" || $("#UserName").val().trim() === "") {
                 md.showNotification("رجاءا ادخل اسم المستخدم ");
                 return;
@@ -269,14 +272,14 @@
                 md.showNotification("رجاءا ادخل كلمة المرور ");
                 return;
             }
-            if ($("#Phone").val() === "" || $("#Phone").val().trim() === "") {
-                md.showNotification("رجاءا ادخل  العنوان  ");
-                return;
-            }
-            if ($("#Whatsapp").val() === "" || $("#Whatsapp").val().trim() === "") {
-                md.showNotification("رجاءا ادخل  رابط واتساب ");
-                return;
-            }
+            // if ($("#Phone").val() === "" || $("#Phone").val().trim() === "") {
+            //     md.showNotification("رجاءا ادخل  العنوان  ");
+            //     return;
+            // }
+            // if ($("#Whatsapp").val() === "" || $("#Whatsapp").val().trim() === "") {
+            //     md.showNotification("رجاءا ادخل  رابط واتساب ");
+            //     return;
+            // }
             var IsClosed = false;
             if ($('#IsClosed').is(":checked")) {
                 IsClosed = true;
@@ -293,7 +296,6 @@
             if ($('#IsTop').is(":checked")) {
                 IsTop = true;
             }
-            debugger;
             var fileUpload1 = $("#Logo").get(0);
             var files1 = fileUpload1.files;
             var fileUpload = $("#Background").get(0);
@@ -321,7 +323,6 @@
             data.append('Password', $("#Password").val());
             data.append('UserName', $("#UserName").val());
             data.append('MinimumPrice', $("#MinimumPrice").val());
-            data.append('MinimumPrice', $("#MinimumPrice").val());
             data.append('Areaname', $("#Areaname").val());
             data.append('CostDelivery', $("#CostDelivery").val());
             data.append('CategoriesId', $("#CategoriesId").val());
@@ -339,6 +340,87 @@
         });
 
     </script>
+</div>
+
+<div class="modal fade" id="ResProductsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title" id="resProdTitle"><i class="material-icons" style="vertical-align:middle;margin-left:8px;font-size:22px;">restaurant_menu</i> منتجات المطعم</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="res-prod-hero">
+                    <div>
+                        <strong id="resProdStoreName" style="font-size:1.05rem;color:var(--rm-text);"></strong>
+                        <p style="margin:4px 0 0;font-size:0.82rem;color:var(--rm-text-muted);">إدارة منتجات هذا المتجر — بحث، تعديل، وإضافة</p>
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <div class="res-prod-stat"><strong id="resProdCount">0</strong><span>منتج</span></div>
+                        <div class="res-prod-stat"><strong id="resProdAvailCount">0</strong><span>متوفر</span></div>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-8"><input type="text" id="resProdSearch" class="form-control" placeholder="بحث عن اسم المنتج..." /></div>
+                    <div class="col-md-2"><button type="button" class="btn btn-info btn-block" onclick="loadResProducts()"><i class="material-icons" style="font-size:18px;vertical-align:middle;">search</i> بحث</button></div>
+                    <div class="col-md-2"><button type="button" class="btn btn-secondary btn-block" onclick="resetResProductForm()"><i class="material-icons" style="font-size:18px;vertical-align:middle;">refresh</i> جديد</button></div>
+                </div>
+                <div id="resProdLoading" class="res-prod-loading" style="display:none;">
+                    <div class="rm-spinner"></div>
+                    <p>جاري تحميل المنتجات...</p>
+                </div>
+                <div class="table-responsive mb-3" id="resProdTableWrap">
+                    <table class="table table-hover rm-rtl-table">
+                        <thead>
+                            <tr>
+                                <th class="rm-actions-cell">إجراءات</th>
+                                <th>التوفر</th>
+                                <th>وقت التحضير</th>
+                                <th>السعر</th>
+                                <th>الصنف</th>
+                                <th class="rm-wrap-cell">التفاصيل</th>
+                                <th>الاسم</th>
+                                <th>صورة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resProdTable"></tbody>
+                    </table>
+                </div>
+                <div class="res-prod-form-card">
+                    <h6><i class="material-icons">add_circle</i> إضافة / تعديل منتج</h6>
+                <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <label class="text-primary">اسم المنتج</label>
+                            <input id="resProdName" class="form-control" placeholder="اسم المنتج" />
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <label class="text-primary">التفاصيل</label>
+                            <input id="resProdDetails" class="form-control" placeholder="التفاصيل" />
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="text-primary">السعر</label>
+                            <input id="resProdPrice" type="number" class="form-control" placeholder="السعر" />
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="text-primary">دقائق التحضير</label>
+                            <input id="resProdPrep" type="number" class="form-control" placeholder="15" value="15" />
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <label class="text-primary">الصنف</label>
+                            <select id="resProdSubCat" class="form-control"><option value="0">اختر الصنف</option></select>
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <label class="text-primary">صورة المنتج</label>
+                            <input type="file" id="resProdImage" class="form-control" accept="image/*" />
+                        </div>
+                        <div class="col-md-2 mb-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-success btn-block" onclick="saveResProduct()"><i class="material-icons" style="font-size:18px;vertical-align:middle;">save</i> حفظ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 

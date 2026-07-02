@@ -146,13 +146,102 @@ namespace RomanaWeb.Controllers
             }
         }
 
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateZone([FromBody] CreateZoneRequest request)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                string name = (request.Name ?? "").Trim();
+                string geo = (request.GeoJson ?? "").Trim();
+                if (string.IsNullOrWhiteSpace(name))
+                    return Response(false, "رجاءا ادخل اسم المنطقة");
+                if (string.IsNullOrWhiteSpace(geo))
+                    return Response(false, "رجاءا ادخل GeoJSON للمنطقة");
+
+                var existing = await _context.Zone.FirstOrDefaultAsync(z => z.Name == name);
+                if (existing != null)
+                {
+                    existing.GeoJson = geo;
+                    existing.IsActive = request.IsActive;
+                    _context.Entry(existing).State = EntityState.Modified;
+                    await _context.SaveChangesAsync();
+                    return Response(true, "تم تحديث المنطقة بنجاح", existing);
+                }
+
+                var zone = new Zone { Name = name, GeoJson = geo, IsActive = request.IsActive };
+                await _context.Zone.AddAsync(zone);
+                await _context.SaveChangesAsync();
+                return Response(true, "تم اضافة المنطقة بنجاح", zone);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ZonesController => CreateZone");
+                return Response(false, "حدث خطأ اثناء الحفظ");
+            }
+        }
+
+        [HttpPost("matrix/create")]
+        public async Task<IActionResult> CreateMatrixEntry([FromBody] CreateMatrixRequest request)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                if (request.FromZoneId <= 0 || request.ToZoneId <= 0)
+                    return Response(false, "رجاءا اختر منطقة المصدر والوجهة");
+                if (request.Price < 0)
+                    return Response(false, "السعر غير صالح");
+
+                var fromExists = await _context.Zone.AsNoTracking().AnyAsync(z => z.ZoneId == request.FromZoneId);
+                var toExists = await _context.Zone.AsNoTracking().AnyAsync(z => z.ZoneId == request.ToZoneId);
+                if (!fromExists || !toExists)
+                    return Response(false, "المنطقة المختارة غير موجودة");
+
+                var existing = await _context.ZonePrice
+                    .FirstOrDefaultAsync(p => p.FromZoneId == request.FromZoneId && p.ToZoneId == request.ToZoneId);
+                if (existing == null)
+                {
+                    var entry = new ZonePrice
+                    {
+                        FromZoneId = request.FromZoneId,
+                        ToZoneId = request.ToZoneId,
+                        Price = request.Price
+                    };
+                    await _context.ZonePrice.AddAsync(entry);
+                    await _context.SaveChangesAsync();
+                    return Response(true, "تم اضافة السعر بنجاح", entry);
+                }
+
+                existing.Price = request.Price;
+                _context.Entry(existing).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Response(true, "تم تحديث السعر بنجاح", existing);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ZonesController => CreateMatrixEntry");
+                return Response(false, "حدث خطأ اثناء الحفظ");
+            }
+        }
+
         [HttpGet("matrix")]
         public async Task<IActionResult> Matrix()
         {
             try
             {
                 if (!IsAdmin()) return Response(false, "غير مصرح");
-                var data = await _context.ZonePrice.AsNoTracking().ToListAsync();
+                var zoneNames = await _context.Zone.AsNoTracking()
+                    .ToDictionaryAsync(z => z.ZoneId, z => z.Name);
+                var prices = await _context.ZonePrice.AsNoTracking().ToListAsync();
+                var data = prices.Select(p => new
+                {
+                    p.ZonePriceId,
+                    p.FromZoneId,
+                    p.ToZoneId,
+                    p.Price,
+                    FromZoneName = zoneNames.TryGetValue(p.FromZoneId, out var fromName) ? fromName : "-",
+                    ToZoneName = zoneNames.TryGetValue(p.ToZoneId, out var toName) ? toName : "-"
+                }).ToList();
                 return Response(true, data);
             }
             catch (Exception ex) { await _logger.WriteAsync(ex, "ZonesController => Matrix"); return Response(false, "خطأ"); }
@@ -244,6 +333,20 @@ namespace RomanaWeb.Controllers
                 ms.ToArray(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 "zones_matrix_template.xlsx");
+        }
+
+        public class CreateZoneRequest
+        {
+            public string? Name { get; set; }
+            public string? GeoJson { get; set; }
+            public bool IsActive { get; set; } = true;
+        }
+
+        public class CreateMatrixRequest
+        {
+            public int FromZoneId { get; set; }
+            public int ToZoneId { get; set; }
+            public decimal Price { get; set; }
         }
     }
 }

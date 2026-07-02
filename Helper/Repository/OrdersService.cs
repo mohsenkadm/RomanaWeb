@@ -1,35 +1,44 @@
 ﻿using RomanaWeb.Classes;
 using RomanaWeb.Models.Entity;
+using RomanaWeb.Models.EntityMapper;
 using RomanaWeb.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using RomanaWeb.Helper.Interface;
+using System.Globalization;
 using static NuGet.Packaging.PackagingConstants;
 
 namespace RomanaWeb.Helper.Repository
 {
     public class OrdersService : IOrdersService, IRegisterScopped
     {
-        // cotext only apply scopped 
         private readonly DB_Context _context;
         private readonly IDapperRepository<Orders> _OrdersRepository;
         private readonly IDapperRepository<OrderDetail> _OrderDetailRepository;
         private readonly IDriverDispatchService _dispatch;
+        private readonly IDistanceService _distance;
+        private readonly IPricingService _pricing;
         private readonly IConfiguration _config;
+        private readonly ILoggerRepository _logger;
 
         public OrdersService(
             DB_Context context,
             IDapperRepository<Orders> orderRepository,
             IDapperRepository<OrderDetail> OrderDetailRepository,
             IDriverDispatchService dispatch,
-            IConfiguration config
-            )
+            IDistanceService distance,
+            IPricingService pricing,
+            IConfiguration config,
+            ILoggerRepository logger)
         {
             _context = context;
             _OrdersRepository = orderRepository;
             _OrderDetailRepository = OrderDetailRepository;
             _dispatch = dispatch;
+            _distance = distance;
+            _pricing = pricing;
             _config = config;
+            _logger = logger;
         }
 
 
@@ -84,19 +93,68 @@ namespace RomanaWeb.Helper.Repository
         }
 
         // get all orders only master
-        public async Task<ResObj> GetAll(string OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto, int? RestaurantId,int? CountriesId,int? state)
+        public async Task<ResObj> GetAll(string OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto, int? RestaurantId,int? CountriesId,int? state,
+            string? phone = null, int? orderStatus = null)
         {
             List<Orders> data = await _OrdersRepository.GetEntityListAsync("dbo.GetOrderAll",
                 new { OrderNo, RestaurantName, datefrom, dateto,RestaurantId , CountriesId , state });
+
+            if (!string.IsNullOrWhiteSpace(phone))
+                data = data.Where(o => o.Phone != null && o.Phone.Contains(phone.Trim())).ToList();
+
+            if (orderStatus.HasValue)
+                data = data.Where(o => MapOrderStatus(o) == orderStatus.Value).ToList();
+
             return Result.Return(true, data);
         }
 
-        // get orders with master and detail all
-        public async Task<ResObj> GetOrdersWithDetailAll(int Id)
+        /// <summary>0=pending,1=approved,3=driverAccepted,4=driverEnRoute,5=pickedUp,6=outForDelivery,7=delivered,8=confirmed,9=cancelled</summary>
+        public static int MapOrderStatus(Orders o)
         {
-            List<OrderDetail> data = await _OrderDetailRepository.GetEntityListAsync("dbo.GetOrdersWithDetailAll",
-                new { Id });
-            return Result.Return(true, data);
+            if (o.IsCancel) return 9;
+            if (o.IsDeliveryConfirmed) return 8;
+            if (o.IsDelivered == true) return 7;
+            if (o.IsOutForDelivery) return 6;
+            if (o.IsPickedUpFromRestaurant) return 5;
+            if (o.IsDriverEnRouteToPickup) return 4;
+            if (o.IsSaleManApprove == true) return 3;
+            if (o.IsApporve) return 1;
+            return 0;
+        }
+
+        public async Task<ResObj> GetOrdersWithDetailAll(int Id) =>
+            await GetOrderFullDetails(Id);
+
+        public async Task<ResObj> GetOrderFullDetails(int orderId)
+        {
+            var order = await GetOrdersById(orderId);
+            if (order == null) return Result.Return(false, "الطلب غير موجود");
+
+            List<OrderDetail> details = await _OrderDetailRepository.GetEntityListAsync("dbo.GetOrdersWithDetailAll", new { Id = orderId });
+
+            SaleMan? driver = null;
+            if (order.SaleManId is > 0)
+            {
+                driver = await _context.SaleMan.AsNoTracking().FirstOrDefaultAsync(s => s.SaleManId == order.SaleManId);
+                var loc = await _context.DriverLocations.AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.SaleManId == order.SaleManId);
+                if (driver != null && loc != null)
+                {
+                    driver.Lat = loc.Lat.ToString(CultureInfo.InvariantCulture);
+                    driver.Long = loc.Lng.ToString(CultureInfo.InvariantCulture);
+                    driver.LocationUpdatedAt = loc.UpdatedAt;
+                }
+            }
+
+            await EnrichOrderCoordinatesAsync(order);
+
+            return Result.Return(true, new
+            {
+                order,
+                details,
+                driver,
+                statusCode = MapOrderStatus(order)
+            });
         }
 
         public async Task<ResObj> Post(Orders orders)
@@ -108,10 +166,21 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(false,"اسم المطعم غير موجود");
             }
 
-            // Verify order cost / delivery cost
+            // Verify order cost / delivery cost — prefer per-city fee when configured
             if (orders.CostDelivery == null || orders.CostDelivery < 0)
             {
-                orders.CostDelivery = checkshop.CostDelivery ?? 3000;
+                var user = await _context.Users.AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.UserId == orders.UserId);
+                if (user?.CityId is > 0)
+                {
+                    var cityRow = await _context.RestaurantCity.AsNoTracking()
+                        .FirstOrDefaultAsync(rc => rc.RestaurantId == orders.RestaurantId && rc.CityId == user.CityId);
+                    if (cityRow?.CostDelivery is > 0)
+                        orders.CostDelivery = cityRow.CostDelivery;
+                }
+
+                if (orders.CostDelivery == null || orders.CostDelivery < 0)
+                    orders.CostDelivery = checkshop.CostDelivery ?? 3000;
             }
 
             var lastorder = await _context.Orders.AsSplitQuery().AsNoTracking().OrderBy(i=>i.OrderId).LastOrDefaultAsync();
@@ -129,6 +198,10 @@ namespace RomanaWeb.Helper.Repository
             orders.IsNotDelivered = false;
             orders.IsDelivered = false;
             orders.IsWaiting = false;
+            orders.IsDriverEnRouteToPickup = false;
+            orders.IsPickedUpFromRestaurant = false;
+            orders.IsOutForDelivery = false;
+            orders.IsDeliveryConfirmed = false;
             orders.Reason = "";
             orders.Reason2 = "";
             orders.SaleManId = 0;
@@ -180,16 +253,69 @@ namespace RomanaWeb.Helper.Repository
                     && (orders.SaleManId == null || orders.SaleManId == 0))
                 {
                     double radius = _config.GetValue<double>("Dispatch:RadiusKm", 5d);
-                    await _dispatch.DispatchOrder(id, radius);
+                    var dispatchRes = await _dispatch.DispatchOrder(id, radius);
+                    if (!dispatchRes.success)
+                        await _logger.WriteAsync(
+                            new Exception($"Dispatch failed for order {id}: {dispatchRes.msg}"),
+                            "OrdersService => SetIsApporve => DispatchOrder");
                 }
             }
-            catch
+            catch (Exception ex)
             {
                 // Dispatch failure must not roll back order approval.
+                await _logger.WriteAsync(ex, "OrdersService => SetIsApporve => DispatchOrder");
             }
 
             return Result.Return(true, "تمت الموافقة", orders);
         }
+
+        public async Task<ResObj> SetDriverEnRouteToPickup(int id)
+        {
+            var orders = await GetOrdersById(id);
+            if (orders.SaleManId is null or 0) return Result.Return(false, "لا يوجد سائق معين");
+            orders.IsDriverEnRouteToPickup = true;
+            _context.Entry(orders).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "السائق في طريقه لاستلام طلبك", orders);
+        }
+
+        public async Task<ResObj> SetPickedUpFromRestaurant(int id)
+        {
+            var orders = await GetOrdersById(id);
+            orders.IsPickedUpFromRestaurant = true;
+            orders.IsDriverEnRouteToPickup = false;
+            _context.Entry(orders).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "تم استلام الطلب من المطعم", orders);
+        }
+
+        public async Task<ResObj> SetOutForDelivery(int id)
+        {
+            var orders = await GetOrdersById(id);
+            orders.IsOutForDelivery = true;
+            orders.IsPickedUpFromRestaurant = true;
+            _context.Entry(orders).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "جاري تسليم الطلب", orders);
+        }
+
+        public async Task<ResObj> SetDeliveryConfirmed(int id)
+        {
+            var orders = await GetOrdersById(id);
+            var saleManId = orders.SaleManId;
+            orders.IsDeliveryConfirmed = true;
+            orders.IsDelivered = true;
+            orders.IsOutForDelivery = false;
+            orders.IsDone = true;
+            _context.Entry(orders).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            if (saleManId is > 0)
+                await _dispatch.ClearActiveOrderAsync(saleManId.Value);
+
+            return Result.Return(true, "تم تأكيد استلام الطلب", orders);
+        }
+
         public async Task<ResObj> SetIsSaleManApprove(int id)
         {
             var orders = await GetOrdersById(id);
@@ -253,13 +379,18 @@ namespace RomanaWeb.Helper.Repository
         public async Task<ResObj> SetIsSaleManCancel(int id)
         {
             var orders = await GetOrdersById(id);
-             
+            var saleManId = orders.SaleManId;
+
             orders.IsSaleManApprove = false;
             orders.IsSaleManCancel = true;
             orders.SaleManId = 0;
 
             _context.Entry(orders).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+
+            if (saleManId is > 0)
+                await _dispatch.ClearActiveOrderAsync(saleManId.Value);
+
             return Result.Return(true, "تمت الغاء الموافقة بنجاح", orders);
         }
 
@@ -268,12 +399,17 @@ namespace RomanaWeb.Helper.Repository
             var orders = await GetOrdersById(id);
             if (orders.IsCancel)
                 return Result.Return(false, "تمت الغاء الطلب سابقا");
+            var saleManId = orders.SaleManId;
             orders.IsCancel = true;
             orders.IsApporve = false;
             orders.IsDone = false;
 
             _context.Entry(orders).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+
+            if (saleManId is > 0)
+                await _dispatch.ClearActiveOrderAsync(saleManId.Value);
+
             return Result.Return(true, "تمت الغاء الموافقة", orders);
         }
 
@@ -419,35 +555,98 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> GetNearbyDriverOrders(int saleManId, double lat, double lng, double radiusKm)
         {
-            // Get pending orders (approved but no driver assigned yet)
+            if (!_distance.IsValidCoord(lat, lng))
+                return Result.Return(false, "موقع السائق غير صالح");
+
+            try { await _dispatch.UpdateDriverLocation(saleManId, lat, lng); } catch { }
+
             var pendingOrders = await _context.Orders
                 .Where(o => o.IsApporve && !o.IsDone && !o.IsCancel && (o.SaleManId == null || o.SaleManId == 0))
                 .ToListAsync();
 
-            // Get restaurant locations and filter by distance
-            var nearbyOrders = new List<Orders>();
+            var results = new List<NearbyDriverOrderDto>();
+
             foreach (var order in pendingOrders)
             {
-                var restaurant = await _context.Restaurant
-                    .Where(r => r.RestaurantId == order.RestaurantId)
-                    .FirstOrDefaultAsync();
+                var restaurant = await _context.Restaurant.AsNoTracking()
+                    .FirstOrDefaultAsync(r => r.RestaurantId == order.RestaurantId);
+                if (restaurant == null) continue;
 
-                if (restaurant != null &&
-                    double.TryParse(restaurant.Lat, out double rLat) &&
-                    double.TryParse(restaurant.Long, out double rLng))
+                if (!_distance.TryParseCoord(restaurant.Lat, restaurant.Long, out double pickupLat, out double pickupLng))
+                    continue;
+
+                var user = await _context.Users.AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.UserId == order.UserId);
+
+                string? dropLatStr = !string.IsNullOrWhiteSpace(order.Lat) ? order.Lat : user?.Lat;
+                string? dropLngStr = !string.IsNullOrWhiteSpace(order.Long) ? order.Long : user?.Long;
+                if (!_distance.TryParseCoord(dropLatStr, dropLngStr, out double dropoffLat, out double dropoffLng))
+                    continue;
+
+                double distanceToPickupKm = _distance.RoundKm(_distance.HaversineKm(lat, lng, pickupLat, pickupLng));
+                if (distanceToPickupKm > radiusKm) continue;
+
+                double pickupToDropoffKm = _distance.RoundKm(_distance.HaversineKm(pickupLat, pickupLng, dropoffLat, dropoffLng));
+                double distanceToDropoffKm = _distance.RoundKm(_distance.HaversineKm(lat, lng, dropoffLat, dropoffLng));
+
+                decimal estimatedFee = order.CostDelivery ?? 0;
+                var quoteRes = await _pricing.Quote(new QuoteRequest
                 {
-                    double distance = CalculateDistance(lat, lng, rLat, rLng);
-                    if (distance <= radiusKm)
-                    {
-                        order.RestaurantName = restaurant.Name;
-                        order.Lat = restaurant.Lat;
-                        order.Long = restaurant.Long;
-                        nearbyOrders.Add(order);
-                    }
-                }
+                    PickupLat = pickupLat,
+                    PickupLng = pickupLng,
+                    DropoffLat = dropoffLat,
+                    DropoffLng = dropoffLng
+                });
+                if (quoteRes.success && quoteRes.data is QuoteResponse quote)
+                    estimatedFee = quote.Total;
+
+                results.Add(new NearbyDriverOrderDto
+                {
+                    OrderId = order.OrderId,
+                    OrderNo = order.OrderNo,
+                    RestaurantId = order.RestaurantId,
+                    RestaurantName = restaurant.Name,
+                    PickupLat = pickupLat,
+                    PickupLong = pickupLng,
+                    DropoffLat = dropoffLat,
+                    DropoffLong = dropoffLng,
+                    DistanceToPickupKm = distanceToPickupKm,
+                    PickupToDropoffKm = pickupToDropoffKm,
+                    DistanceToDropoffKm = distanceToDropoffKm,
+                    EstimatedFee = estimatedFee,
+                    UserName = user?.Name ?? order.UserName,
+                    Phone = user?.Phone ?? order.Phone,
+                    Address = user?.Address ?? order.Address,
+                    Notes = order.Notes
+                });
             }
 
-            return Result.Return(true, nearbyOrders);
+            results.Sort((a, b) => a.DistanceToPickupKm.CompareTo(b.DistanceToPickupKm));
+            return Result.Return(true, results);
+        }
+
+        private async Task EnrichOrderCoordinatesAsync(Orders order)
+        {
+            var restaurant = await _context.Restaurant.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.RestaurantId == order.RestaurantId);
+            var user = await _context.Users.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.UserId == order.UserId);
+
+            if (_distance.TryParseCoord(restaurant?.Lat, restaurant?.Long, out double pickupLat, out double pickupLng))
+            {
+                order.RestaurantLat = pickupLat.ToString(CultureInfo.InvariantCulture);
+                order.RestaurantLong = pickupLng.ToString(CultureInfo.InvariantCulture);
+            }
+
+            string? dropLatStr = !string.IsNullOrWhiteSpace(order.Lat) ? order.Lat : user?.Lat;
+            string? dropLngStr = !string.IsNullOrWhiteSpace(order.Long) ? order.Long : user?.Long;
+            if (_distance.TryParseCoord(dropLatStr, dropLngStr, out double dropoffLat, out double dropoffLng))
+            {
+                order.Lat = dropoffLat.ToString(CultureInfo.InvariantCulture);
+                order.Long = dropoffLng.ToString(CultureInfo.InvariantCulture);
+                order.DropoffLat = order.Lat;
+                order.DropoffLng = order.Long;
+            }
         }
 
         public async Task<ResObj> ApproveOrderBySaleMan(int orderId, int saleManId)
@@ -463,6 +662,9 @@ namespace RomanaWeb.Helper.Repository
             if (order.IsSaleManApprove == true)
                 return Result.Return(false, "تم قبول الطلب من قبل مندوب آخر");
 
+            if (await _dispatch.DriverHasActiveOrderAsync(saleManId, orderId))
+                return Result.Return(false, "لديك طلب نشط، أكمله قبل قبول طلب جديد");
+
             order.SaleManId = saleManId;
             order.IsSaleManApprove = true;
             order.IsSaleManCancel = false;
@@ -470,22 +672,9 @@ namespace RomanaWeb.Helper.Repository
             _context.Entry(order).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
-            return Result.Return(true, "تم قبول الطلب بنجاح", order);
-        }
+            await _dispatch.SetActiveOrderAsync(saleManId, orderId);
 
-        /// <summary>
-        /// Haversine formula to calculate distance between two GPS coordinates in km
-        /// </summary>
-        private static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
-        {
-            const double R = 6371; // Earth's radius in km
-            double dLat = (lat2 - lat1) * Math.PI / 180;
-            double dLon = (lon2 - lon1) * Math.PI / 180;
-            double a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                       Math.Cos(lat1 * Math.PI / 180) * Math.Cos(lat2 * Math.PI / 180) *
-                       Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-            double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-            return R * c;
+            return Result.Return(true, "تم قبول الطلب بنجاح", order);
         }
     }
 }

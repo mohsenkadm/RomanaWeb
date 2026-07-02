@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Helper.Repository;
 using RomanaWeb.Models.Entity;
@@ -22,7 +23,7 @@ public class PromoCodeServiceTests
     private static PromoCodeService NewService(out RomanaWeb.Model.DB_Context ctx, bool firstUseForceGlobal = true)
     {
         ctx = TestDbContext.New();
-        var mapper = new MapperConfiguration(_ => { }).CreateMapper();
+        var mapper = new MapperConfiguration(_ => { }, NullLoggerFactory.Instance).CreateMapper();
         // _PromoCodeService dapper field is unused by the methods under test ⇒ pass null!.
         return new PromoCodeService(ctx, mapper, null!, ConfigWith(firstUseForceGlobal));
     }

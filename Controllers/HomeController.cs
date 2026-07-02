@@ -148,7 +148,19 @@ namespace RomanaWeb.Controllers
         {
             return View();
         }
+        public IActionResult AppSplash()
+        {
+            return View();
+        }
         public IActionResult Zones()
+        {
+            return View();
+        }
+        public IActionResult SupportPhone()
+        {
+            return View();
+        }
+        public IActionResult QuickProducts()
         {
             return View();
         }

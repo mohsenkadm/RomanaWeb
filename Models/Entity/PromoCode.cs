@@ -27,6 +27,9 @@ namespace RomanaWeb.Models.Entity
         /// <summary>First time this code was successfully applied to an order. Null until first use.</summary>
         public DateTime? FirstUsedAt { get; set; }
 
+        /// <summary>Max times a single user may apply this code (0 = unlimited).</summary>
+        public int MaxUsagePerUser { get; set; } = 1;
+
         // --- Aliases mapped to existing columns (kept NotMapped so EF ignores them) ---
 
         [NotMapped]

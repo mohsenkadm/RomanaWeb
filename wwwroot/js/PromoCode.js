@@ -15,6 +15,7 @@ function filltablePromoCode(data) {
             "<td>" + (item.discountAmount || 0) + " د.ع</td>" +
             "<td>" + item.promoName + "</td>" +
             "<td>" + (item.maxOrders > 0 ? item.maxOrders : 'غير محدود') + "</td>" +
+            "<td>" + (item.maxUsagePerUser > 0 ? item.maxUsagePerUser : 'غير محدود') + "</td>" +
             "<td>" + (item.usedOrders || 0) + "</td>" +
             "<td>" + scopeBadge + "</td>" +
             "<td>" + statusBadge + "</td>" +
@@ -46,6 +47,7 @@ function setdataPromoCode(data) {
     $("#Percentage").val(data.percentage);
     $("#DiscountAmount").val(data.discountAmount || 0);
     $("#MaxOrders").val(data.maxOrders || 0);
+    $("#MaxUsagePerUser").val(data.maxUsagePerUser ?? 1);
     $("#RestaurantIdPromo").val(data.restaurantId);
     $("#IsForAllStores").prop('checked', data.isForAllStores);
     $("#IsActivePromo").prop('checked', data.isActive);
@@ -56,6 +58,7 @@ function aftersavePromoCode() {
     $("#PromoName").val('');
     $("#DiscountAmount").val('');
     $("#MaxOrders").val('');
+    $("#MaxUsagePerUser").val('1');
     $("#RestaurantIdPromo").val(0);
     $("#IsForAllStores").prop('checked', false);
     $("#IsActivePromo").prop('checked', true);

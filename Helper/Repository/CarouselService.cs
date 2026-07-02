@@ -21,9 +21,15 @@ namespace RomanaWeb.Helper.Repository
             _context = context;                   
         }
 
-        public async Task<ResObj> GetAllApp(int? CountryId=0)
+        public async Task<ResObj> GetAllApp(int? CountryId = 0, int? AppType = null)
         {
-            List<Carousel> data = await _context.Carousel.AsSplitQuery().AsNoTracking().Where(i=>i.IsShow==true && (CountryId==0 || CountryId ==null || i.CountryId== CountryId)).ToListAsync() ;
+            var query = _context.Carousel.AsSplitQuery().AsNoTracking()
+                .Where(i => i.IsShow == true && (CountryId == 0 || CountryId == null || i.CountryId == CountryId));
+
+            if (AppType.HasValue && AppType.Value > 0)
+                query = query.Where(i => i.AppType == AppType.Value);
+
+            List<Carousel> data = await query.ToListAsync();
             return Result.Return(true, data);
         }                            
         public async Task<ResObj> GetAll()
@@ -58,6 +64,7 @@ namespace RomanaWeb.Helper.Repository
 
             Carousel1.IsShow = Carousel.IsShow;
             Carousel1.CountryId = Carousel.CountryId;
+            Carousel1.AppType = Carousel.AppType;
             Carousel1.Url = Carousel.Url;
             _context.Entry(Carousel1).State = EntityState.Modified;
             await _context.SaveChangesAsync();

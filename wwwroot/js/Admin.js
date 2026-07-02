@@ -55,6 +55,7 @@ var _navIcons = {
     'Stars': 'star_rate',
     'Ratings': 'reviews',
     'Carousel': 'view_carousel',
+    'AppSplash': 'image',
     'Notification': 'notifications',
     'PromoCode': 'local_offer',
     'CodeRes': 'qr_code',
@@ -69,6 +70,8 @@ var _navIcons = {
     'Analytics': 'insights',
     'AppSettings': 'settings',
     'Questions': 'help_center',
+    'SupportPhone': 'support_agent',
+    'QuickProducts': 'playlist_add',
     'message': 'chat'
 };
 

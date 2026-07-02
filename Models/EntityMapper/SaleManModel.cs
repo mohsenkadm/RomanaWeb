@@ -9,6 +9,6 @@
         public string? Phone { get; set; }   
         public string? Password { get; set; }   
         public bool? IsActive { get; set; }
-        public int RestaurantId { get; set; }
+        // RestaurantId removed: SaleMan is admin-managed and not linked to a restaurant.
     }
 }

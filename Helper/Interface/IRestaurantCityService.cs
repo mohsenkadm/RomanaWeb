@@ -12,5 +12,6 @@ namespace RomanaWeb.Helper.Interface
         public Task<ResObj> Delete(int Id);
         public Task<ResObj> Post(RestaurantCity RestaurantCity);      
         Task<ResObj> PostFromAppAll(int resId, decimal CostDelivery);
+        Task<ResObj> GetDeliveryFee(int restaurantId, int cityId);
     }
 }

@@ -81,6 +81,7 @@
                                             <th scope="col">مبلغ الخصم</th>
                                             <th scope="col">اسم البرومو</th>
                                             <th scope="col">الحد الاقصى</th>
+                                            <th scope="col">حد الاستخدام للشخص</th>
                                             <th scope="col">المستخدم</th>
                                             <th scope="col">النطاق</th>
                                             <th scope="col">الحالة</th>
@@ -125,6 +126,10 @@
                     <div class="form-group col-md-6 alignright">
                         <label class="text-primary">الحد الاقصى للاستخدام</label>
                         <input type="number" id="MaxOrders" autocomplete="off" class="form-control alignright" placeholder="0 = غير محدود" />
+                    </div>
+                    <div class="form-group col-md-6 alignright">
+                        <label class="text-primary">عدد مرات الاستخدام للشخص الواحد</label>
+                        <input type="number" id="MaxUsagePerUser" autocomplete="off" class="form-control alignright" placeholder="1" value="1" />
                     </div>
                     <div class="form-group col-md-6 alignright">
                         <label class="text-primary">المطعم</label>
@@ -185,6 +190,7 @@
             data.append('PromoName', $("#PromoName").val());
             data.append('DiscountAmount', $("#DiscountAmount").val() || 0);
             data.append('MaxOrders', $("#MaxOrders").val() || 0);
+            data.append('MaxUsagePerUser', $("#MaxUsagePerUser").val() || 1);
             data.append('RestaurantId', $("#RestaurantIdPromo").val() || 0);
             data.append('IsForAllStores', $("#IsForAllStores").is(':checked'));
             data.append('IsActive', $("#IsActivePromo").is(':checked'));

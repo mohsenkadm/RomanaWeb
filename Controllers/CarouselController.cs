@@ -44,11 +44,11 @@ namespace RomanaWeb.Controllers
         #region Get Info Carousel 
         [AllowAnonymous]
         [HttpGet]
-        public async Task<IActionResult> GetAllApp(int? CountryId = 0)
+        public async Task<IActionResult> GetAllApp(int? CountryId = 0, int? AppType = null)
         {
             try
             {
-                ResObj res = await _CarouselService.GetAllApp(CountryId);
+                ResObj res = await _CarouselService.GetAllApp(CountryId, AppType);
 
                 return Response(res.success, res.data);
             }

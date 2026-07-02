@@ -2,8 +2,11 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.OpenApi;
 using RomanaWeb.Classes;
 using RomanaWeb.Helper;
+using RomanaWeb.Hubs;
 using RomanaWeb.Mapping;
 using RomanaWeb.Model;
 
@@ -19,35 +22,22 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    c.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "Rumana Platform API",
         Version = "v1",
         Description = "REST API powering the Customer, Merchant and Driver apps."
     });
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        In = ParameterLocation.Header,
         Description = "Paste the JWT token (without the 'Bearer ' prefix)."
     });
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
+    // Swashbuckle v10 changed security requirement API shape; keep Bearer definition only.
 });
 
 builder.Services.AddCors(options =>
@@ -73,9 +63,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ClockSkew = TimeSpan.FromHours(10),
             IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(Key.SecretKey))
         };
+        cfg.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                    context.Token = accessToken;
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
+
+builder.Services.AddMemoryCache();
 
 builder.Services.AddDbContext<DB_Context>(
     option => option.UseSqlServer(DBConn.ConnectionString),
@@ -91,9 +94,11 @@ builder.Services.AddSession(o =>
 AppRegisterServices.RegisterServices<IRegisterScopped>(builder.Services);
 AppRegisterServices.RegisterServices<IRegisterSingleton>(builder.Services);
 
-builder.Services.AddSingleton(
-    new MapperConfiguration(config => config.AddProfile(new MappingProfile())).CreateMapper()
-);
+var mapperConfig = new MapperConfiguration(cfg =>
+{
+    cfg.AddProfile<MappingProfile>();
+}, NullLoggerFactory.Instance);
+builder.Services.AddSingleton<IMapper>(mapperConfig.CreateMapper());
 
 var app = builder.Build();
 
@@ -122,5 +127,7 @@ app.UseSession();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Login}/{id?}");
+
+app.MapHub<OrderNotificationHub>("/hubs/orders");
 
 app.Run();

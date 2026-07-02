@@ -1,0 +1,69 @@
+@{
+    ViewData["Title"] = "شاشة التطبيق";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .splash-preview { max-height: 220px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.15); animation: splashIn .5s ease; }
+    @@keyframes splashIn { from { opacity:0; transform: scale(.95); } to { opacity:1; transform: scale(1); } }
+</style>
+
+<div class="content">
+    <div class="container-fluid" style="direction:rtl;">
+        <div class="rm-page-summary">
+            <div class="rm-summary-icon bg-info"><i class="material-icons">image</i></div>
+            <div class="rm-summary-body">
+                <h4>شاشة افتتاح التطبيق</h4>
+                <p>صورة واحدة مع تفاصيل تظهر عند فتح التطبيق عند تفعيل العرض. يتم جلبها عبر API للتطبيق.</p>
+            </div>
+        </div>
+
+        <div class="card" style="animation: splashIn .6s ease">
+            <div class="card-body">
+                <form id="splashForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label>صورة الشاشة</label>
+                            <input type="file" id="SplashImage" accept="image/*" class="form-control" />
+                            <img id="splashPreview" class="splash-preview mt-3" style="display:none" alt="preview" />
+                        </div>
+                        <div class="col-md-6">
+                            <label>التفاصيل / النص</label>
+                            <textarea id="SplashDetails" class="form-control" rows="5" placeholder="نص يظهر مع الصورة"></textarea>
+                            <div class="form-check mt-3">
+                                <label><input type="checkbox" id="SplashIsVisible" /> معروضة في التطبيق</label>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" id="saveSplash" class="btn btn-success mt-3">حفظ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="mydiv">
+<script>
+$(function () {
+    function loadSplash() {
+        call_ajax('GET', 'AppSplash/GetAdmin', null, function (d) {
+            if (!d) return;
+            $('#SplashDetails').val(d.details || '');
+            $('#SplashIsVisible').prop('checked', d.isVisible === true);
+            if (d.imageUrl) {
+                $('#splashPreview').attr('src', d.imageUrl).show();
+            }
+        });
+    }
+    loadSplash();
+    $('#saveSplash').on('click', function () {
+        var fd = new FormData();
+        fd.append('Details', $('#SplashDetails').val());
+        fd.append('IsVisible', $('#SplashIsVisible').is(':checked'));
+        var f = $('#SplashImage')[0].files[0];
+        if (f) fd.append('Image', f);
+        call_ajax_withfile('POST', 'AppSplash/Save', fd, loadSplash);
+    });
+});
+</script>
+</div>

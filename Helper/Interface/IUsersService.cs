@@ -11,7 +11,9 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> ConfirmCode(string code, string Phone);
         Task<ResObj> Update_Pass_WithCode(string Pass, string Phone, string Code);
 
-        Task<ResObj> Login(string UserName, string password);      
+        Task<ResObj> Login(string UserName, string password);
+        Task<ResObj> LoginSendOtp(string phone);
+        Task<ResObj> LoginVerifyOtp(string phone, string code);
         Task<ResObj> GetAll(string? Name);
         Task<ResObj> Post(Users Users);
         Task<ResObj> Update(Users Users);

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Net.Http.Headers;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using RomanaWeb.Models.Entity;
 using RomanaWeb.UploadService;
@@ -79,9 +80,10 @@ namespace RomanaWeb.Controllers
         #endregion                                                                                                                                                                             
 
         #region Get Info Products by RestaurantId and userid   and SubCategoriesId   
+        [HttpGet("Products/GetByRestaurantId/{RestaurantId}/{SubCategoriesId}")]
         [HttpGet("Products/GetByRestaurantId/{RestaurantId},{SubCategoriesId},{prodname}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetByRestaurantId(int RestaurantId, int SubCategoriesId,string? prodname)
+        public async Task<IActionResult> GetByRestaurantId(int RestaurantId, int SubCategoriesId, string? prodname = null)
         {
             try
             {
@@ -98,6 +100,47 @@ namespace RomanaWeb.Controllers
         #endregion
 
 
+
+        #region Set product availability (restaurant owner)
+        [HttpPost("Products/SetIsAvailable/{Id}/{isAvailable}")]
+        public async Task<IActionResult> SetIsAvailable(int Id, bool isAvailable)
+        {
+            try
+            {
+                if (UserManager?.Role == "res")
+                {
+                    var prod = await _ProductsService.GetProductsById(Id);
+                    if (prod?.RestaurantId != UserManager.Id)
+                        return Response(false, "غير مصرح بتعديل منتج مطعم آخر");
+                }
+                ResObj res = await _ProductsService.SetIsAvailable(Id, isAvailable);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ProductsController => SetIsAvailable");
+                return Response(false, "حدث خطأ");
+            }
+        }
+        #endregion
+
+        #region Top selling products per restaurant
+        [AllowAnonymous]
+        [HttpGet("Products/GetTopSellingByRestaurant/{restaurantId}")]
+        public async Task<IActionResult> GetTopSellingByRestaurant(int restaurantId, int take = 20)
+        {
+            try
+            {
+                ResObj res = await _ProductsService.GetTopSellingByRestaurant(restaurantId, take);
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ProductsController => GetTopSellingByRestaurant");
+                return Response(false, "حدث خطأ");
+            }
+        }
+        #endregion
 
         #region Set Products SetIsFree
         [HttpPost("Products/SetIsFree/{Id}/{Free}")]
@@ -179,14 +222,10 @@ namespace RomanaWeb.Controllers
         public async Task<IActionResult> Post([FromForm]ProductsModel ProductsModel)
         {
             try
-            {       
-                if (ProductsModel.ProductsId == 0)
-                {
-                    if (ProductsModel.FileChoose.Count() == 0)
-                    {
-                        return Response(false, "رجاءا اختيار ملف التحميل");
-                    }
-                }                              
+            {
+                var hasFile = ProductsModel.FileChoose != null &&
+                    ProductsModel.FileChoose.Any(f => f != null && f.Length > 0);
+
                 Products Products = _mapper.Map<Products>(ProductsModel);
                 ResObj res;
                 if (Products.ProductsId == 0)
@@ -197,19 +236,26 @@ namespace RomanaWeb.Controllers
                 {
                     res = await _ProductsService.Update(Products);
                 }
-                if(ProductsModel.FileChoose!=null)
-                foreach (var item in ProductsModel.FileChoose)
+
+                if (!res.success)
+                    return Response(false, res.msg ?? "حدث خطا اثناء عملية الحفظ");
+
+                var productId = Convert.ToInt32(res.data);
+
+                if (hasFile)
                 {
-                    if (item != null)
+                    foreach (var item in ProductsModel.FileChoose)
                     {
+                        if (item == null || item.Length == 0)
+                            continue;
 
                         var result = await storageServices.UploadImageAsync(item, _hostEnvironment.WebRootPath);
                         if (result.success)
                         {
                             await _ProductsService.PostImages(new Images()
                             {
-                                ProductsId = Convert.ToInt32(res.data),
-                                ImagePath =Key.CurrentUrl + @$"\Uplouds\image-{result.data}"     
+                                ProductsId = productId,
+                                ImagePath = Key.CurrentUrl + @$"\Uplouds\image-{result.data}"
                             });
                         }
                         else
@@ -218,7 +264,15 @@ namespace RomanaWeb.Controllers
                         }
                     }
                 }
-                                                 
+                else if (Products.ProductsId == 0)
+                {
+                    await _ProductsService.PostImages(new Images()
+                    {
+                        ProductsId = productId,
+                        ImagePath = Key.CurrentUrl + "images/product-placeholder.png"
+                    });
+                }
+
                 return Response(true, "تم الحفظ بنجاح");
                 
             }
@@ -226,6 +280,84 @@ namespace RomanaWeb.Controllers
             {
                 await _logger.WriteAsync(ex, "ProductsController => Post => name:"  );
                 return Response(false, "حدث خطا اثناء عملية الحفظ");
+            }
+        }
+        #endregion
+
+        #region Bulk quick entry
+        [HttpPost("Products/PostBulk")]
+        public async Task<IActionResult> PostBulk([FromBody] QuickProductsBulkRequest request)
+        {
+            try
+            {
+                if (request?.Items == null || request.Items.Count == 0)
+                    return Response(false, "لا توجد منتجات للحفظ");
+
+                var placeholder = Key.CurrentUrl + "images/product-placeholder.png";
+                foreach (var item in request.Items)
+                {
+                    if (string.IsNullOrWhiteSpace(item.Base64Image))
+                        continue;
+
+                    var imageUrl = await SaveQuickProductImageAsync(item.Base64Image);
+                    if (imageUrl == null)
+                    {
+                        return Response(false, "صيغة الصورة غير صالحة للمنتج: " + (item.ProductsName ?? ""));
+                    }
+                    item.ImageUrl = imageUrl;
+                }
+
+                ResObj res = await _ProductsService.PostBulk(request, placeholder);
+                var data = res.data;
+                var savedCount = 0;
+                var failedCount = 0;
+                if (data != null)
+                {
+                    dynamic bulk = data;
+                    try
+                    {
+                        savedCount = bulk.saved?.Count ?? 0;
+                        failedCount = bulk.failed?.Count ?? 0;
+                    }
+                    catch { }
+                }
+
+                var msg = failedCount > 0
+                    ? $"تم حفظ {savedCount} منتج، فشل {failedCount}"
+                    : $"تم حفظ {savedCount} منتج بنجاح";
+
+                return Response(res.success, msg, data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ProductsController => PostBulk");
+                return Response(false, "حدث خطأ أثناء الحفظ الجماعي");
+            }
+        }
+
+        private async Task<string?> SaveQuickProductImageAsync(string base64)
+        {
+            try
+            {
+                var payload = base64.Trim();
+                if (payload.Contains(","))
+                    payload = payload.Substring(payload.IndexOf(',') + 1);
+
+                var bytes = Convert.FromBase64String(payload);
+                if (bytes.Length == 0)
+                    return null;
+
+                var ext = ".png";
+                var fileName = $"{Guid.NewGuid()}{ext}";
+                var dir = Path.Combine(_hostEnvironment.WebRootPath, "Uplouds");
+                Directory.CreateDirectory(dir);
+                var fullPath = Path.Combine(dir, "image-" + fileName);
+                await System.IO.File.WriteAllBytesAsync(fullPath, bytes);
+                return Key.CurrentUrl + @"\Uplouds\image-" + fileName;
+            }
+            catch
+            {
+                return null;
             }
         }
         #endregion

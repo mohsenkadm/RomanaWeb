@@ -30,7 +30,7 @@
                             <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#UsersModal">اضافة  جديد <i class='material-icons'>add</i> </button>
                         </div>
                     </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12 ">
+                    <div class="col-lg-4 col-md-4 col-sm-12 ">
                         <label class="mb-2">بحث عن الاسم</label>
                         <input type="text" class="form-control alignright" placeholder="اكتب الاسم" autocomplete="off" name="Namese" id="Namese">
                     </div>
@@ -38,6 +38,12 @@
                         <div class="text-center wow fadeInDown" style="text-align:left;">
                             <label class="mb-2"> </label>
                             <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث <i class='material-icons'>search</i>  </button>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" id="excel-btn" class="btn btn-success btnwidth" style="text-align:center; width:100%;">اكسل <i class='material-icons'>file_download</i></button>
                         </div>
                     </div>
                     <div class="col-lg-2 col-md-2 col-sm-12" style="padding-top:24px;">
@@ -148,6 +154,10 @@
         $("#search-btn").on("click", (e) => {
             e.preventDefault();
             RefreshUsers();
+        });
+        $("#excel-btn").on("click", (e) => {
+            e.preventDefault();
+            window.open("/Users/GetExcelAll?Name=" + encodeURIComponent($("#Namese").val() || ""));
         });
         $(document).ready(function () {
             var obj = { Name: $("#Namese").val() }

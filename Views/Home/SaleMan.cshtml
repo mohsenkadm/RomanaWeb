@@ -13,12 +13,18 @@
                 <div class="rm-summary-icon bg-orange"><i class="material-icons">badge</i></div>
                 <div class="rm-summary-body">
                     <h4>ادارة المندوبين</h4>
-                    <p>عرض وادارة مندوبي المبيعات المرتبطين بالمتاجر. يمكنك البحث عن المندوبين بالاسم ومراجعة بياناتهم وربطهم بالمتاجر المناسبة.</p>
+                    <p>عرض وادارة السائقين/المندوبين من قبل الادمن فقط (غير مرتبطين بمطعم محدد). يمكنك البحث بالاسم ومراجعة بياناتهم وحالة العمل.</p>
                 </div>
             </div>
 
             <div class="rm-filter-bar">
-                <div class="row"> 
+                <div class="row">
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" onclick="openAddSaleMan()" data-toggle="modal" data-target="#SaleManModal">اضافة جديد <i class='material-icons'>add</i></button>
+                        </div>
+                    </div>
                     <div class="col-lg-6 col-md-6 col-sm-12">
                         <label class="mb-2">بحث عن الاسم</label>
                         <input type="text" class="form-control alignright" placeholder="اكتب الاسم" autocomplete="off" name="Namese" id="Namese">
@@ -43,7 +49,6 @@
                                 <table class="table table-hover">
                                     <thead class=" ">
                                         <tr> 
-                                            <th scope="col">اسم المطعم</th>
                                             <th scope="col">نشط</th>
                                             <th scope="col">حالة العمل</th>
                                             <th scope="col">كلمة المرور</th> 
@@ -63,17 +68,101 @@
             </div>
         </div>
     </div>
-</div> 
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="SaleManModal" tabindex="-1" role="dialog" aria-labelledby="SaleManModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title" id="SaleManModalLabel">اضافة جديد</h5>
+                <button type="button" id="close1" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">اسم المندوب</label>
+                        <input type="text" placeholder="اكتب الاسم" class="form-control alignright" autocomplete="off" name="Name" id="Name" />
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">رقم الهاتف</label>
+                        <input type="text" placeholder="اكتب رقم الهاتف" class="form-control alignright" autocomplete="off" name="Phone" id="Phone" />
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">العنوان</label>
+                        <input type="text" placeholder="اكتب العنوان" class="form-control alignright" autocomplete="off" name="Address" id="Address" />
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">كلمة المرور</label>
+                        <input type="text" placeholder="اكتب كلمة المرور" class="form-control alignright" autocomplete="off" name="Password" id="Password" />
+                    </div>
+                    <div class="form-group col-md-6 alignright">
+                        <label class="text-primary">نشط</label>
+                        <div class='form-check col-md-6 alignright'>
+                            <label class='form-check-label'>
+                                <input class='form-check-input' type='checkbox' id='IsActive'>
+                                <span class='form-check-sign'>
+                                    <span class='check'></span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="close" data-dismiss="modal">اغلاق</button>
+                <button type="button" class="btn btn-success" id="save">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="mydiv">
-    <script> 
+    <script>
+        $("#close").on("click", (e) => {
+            e.preventDefault();
+            aftersaveSaleMan();
+        });
+        $("#close1").on("click", (e) => {
+            e.preventDefault();
+            aftersaveSaleMan();
+        });
         $("#search-btn").on("click", (e) => {
             e.preventDefault();
             RefreshSaleMan();
         });
         $(document).ready(function () {
-            var obj = { Name: $("#Namese").val() }
             call_ajax("GET", "SaleMan/GetAll", null, filltableSaleMan);
-        }); 
+        });
+        $("#save").on("click", (e) => {
+            e.preventDefault();
+            var IsActive = $('#IsActive').is(":checked");
+            var object = {
+                SaleManId: _SaleManId,
+                Name: $("#Name").val(),
+                Phone: $("#Phone").val(),
+                Address: $("#Address").val(),
+                Password: $("#Password").val(),
+                IsActive: IsActive,
+            };
+
+            if (object.Name === "" || object.Name.trim() === "") {
+                md.showNotification("رجاءا ادخل الاسم");
+                return;
+            }
+            if (object.Phone === "" || object.Phone.trim() === "") {
+                md.showNotification("رجاءا ادخل رقم الهاتف");
+                return;
+            }
+            if (object.Password === "" || object.Password.trim() === "") {
+                md.showNotification("رجاءا ادخل كلمة المرور");
+                return;
+            }
+
+            call_ajax("POST", "SaleMan/Post", object, aftersaveSaleMan);
+        });
     </script>
 </div>
 

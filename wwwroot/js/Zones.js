@@ -5,19 +5,27 @@
 // token and the server returns 401. Always go through call_ajax*.
 (function () {
 
-    function getCookieSafe(name) {
-        try { return getCookie(name); } catch (e) { return ''; }
-    }
-
     function alertBox(targetId, success, msg) {
         var cls = success ? 'alert-success' : 'alert-danger';
         $('#' + targetId).html('<div class="alert ' + cls + '">' + msg + '</div>');
+    }
+
+    function fillZoneSelects(rows) {
+        var options = '<option value="">اختر المنطقة</option>';
+        rows.forEach(function (z) {
+            var id = z.zoneId || z.ZoneId;
+            var name = z.name || z.Name;
+            options += '<option value="' + id + '">' + name + '</option>';
+        });
+        $('#matrixFromZone, #matrixToZone').html(options);
     }
 
     function loadZones() {
         call_ajax('GET', 'zones', null, function (rows) {
             rows = rows || [];
             $('#zonesCount').text(rows.length);
+            fillZoneSelects(rows);
+
             var html = '';
             rows.forEach(function (z) {
                 html += '<tr>' +
@@ -38,10 +46,12 @@
             $('#matrixCount').text(rows.length);
             var html = '';
             rows.forEach(function (m) {
+                var fromName = m.fromZoneName || m.FromZoneName || m.fromZoneId || m.FromZoneId;
+                var toName = m.toZoneName || m.ToZoneName || m.toZoneId || m.ToZoneId;
                 html += '<tr>' +
                     '<td>' + (m.zonePriceId || m.ZonePriceId) + '</td>' +
-                    '<td>' + (m.fromZoneId || m.FromZoneId) + '</td>' +
-                    '<td>' + (m.toZoneId || m.ToZoneId) + '</td>' +
+                    '<td>' + fromName + '</td>' +
+                    '<td>' + toName + '</td>' +
                     '<td>' + (m.price || m.Price) + '</td>' +
                     '</tr>';
             });
@@ -50,8 +60,6 @@
     }
 
     function uploadFile(url, inputId, resultId, onDone) {
-        // Read the input via jQuery to be resilient to any DOM replacement
-        // done by Material Dashboard's bmd-form-group transform.
         var $input = $('#' + inputId);
         var fileInput = $input.length ? $input[0] : document.getElementById(inputId);
         if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
@@ -61,12 +69,61 @@
         var fd = new FormData();
         fd.append('file', fileInput.files[0]);
 
-        // call_ajax_withfile already wires the JWT from cookie "token2".
         call_ajax_withfile('POST', url, fd, function (data) {
             alertBox(resultId, true, 'تم رفع الملف بنجاح');
             if (onDone) onDone();
-            // Reset so the same file can be re-uploaded.
             try { fileInput.value = ''; } catch (e) { }
+        });
+    }
+
+    function saveZoneManual() {
+        var name = ($('#zoneNameManual').val() || '').trim();
+        var geo = ($('#zoneGeoManual').val() || '').trim();
+        if (!name) {
+            alertBox('zoneManualResult', false, 'رجاءا ادخل اسم المنطقة');
+            return;
+        }
+        if (!geo) {
+            alertBox('zoneManualResult', false, 'رجاءا ادخل GeoJSON للمنطقة');
+            return;
+        }
+
+        call_ajax_json('POST', 'zones/create', {
+            name: name,
+            geoJson: geo,
+            isActive: $('#zoneActiveManual').is(':checked')
+        }, function () {
+            alertBox('zoneManualResult', true, 'تم حفظ المنطقة بنجاح');
+            $('#zoneNameManual').val('');
+            $('#zoneGeoManual').val('');
+            $('#zoneActiveManual').prop('checked', true);
+            loadZones();
+        });
+    }
+
+    function saveMatrixManual() {
+        var fromId = parseInt($('#matrixFromZone').val(), 10);
+        var toId = parseInt($('#matrixToZone').val(), 10);
+        var price = parseFloat($('#matrixPriceManual').val());
+        if (!fromId || !toId) {
+            alertBox('matrixManualResult', false, 'رجاءا اختر منطقة المصدر والوجهة');
+            return;
+        }
+        if (isNaN(price) || price < 0) {
+            alertBox('matrixManualResult', false, 'رجاءا ادخل سعرا صالحا');
+            return;
+        }
+
+        call_ajax_json('POST', 'zones/matrix/create', {
+            fromZoneId: fromId,
+            toZoneId: toId,
+            price: price
+        }, function () {
+            alertBox('matrixManualResult', true, 'تم حفظ السعر بنجاح');
+            $('#matrixFromZone').val('');
+            $('#matrixToZone').val('');
+            $('#matrixPriceManual').val('');
+            loadMatrix();
         });
     }
 
@@ -79,6 +136,8 @@
         $('#uploadMatrixBtn').on('click', function () {
             uploadFile('zones/matrix/upload', 'matrixFile', 'matrixResult', loadMatrix);
         });
+        $('#saveZoneManualBtn').on('click', saveZoneManual);
+        $('#saveMatrixManualBtn').on('click', saveMatrixManual);
 
         loadZones();
         loadMatrix();

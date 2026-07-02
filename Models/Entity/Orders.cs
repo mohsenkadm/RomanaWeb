@@ -26,10 +26,17 @@ namespace RomanaWeb.Models.Entity
         public bool? IsSaleManCancel { get; set; }    
         public bool? IsDelivered { get; set; }    
         public bool? IsNotDelivered { get; set; }    
-        public bool? IsWaiting { get; set; }    
+        public bool? IsWaiting { get; set; }
+        public bool IsPreparing { get; set; }
+        public bool IsDriverEnRouteToPickup { get; set; }
+        public bool IsPickedUpFromRestaurant { get; set; }
+        public bool IsOutForDelivery { get; set; }
+        public bool IsDeliveryConfirmed { get; set; }
         public string? Reason { get; set; }
         public string? Reason2 { get; set; }
         public string? SaleManName { get; set; }
+        /// <summary>Populated on order-detail API; not mapped to Orders table.</summary>
+        public SaleMan? Driver { get; set; }
 
         public decimal? CostDelivery { get; set; }
         // for show
@@ -41,6 +48,14 @@ namespace RomanaWeb.Models.Entity
         public string? Logo { get; set; }
         public string? Lat { get; set; }
         public string? Long { get; set; }
+        /// <summary>API-only: restaurant pickup latitude (not persisted).</summary>
+        public string? RestaurantLat { get; set; }
+        /// <summary>API-only: restaurant pickup longitude (not persisted).</summary>
+        public string? RestaurantLong { get; set; }
+        /// <summary>API-only: customer dropoff latitude (duplicate of Lat for clarity).</summary>
+        public string? DropoffLat { get; set; }
+        /// <summary>API-only: customer dropoff longitude (duplicate of Long for clarity).</summary>
+        public string? DropoffLng { get; set; }
         public string? RestaurantName { get; set; }
         public string? CategoriesName { get; set; }
         public string? CityName { get; set; }

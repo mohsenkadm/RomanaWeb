@@ -2,7 +2,8 @@
 function filltableOrders(data) {
     $('#tableOrders').empty();
     $.each(data, function (i, item) {
-        var rows = "<tr>" +  
+        var rows = "<tr>" +
+            "<td class='rm-actions-cell'><button type='button' class='btn btn-info btn-sm' onclick='OrderDetail(" + item.orderId + ")' data-toggle='modal' data-target='#OrdersDetailsModal'>تفاصيل</button></td>" +
             "<td>" +
             "<div class='form-check'>" +
             "<label class='form-check-label'>" +
@@ -46,8 +47,7 @@ function filltableOrders(data) {
             "<td>" + item.restaurantName + "</td>" +
             "<td>" + item.categoriesName + "</td>" +
             "<td>" + item.orderDate + "</td>" +
-            "<td>" + item.orderNo + "</td>"+
-            "  <td>  <button type='button' class='btn btn-info' onclick='OrderDetail(" + item.orderId + ")'  data-toggle='modal' data-target='#OrdersDetailsModal'>تفاصيل الطلب</button></td></tr>";
+            "<td><strong>" + (item.orderNo || '') + "</strong></td></tr>";
 
               $('#tableOrders').append(rows); 
         $('#IsDone' + item.orderId).attr('checked', item.isDone);
@@ -159,22 +159,34 @@ function OrderDetailForRes(id) {
 }
 
 function SetDataOrderDetail(data) {
+    var details = data;
+    if (data && data.details) {
+        details = data.details;
+        if (data.driver) {
+            $('#orderDriverInfo').remove();
+            var d = data.driver;
+            $('#tableOrdersDetail').before(
+                '<div id="orderDriverInfo" class="alert alert-info" style="animation:fadeIn .4s">' +
+                '<strong>السائق:</strong> ' + (d.name || '-') + ' | <strong>هاتف:</strong> ' + (d.phone || '-') + '</div>');
+        }
+    }
     $('#tableOrdersDetail').empty();
-    $.each(data, function (i, item) {
+    $.each(details, function (i, item) {
         var rows = "<tr>" +
             "<td> " + item.count + "</td> " +  
             "<td> " + item.price + "</td> " +  
             "<td>" + item.productsDetails + "</td>" + 
             "<td>" + item.productsName + "</td>" +
             "<td>" + item.subCategoriesName + "</td>" +
-            "<td><img src='" + item.productsImage + "' alt='' border=3 height=50 width=50></img></td>" 
+            "<td class='rm-img-cell'><img src='" + item.productsImage + "' alt='' class='rm-table-thumb'></td>" 
             + "<td> <button type='button' class='btn btn-danger' onclick='deleteOrderDetail(" + item.orderDetailId + ")'  >حذف</button></td></tr>";
         $('#tableOrdersDetail').append(rows);
     });
 }
 function SetDataOrderDetailForRes(data) {
+    var details = (data && data.details) ? data.details : data;
     $('#tableOrdersDetailForRes').empty();
-    $.each(data, function (i, item) {
+    $.each(details, function (i, item) {
         var rows = "<tr>" +
             "<td> " + item.notes2 + "</td> " +  
             "<td> " + item.count + "</td> " +  
@@ -182,7 +194,7 @@ function SetDataOrderDetailForRes(data) {
             "<td>" + item.productsDetails + "</td>" + 
             "<td>" + item.productsName + "</td>" +
             "<td>" + item.subCategoriesName + "</td>" +
-            "<td><img src='" + item.productsImage + "' alt='' border=3 height=50 width=50></img></td></tr>";
+            "<td class='rm-img-cell'><img src='" + item.productsImage + "' alt='' class='rm-table-thumb'></td></tr>";
         $('#tableOrdersDetailForRes').append(rows);
     });
 }
@@ -198,10 +210,14 @@ function RefreshOrderDetail() {
     OrderDetail(_id);
 }
 function RefreshOrders() {
+    var status = $("#FilterOrderStatus").val();
     var obj = {
         OrderNo: $("#OrderNo").val(), RestaurantName: $("#RestaurantName").val(),
         datefrom: $("#datefrom").val(),
-        dateto: $("#dateto").val(), CountriesId:$("#CountriesId").val()
+        dateto: $("#dateto").val(),
+        CountriesId: $("#CountriesId").val(),
+        Phone: $("#FilterPhone").val() || '',
+        orderStatus: status === '' ? null : parseInt(status, 10)
     }
     call_ajax("GET", "Orders/GetAll", obj, filltableOrders);
 }

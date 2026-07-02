@@ -12,6 +12,10 @@ namespace RomanaWeb.Helper.Interface
     {
         Task<ResObj> DispatchOrder(int orderId, double radiusKm = 5d);
         Task<ResObj> CancelByDriver(int orderId, int saleManId, string reason);
-        Task<ResObj> UpdateDriverLocation(int saleManId, double lat, double lng);
+        Task<ResObj> UpdateDriverLocation(int saleManId, double lat, double lng, int? orderId = null);
+        Task<(bool ok, int httpStatus, object? data, string? msg)> GetDriverLocationForOrder(int orderId, int userId);
+        Task SetActiveOrderAsync(int saleManId, int orderId);
+        Task ClearActiveOrderAsync(int saleManId);
+        Task<bool> DriverHasActiveOrderAsync(int saleManId, int? excludeOrderId = null);
     }
 }

@@ -41,7 +41,13 @@ namespace RomanaWeb.Controllers
             _mapper = mapper;
             _storageServices = storageServices;
         }
-        #endregion         
+        #endregion
+
+        // Admin role guard. SaleMan management (add/edit/remove) is admin-only;
+        // restaurants no longer manage their own salesmen.
+        [NonAction]
+        private bool IsAdmin() =>
+            string.Equals(UserManager?.Role, "admin", StringComparison.OrdinalIgnoreCase);
 
         #region LoginSaleMan 
         [AllowAnonymous]
@@ -79,30 +85,9 @@ namespace RomanaWeb.Controllers
             }
         }
         #endregion
-                                  
-        #region Get Info SaleMan GetByRestaurantId     
-        [HttpGet]
-        public async Task<IActionResult> GetByRestaurantId(int RestaurantId)
-        {
-            try
-            {
-                if (RestaurantId == 0)
-                {
-                    RestaurantId = UserManager.Id;
-                }
-                ResObj res = await _SaleManService.GetByRestaurantId(RestaurantId);
 
-                return Response(res.success, res.data);
-            }
-            catch (Exception ex)
-            {
-                await _logger.WriteAsync(ex, "SaleManController => GetByRestaurantId => name:");
-                return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
-            }
-        }
-        #endregion      
         #region Get Info SaleMan 
-         
+
         [HttpGet]
         public async Task<IActionResult> GetAll(string? Name)
         {
@@ -122,20 +107,23 @@ namespace RomanaWeb.Controllers
 
                                     
                                                  
-        #region insert or update Info SaleMan 
+        #region insert or update Info SaleMan (admin only)
         [HttpPost]
         public async Task<IActionResult> Post([FromForm]SaleManModel SaleManModel)
         {
             try
-            {  
+            {
+                if (!IsAdmin())
+                    return Response(false, "هذه العملية مخصصة لمدير التطبيق فقط");
+
                 SaleMan SaleMan = _mapper.Map<SaleMan>(SaleManModel);
-                
+
                 ResObj res;
 
                 if (SaleMan.SaleManId == 0)
                 {
                     res = await _SaleManService.Post(SaleMan);
-                                                        
+
                 }
                 else
                 {
@@ -153,12 +141,14 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
-        #region delete Info SaleMan 
+        #region delete Info SaleMan (admin only)
         [HttpDelete]
         public async Task<IActionResult> Delete(int Id)
         {
             try
             {
+                if (!IsAdmin())
+                    return Response(false, "هذه العملية مخصصة لمدير التطبيق فقط");
                 ResObj res = await _SaleManService.Delete(Id);
 
                 return Response(res.success, res.msg);

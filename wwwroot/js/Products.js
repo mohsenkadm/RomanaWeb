@@ -3,18 +3,20 @@ var _ProductsId = 0;
 function filltableProducts(data) {
     $('#tableProducts').empty();
     $.each(data, function (i, item) {
-        var rows = "<tr>" +   
-            "<td>" + item.subCategoriesName + "</td>" +
-            "<td><img src='" + item.productsImageFirst + "' alt='' border=3 height=50 width=50></img></td>" + 
+        var rows = "<tr>" +
+            "<td class='rm-actions-cell'><div class='rm-actions'>" +
+            "<button type='button' class='btn btn-primary btn-sm' onclick='updateProducts(" + item.productsId + ")' data-toggle='modal' data-target='#ProductsModal'>تعديل</button> " +
+            "<button type='button' class='btn btn-danger btn-sm' onclick='deleteProducts(" + item.productsId + ")'>حذف</button> " +
+            "<button type='button' class='btn btn-info btn-sm' onclick='ShowImage(" + item.productsId + ")' data-toggle='modal' data-target='#ImageModal'>صور</button>" +
+            "</div></td>" +
+            "<td class='rm-actions-cell'><button type='button' class='btn btn-info btn-sm' onclick='showIngredients(" + item.productsId + ")' data-toggle='modal' data-target='#IngredientsModal'>المكونات</button></td>" +
+            "<td class='rm-actions-cell'><button type='button' class='btn btn-warning btn-sm' onclick='showSizes(" + item.productsId + ")' data-toggle='modal' data-target='#SizesModal'>الأحجام</button></td>" +
+            "<td>" + (item.restaurantName || '') + "</td>" +
+            "<td><strong>" + (item.productsName || '') + "</strong></td>" +
+            "<td class='rm-wrap-cell'>" + (item.productsDetails || '') + "</td>" +
             "<td>" + item.productsPrice + "</td>" +
-            "<td>" + item.productsDetails + "</td>" +
-            "<td>" + item.productsName + "</td>" +
-            "<td>" + item.restaurantName + "</td>" +
-            "<td><button type='button' class='btn btn-warning btn-sm' onclick='showSizes(" + item.productsId + ")' data-toggle='modal' data-target='#SizesModal'>الأحجام</button></td>" +
-            "<td><button type='button' class='btn btn-info btn-sm' onclick='showIngredients(" + item.productsId + ")' data-toggle='modal' data-target='#IngredientsModal'>المكونات</button></td>" +
-            "<td> <button type='button' class='btn btn-info' onclick='ShowImage(" + item.productsId + ")'  data-toggle='modal' data-target='#ImageModal' >عرض الصور</button> |" +
-            " <button type = 'button' class='btn btn-danger' onclick = 'deleteProducts(" + item.productsId + ")' > حذف</button > " +
-            "  |  <button type='button' class='btn btn-primary' onclick='updateProducts(" + item.productsId + ")'  data-toggle='modal' data-target='#ProductsModal'>تعديل</button></td></tr>";
+            "<td class='rm-img-cell'><img src='" + (item.productsImageFirst || '') + "' alt='' class='rm-table-thumb'></td>" +
+            "<td>" + (item.subCategoriesName || '') + "</td></tr>";
         $('#tableProducts').append(rows); 
     });
 }
@@ -55,6 +57,7 @@ function setdataProducts(data) {
     $("#ProductsDetails").val(data.productsDetails);  
     $("#RestaurantId").val(data.restaurantId).change();
     $("#SubCategoriesId").val(data.subCategoriesId).change();
+    $("#PreparationTimeMinutes").val(data.preparationTimeMinutes || 15);
 }
 function aftersaveProducts(data) { 
     
@@ -74,7 +77,7 @@ function filltableImage(data) {
     $('#tableImage').empty();
     $.each(data, function (i, item) {
         var rows = "<tr>" +
-            "<td><img src='" + item.imagePath + "' alt='' border=3 height=50 width=50></img></td>"
+            "<td class='rm-img-cell'><img src='" + item.imagePath + "' alt='' class='rm-table-thumb'></td>"
             + "<td> <button type='button' class='btn btn-danger' onclick='deleteImage(" + item.imageId + ")'  >حذف</button></tr>";
         $('#tableImage').append(rows);
     });

@@ -16,6 +16,8 @@ namespace RomanaWeb.Models.Entity
         public string? ProductsImageFirst { get; set; }      
         public string? Background { get; set; }
         public bool? IsFree { get; set; }
+        public int PreparationTimeMinutes { get; set; } = 15;
+        public bool IsAvailable { get; set; } = true;
         public List<Images> Images { get; set; }
         public List<ProductSize>? Sizes { get; set; }
         public List<ProductIngredient>? Ingredients { get; set; }

@@ -8,7 +8,6 @@ namespace RomanaWeb.Helper.Interface
     {
         Task<ResObj> Login(string Phone, string password);       
         Task<ResObj> GetAll(string? Name);
-        Task<ResObj> GetByRestaurantId(int RestaurantId);
         Task<ResObj> Post(SaleMan SaleMan);
         Task<ResObj> Update(SaleMan SaleMan);
         Task<ResObj> Delete(int Id);

@@ -161,12 +161,52 @@
         requestAnimationFrame(step);
     };
 
+    /* ---------- Normalize oversized table images ---------- */
+    RM.normalizeTableImages = function (root) {
+        root = root || document;
+        root.querySelectorAll('.table img').forEach(function (img) {
+            img.classList.add('rm-table-thumb');
+            img.removeAttribute('width');
+            img.removeAttribute('height');
+            img.removeAttribute('border');
+            var td = img.closest('td');
+            if (td) td.classList.add('rm-img-cell');
+        });
+    };
+
+    /* ---------- Wrap tables: RTL class + bottom scroll hint ---------- */
+    RM.initTableWraps = function (root) {
+        root = root || document;
+        root.querySelectorAll('.table-responsive').forEach(function (wrap) {
+            if (wrap.closest('.rm-table-wrap')) return;
+            var table = wrap.querySelector('table');
+            if (!table) return;
+            table.classList.add('rm-rtl-table');
+            var outer = document.createElement('div');
+            outer.className = 'rm-table-wrap';
+            wrap.parentNode.insertBefore(outer, wrap);
+            outer.appendChild(wrap);
+            var hint = document.createElement('div');
+            hint.className = 'rm-table-scroll-hint';
+            hint.innerHTML = '<i class="material-icons">swap_horiz</i><span>مرّر أفقياً لعرض جميع الأعمدة</span>';
+            outer.appendChild(hint);
+        });
+    };
+
     /* ---------- Auto boot ---------- */
     RM.boot = function () {
         RM.initLazyImages();
         RM.initReveal();
         RM.initTooltips();
         RM.bindGlobalAjax();
+        RM.initTableWraps();
+        RM.normalizeTableImages();
+        if ($) {
+            $(document).ajaxComplete(function () {
+                RM.initTableWraps();
+                RM.normalizeTableImages();
+            });
+        }
     };
 
     global.RM = RM;

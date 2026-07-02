@@ -26,7 +26,9 @@ namespace RomanaWeb.Controllers
             try
             {
                 ResObj res = await _pricingService.Quote(request);
-                return Response(res.success, res.data);
+                if (!res.success)
+                    return Response(false, res.msg ?? "تعذر حساب السعر");
+                return Response(true, res.data);
             }
             catch (Exception ex)
             {

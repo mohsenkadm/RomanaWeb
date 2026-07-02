@@ -971,18 +971,62 @@ label.text-primary,
     border-radius: var(--rm-radius-sm);
 }
 
-/* ---------- Image Thumbnails ---------- */
-.card img,
+/* ---------- Image Thumbnails (tables: fixed size) ---------- */
+.rm-table-thumb,
+.res-prod-thumb,
+.table td img,
 .table img,
+.rm-table-wrap img,
+#ResProductsModal .table img {
+    width: 44px !important;
+    height: 44px !important;
+    max-width: 44px !important;
+    max-height: 44px !important;
+    min-width: 44px;
+    min-height: 44px;
+    object-fit: cover !important;
+    object-position: center;
+    border-radius: 10px !important;
+    border: 2px solid var(--rm-border) !important;
+    display: inline-block;
+    vertical-align: middle;
+    background: var(--rm-bg-input);
+    box-shadow: var(--rm-shadow-xs);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.table td.rm-img-cell {
+    width: 56px;
+    max-width: 56px;
+    padding: 8px 10px !important;
+    text-align: center !important;
+}
+.rm-table-thumb:hover,
+.res-prod-thumb:hover,
+.table td img:hover {
+    transform: scale(1.06);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    border-color: var(--rm-accent-light) !important;
+}
+/* Override legacy inline dimensions in JS */
+.table img[width],
+.table img[height],
+.table img[border] {
+    width: 44px !important;
+    height: 44px !important;
+    max-width: 44px !important;
+    max-height: 44px !important;
+}
+.card img:not(.table img):not(.rm-table-thumb):not(.res-prod-thumb) {
+    border-radius: var(--rm-radius-xs);
+    max-width: 100%;
+    height: auto;
+}
 img.img-thumbnail {
     border-radius: var(--rm-radius-xs) !important;
     border: 1px solid var(--rm-border) !important;
-    transition: transform var(--rm-transition), box-shadow var(--rm-transition);
-}
-.card img:hover,
-.table img:hover {
-    transform: scale(1.03);
-    box-shadow: var(--rm-shadow-md);
+    max-width: 120px;
+    max-height: 80px;
+    object-fit: cover;
 }
 
 /* ---------- Footer ---------- */
@@ -1005,6 +1049,266 @@ img.img-thumbnail {
     border-radius: var(--rm-radius-sm);
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
+}
+
+/* ---------- RTL table shell + horizontal scroll ---------- */
+.rm-table-wrap {
+    border: 1px solid var(--rm-border);
+    border-radius: var(--rm-radius-sm);
+    background: var(--rm-bg-card);
+    overflow: hidden;
+    margin-bottom: 4px;
+    animation: rmFadeInUp 0.35s ease-out both;
+}
+.rm-table-wrap .table-responsive {
+    overflow-x: scroll;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    margin-bottom: 0;
+    border-radius: 0;
+}
+.rm-table-wrap .table-responsive::-webkit-scrollbar {
+    height: 11px;
+}
+.rm-table-wrap .table-responsive::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 0 0 8px 8px;
+}
+.rm-table-wrap .table-responsive::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, var(--rm-accent-light), var(--rm-accent));
+    border-radius: 8px;
+    border: 2px solid #f1f5f9;
+}
+.rm-table-wrap .table-responsive::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(90deg, #4338ca, #6366f1);
+}
+.rm-table-scroll-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--rm-text-muted);
+    background: linear-gradient(180deg, #f8fafc, #f1f5f9);
+    border-top: 1px solid var(--rm-border-light);
+    direction: rtl;
+}
+.rm-table-scroll-hint i {
+    font-size: 18px !important;
+    color: var(--rm-accent);
+    animation: rmFloat 2.5s ease-in-out infinite;
+}
+
+/* RTL tables: first column in markup = rightmost on screen */
+table.rm-rtl-table {
+    direction: rtl;
+    text-align: right;
+    width: 100%;
+    min-width: max(100%, 720px);
+}
+table.rm-rtl-table thead th,
+table.rm-rtl-table tbody td {
+    text-align: right;
+    white-space: nowrap;
+}
+table.rm-rtl-table tbody td.rm-wrap-cell {
+    white-space: normal;
+    min-width: 140px;
+    max-width: 280px;
+}
+table.rm-rtl-table tbody td.rm-actions-cell {
+    white-space: nowrap;
+}
+table.rm-rtl-table .rm-actions {
+    justify-content: flex-start;
+}
+
+/* ---------- Stats grid (dashboard + pages) ---------- */
+.rm-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+}
+.rm-kpi {
+    position: relative;
+    border-radius: 16px;
+    padding: 20px 18px 16px;
+    color: #fff;
+    overflow: hidden;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.1);
+    animation: rmFadeInUp 0.5s ease-out both;
+    transition: transform var(--rm-transition), box-shadow var(--rm-transition);
+    direction: rtl;
+    text-align: right;
+}
+.rm-kpi:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 30px rgba(15, 23, 42, 0.16);
+}
+.rm-kpi::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.2), transparent 55%);
+    pointer-events: none;
+}
+.rm-kpi .rm-kpi-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.22);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+.rm-kpi .rm-kpi-icon i { font-size: 26px; color: #fff; }
+.rm-kpi .rm-kpi-label {
+    font-size: 0.84rem;
+    font-weight: 500;
+    opacity: 0.92;
+    margin: 0 0 4px;
+}
+.rm-kpi .rm-kpi-value {
+    font-size: 1.85rem;
+    font-weight: 800;
+    line-height: 1.1;
+    margin: 0;
+    animation: rmPulseNumber 3s ease-in-out infinite;
+}
+.rm-kpi .rm-kpi-sub {
+    margin-top: 8px;
+    font-size: 0.74rem;
+    opacity: 0.88;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.rm-kpi-violet  { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+.rm-kpi-emerald { background: linear-gradient(135deg, #10b981, #059669); }
+.rm-kpi-cyan    { background: linear-gradient(135deg, #06b6d4, #0891b2); }
+.rm-kpi-amber   { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.rm-kpi-rose    { background: linear-gradient(135deg, #f43f5e, #e11d48); }
+.rm-kpi-sky     { background: linear-gradient(135deg, #0ea5e9, #0284c7); }
+.rm-kpi-purple  { background: linear-gradient(135deg, #a855f7, #7e22ce); }
+
+.rm-page-summary .rm-summary-stats {
+    flex-wrap: wrap;
+}
+.rm-page-summary .rm-summary-stats .rm-stat {
+    transition: transform var(--rm-transition), box-shadow var(--rm-transition);
+    animation: rmScaleIn 0.4s ease-out both;
+}
+.rm-page-summary .rm-summary-stats .rm-stat:nth-child(1) { animation-delay: 0.05s; }
+.rm-page-summary .rm-summary-stats .rm-stat:nth-child(2) { animation-delay: 0.1s; }
+.rm-page-summary .rm-summary-stats .rm-stat:nth-child(3) { animation-delay: 0.15s; }
+.rm-page-summary .rm-summary-stats .rm-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--rm-shadow-md);
+}
+.rm-page-summary .rm-summary-stats .rm-stat .rm-stat-value {
+    animation: rmPulseNumber 2.8s ease-in-out infinite;
+}
+
+/* ---------- Restaurant products modal ---------- */
+#ResProductsModal .modal-dialog {
+    max-width: min(1140px, 96vw);
+    width: 96vw;
+    margin: 1.5rem auto;
+}
+#ResProductsModal .modal-content {
+    border-radius: 22px;
+    box-shadow: 0 28px 70px rgba(15, 23, 42, 0.22);
+    animation: rmScaleIn 0.35s ease-out;
+}
+#ResProductsModal .modal-header {
+    background: linear-gradient(135deg, #0d9488, #0891b2, #4f46e5) !important;
+    padding: 20px 26px !important;
+}
+#ResProductsModal .res-prod-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 16px 20px;
+    margin: -8px 0 16px;
+    border-radius: 14px;
+    background: var(--rm-gradient-soft);
+    border: 1px solid var(--rm-border);
+    direction: rtl;
+}
+#ResProductsModal .res-prod-stat {
+    text-align: center;
+    min-width: 88px;
+    padding: 10px 14px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid var(--rm-border);
+    box-shadow: var(--rm-shadow-xs);
+}
+#ResProductsModal .res-prod-stat strong {
+    display: block;
+    font-size: 1.35rem;
+    color: var(--rm-accent);
+    font-weight: 800;
+}
+#ResProductsModal .res-prod-stat span {
+    font-size: 0.72rem;
+    color: var(--rm-text-muted);
+}
+#ResProductsModal .res-prod-form-card {
+    background: #f8fafc;
+    border: 1px solid var(--rm-border);
+    border-radius: 14px;
+    padding: 18px 16px 8px;
+    margin-top: 8px;
+    direction: rtl;
+}
+#ResProductsModal .res-prod-form-card h6 {
+    font-weight: 700;
+    color: var(--rm-text);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+#ResProductsModal .res-prod-form-card h6 i {
+    color: var(--rm-accent);
+}
+#ResProductsModal .res-prod-loading {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--rm-text-muted);
+}
+#ResProductsModal .res-prod-loading .rm-spinner {
+    margin: 0 auto 12px;
+    width: 40px;
+    height: 40px;
+}
+#ResProductsModal .table img.res-prod-thumb {
+    width: 44px !important;
+    height: 44px !important;
+}
+#ResProductsModal .badge-avail-yes {
+    background: var(--rm-success-soft);
+    color: var(--rm-success);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+#ResProductsModal .badge-avail-no {
+    background: var(--rm-danger-soft);
+    color: var(--rm-danger);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 700;
 }
 
 /* ---------- Row Stagger Animation ---------- */
@@ -2180,4 +2484,278 @@ select.form-control {
     .sidebar.open {
         transform: translateX(0);
     }
+}
+
+/* ============================================================
+   ROMANA v3 — Login-inspired modern dashboard shell
+   ============================================================ */
+
+body.rm-app {
+    background: linear-gradient(160deg, #eef2ff 0%, #f8fafc 35%, #faf5ff 70%, #f0fdfa 100%) !important;
+    min-height: 100vh;
+}
+
+body.rm-app::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(circle at 8% 15%, rgba(99, 102, 241, 0.12), transparent 42%),
+        radial-gradient(circle at 92% 80%, rgba(168, 85, 247, 0.1), transparent 40%),
+        radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.05), transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+body.rm-app .wrapper,
+body.rm-app .main-panel,
+body.rm-app .content {
+    position: relative;
+    z-index: 1;
+}
+
+/* Sidebar — dark glass like login */
+body.rm-app .sidebar {
+    background: linear-gradient(180deg, #1e293b 0%, #312e81 55%, #1e1b4b 100%) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: -4px 0 24px rgba(15, 23, 42, 0.15) !important;
+}
+body.rm-app .sidebar .logo {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+}
+body.rm-app .sidebar .logo .simple-text {
+    color: #fff !important;
+    -webkit-text-fill-color: #fff !important;
+    font-weight: 800 !important;
+}
+body.rm-app .sidebar .logo .btn {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #fff !important;
+}
+body.rm-app .sidebar .logo .btn:hover {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    border-color: transparent !important;
+}
+body.rm-app .sidebar .nav li a {
+    color: rgba(255, 255, 255, 0.75) !important;
+    margin: 4px 12px !important;
+    border-radius: 12px !important;
+}
+body.rm-app .sidebar .nav li a i,
+body.rm-app .sidebar .nav li a p {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+body.rm-app .sidebar .nav li a:hover,
+body.rm-app .sidebar .nav li.active > a {
+    background: rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+body.rm-app .sidebar .nav li a:hover i,
+body.rm-app .sidebar .nav li a:hover p,
+body.rm-app .sidebar .nav li.active > a i,
+body.rm-app .sidebar .nav li.active > a p {
+    color: #fff !important;
+}
+body.rm-app .sidebar .nav li.active > a {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.5), rgba(139, 92, 246, 0.45)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Navbar — frosted glass */
+body.rm-app .navbar {
+    background: rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border-bottom: 1px solid rgba(99, 102, 241, 0.12) !important;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04) !important;
+}
+body.rm-app .navbar .navbar-brand {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800 !important;
+}
+body.rm-app .rm-avatar {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(99, 102, 241, 0.2);
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.1);
+}
+
+/* Cards — glass panels */
+body.rm-app .card {
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06), 0 1px 0 rgba(255, 255, 255, 0.8) inset !important;
+}
+body.rm-app .card:hover {
+    box-shadow: 0 12px 40px rgba(79, 70, 229, 0.1) !important;
+    border-color: rgba(99, 102, 241, 0.15) !important;
+}
+body.rm-app .card .card-header:not(.card-header-icon) {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35) !important;
+}
+
+/* Page summary & filters — login glass */
+body.rm-app .rm-page-summary,
+body.rm-app .rm-filter-bar,
+body.rm-app .rm-table-wrap {
+    background: rgba(255, 255, 255, 0.82) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 8px 28px rgba(15, 23, 42, 0.05) !important;
+}
+body.rm-app .rm-page-summary {
+    border-right: 3px solid #8b5cf6 !important;
+}
+
+/* KPI cards — match login gradient chips */
+body.rm-app .rm-kpi {
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+}
+
+/* Forms — login-style fields */
+body.rm-app .form-control {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    padding: 11px 14px !important;
+}
+body.rm-app .form-control:focus {
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.12) !important;
+    background: #fff !important;
+}
+
+/* Primary buttons — login gradient */
+body.rm-app .btn-primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    border: none !important;
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35) !important;
+}
+body.rm-app .btn-primary:hover {
+    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(99, 102, 241, 0.4) !important;
+}
+body.rm-app .btn-success {
+    background: linear-gradient(135deg, #059669, #10b981) !important;
+    box-shadow: 0 6px 16px rgba(5, 150, 105, 0.3) !important;
+}
+body.rm-app .btn-info {
+    background: linear-gradient(135deg, #0891b2, #06b6d4) !important;
+}
+
+/* Tables — soft rows on glass */
+body.rm-app .table thead th {
+    background: linear-gradient(180deg, rgba(238, 242, 255, 0.95), rgba(241, 245, 249, 0.9)) !important;
+    color: #4338ca !important;
+    font-weight: 700 !important;
+}
+body.rm-app .table tbody tr:hover {
+    background: rgba(238, 242, 255, 0.65) !important;
+}
+
+/* Modals — login card feel */
+body.rm-app .modal-content {
+    background: rgba(255, 255, 255, 0.97) !important;
+    backdrop-filter: blur(20px);
+    border-radius: 22px !important;
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.2) !important;
+}
+body.rm-app .modal-header {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7) !important;
+}
+body.rm-app .modal-header .close {
+    background: rgba(255, 255, 255, 0.2) !important;
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+body.rm-app .modal-header .close span {
+    color: #fff !important;
+}
+
+/* Product modal hero */
+body.rm-app #ResProductsModal .res-prod-hero {
+    background: linear-gradient(135deg, rgba(238, 242, 255, 0.9), rgba(253, 242, 248, 0.85));
+    border: 1px solid rgba(99, 102, 241, 0.12);
+}
+body.rm-app #ResProductsModal .res-prod-form-card {
+    background: rgba(248, 250, 252, 0.9);
+    border: 1px dashed rgba(99, 102, 241, 0.25);
+    border-radius: 16px;
+}
+
+/* Pagination */
+body.rm-app .pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+}
+
+/* Restaurant status badges */
+.rm-status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.rm-status-open {
+    background: var(--rm-success-soft);
+    color: var(--rm-success);
+}
+.rm-status-closed {
+    background: #f1f5f9;
+    color: var(--rm-text-muted);
+}
+.rm-status-active {
+    background: var(--rm-success-soft);
+    color: var(--rm-success);
+}
+.rm-status-inactive {
+    background: var(--rm-danger-soft);
+    color: var(--rm-danger);
+}
+.rm-status-top {
+    background: var(--rm-warning-soft);
+    color: var(--rm-warning);
+}
+.rm-status-stars {
+    background: var(--rm-info-soft);
+    color: var(--rm-info);
+}
+.rm-status-cell,
+.rm-openclose-cell {
+    white-space: nowrap;
+    vertical-align: middle !important;
+}
+
+/* Quick product entry table */
+.rm-quick-entry-table input.form-control-sm,
+.rm-quick-entry-table select.form-control-sm {
+    min-width: 0;
+    border-radius: var(--rm-radius-xs);
+}
+.rm-quick-entry-table tbody tr:hover {
+    background: var(--rm-accent-soft);
+}
+.rm-quick-entry-table tbody tr:focus-within {
+    background: rgba(79, 70, 229, 0.08);
+    box-shadow: inset 3px 0 0 var(--rm-accent);
+}
+.qp-toolbar .btn {
+    margin-left: 6px;
+    margin-bottom: 4px;
+}
+.qp-result-summary {
+    margin-bottom: 1rem;
+}
+.qp-progress {
+    margin-bottom: 1rem;
 }

@@ -17,7 +17,9 @@ namespace RomanaWeb.Model.EntityMap
             builder.Property(x => x.RestaurantId).IsRequired(); 
             builder.Ignore(x => x.ProductsImageFirst);              
             builder.Property(x => x.SubCategoriesId).IsRequired();    
-            builder.Property(x => x.IsFree);    
+            builder.Property(x => x.IsFree);
+            builder.Property(x => x.PreparationTimeMinutes).HasDefaultValue(15);
+            builder.Property(x => x.IsAvailable).HasDefaultValue(true);
             builder.Ignore(x => x.SubCategoriesName);        
             builder.Ignore(x => x.RestaurantName);            
             builder.Ignore(x => x.Logo);            

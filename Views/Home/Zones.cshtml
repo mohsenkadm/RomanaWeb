@@ -11,8 +11,8 @@
             <div class="rm-summary-body">
                 <h4>إدارة المناطق ومصفوفة الأسعار (Zones)</h4>
                 <p>
-                    رفع المناطق (Polygons) ومصفوفة الأسعار من ملف Excel.
-                    تستخدمها خوارزمية التسعير لاحتساب أجور التوصيل بين المناطق.
+                    اضافة المناطق ومصفوفة الاسعار يدويا او عبر ملف Excel.
+                    تستخدمها خوارزمية التسعير لاحتساب اجور التوصيل بين المناطق.
                 </p>
             </div>
             <div class="rm-summary-stats">
@@ -49,6 +49,28 @@
                             تنزيل ملف نموذجي <i class="material-icons">download</i>
                         </a>
                         <div id="zonesResult" class="mt-3"></div>
+                        <hr />
+                        <h5 class="text-primary">اضافة منطقة يدويا</h5>
+                        <div class="form-group alignright">
+                            <label class="text-primary">اسم المنطقة</label>
+                            <input type="text" class="form-control alignright" id="zoneNameManual" placeholder="مثال: الكرادة" autocomplete="off" />
+                        </div>
+                        <div class="form-group alignright">
+                            <label class="text-primary">GeoJSON Polygon</label>
+                            <textarea class="form-control alignright" id="zoneGeoManual" rows="4" style="direction:ltr;text-align:left;font-size:11px;"
+                                      placeholder='{"type":"Polygon","coordinates":[[[44.36,33.31],[44.40,33.31],[44.40,33.34],[44.36,33.34],[44.36,33.31]]]}'></textarea>
+                        </div>
+                        <div class="form-check alignright mb-3">
+                            <label class="form-check-label">
+                                <input class="form-check-input" type="checkbox" id="zoneActiveManual" checked>
+                                <span class="form-check-sign"><span class="check"></span></span>
+                                مفعّلة
+                            </label>
+                        </div>
+                        <button id="saveZoneManualBtn" type="button" class="btn btn-primary">
+                            حفظ المنطقة <i class="material-icons">save</i>
+                        </button>
+                        <div id="zoneManualResult" class="mt-2"></div>
                     </div>
                 </div>
             </div>
@@ -77,6 +99,24 @@
                             تنزيل ملف نموذجي <i class="material-icons">download</i>
                         </a>
                         <div id="matrixResult" class="mt-3"></div>
+                        <hr />
+                        <h5 class="text-success">اضافة سعر يدويا</h5>
+                        <div class="form-group alignright">
+                            <label class="text-primary">من منطقة</label>
+                            <select class="form-control text-right" id="matrixFromZone"></select>
+                        </div>
+                        <div class="form-group alignright">
+                            <label class="text-primary">الى منطقة</label>
+                            <select class="form-control text-right" id="matrixToZone"></select>
+                        </div>
+                        <div class="form-group alignright">
+                            <label class="text-primary">السعر (د.ع)</label>
+                            <input type="number" min="0" step="1" class="form-control alignright" id="matrixPriceManual" placeholder="4000" autocomplete="off" />
+                        </div>
+                        <button id="saveMatrixManualBtn" type="button" class="btn btn-primary">
+                            حفظ السعر <i class="material-icons">save</i>
+                        </button>
+                        <div id="matrixManualResult" class="mt-2"></div>
                     </div>
                 </div>
             </div>
@@ -112,8 +152,8 @@
                     <thead class="text-rose">
                         <tr>
                             <th>#</th>
-                            <th>من منطقة (Id)</th>
-                            <th>الى منطقة (Id)</th>
+                            <th>من منطقة</th>
+                            <th>الى منطقة</th>
                             <th>السعر</th>
                         </tr>
                     </thead>

@@ -30,12 +30,16 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> SendOTPCodeToPhoneNo(string PhoneNo, string OTPCode)
         {
+            Users? person = await _context.Users.FirstOrDefaultAsync(i => i.Phone == PhoneNo && i.IsDelete != true);
+            if (person == null)
+                return Result.Return(false, "حسابك غير موجود حاول التسجيل مرة اخرى");
+            return await SendOtpToUserAsync(person, OTPCode);
+        }
+
+        public async Task<ResObj> SendOtpToUserAsync(Users person, string OTPCode)
+        {
             try
             {
-                Users? person = await _context.Users.FirstOrDefaultAsync(i => i.Phone == PhoneNo && i.IsDelete != true);
-                if (person == null)
-                    return Result.Return(false, "حسابك غير موجود حاول التسجيل مرة اخرى");
-
                 if (person.NumberSendOtp > 3)
                 {
                     person.IsBlock = true;
@@ -46,7 +50,7 @@ namespace RomanaWeb.Helper.Repository
 
                 var requestData = new
                 {
-                    recipient = $"964{PhoneNo.Substring(1)}",
+                    recipient = $"964{person.Phone.Substring(1)}",
                     type = "otp",
                     code = OTPCode,
                     channel = "whatsapp"
@@ -54,37 +58,25 @@ namespace RomanaWeb.Helper.Repository
 
                 var jsonContent = JsonSerializer.Serialize(requestData);
                 var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
                 var response = await _httpClient.PostAsync("/api/v1/", content);
 
-                if (response.IsSuccessStatusCode)
-                {
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    var responseObj = JsonSerializer.Deserialize<ApiResponse>(responseContent);
-
-                    if (responseObj?.status == "success")
-                    {
-                        person.IsConfirm = false;
-                        person.Code = OTPCode;
-                        person.NumberSendOtp = (person.NumberSendOtp ?? 0) + 1;
-                        _context.Entry(person).State = EntityState.Modified;
-                        await _context.SaveChangesAsync();
-
-                        return Result.Return(true, "تم ارسال كود التحقق الخاص بك");
-                    }
-                    else
-                    {
-                        return Result.Return(false, "لم يتم ارسال كود التحقق الخاص بك حاول مرة اخرى");
-                    }
-                }
-                else
-                {
+                if (!response.IsSuccessStatusCode)
                     return Result.Return(false, "لم يتم ارسال كود التحقق الخاص بك حاول مرة اخرى");
-                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var responseObj = JsonSerializer.Deserialize<ApiResponse>(responseContent);
+                if (responseObj?.status != "success")
+                    return Result.Return(false, "لم يتم ارسال كود التحقق الخاص بك حاول مرة اخرى");
+
+                person.Code = OTPCode;
+                person.NumberSendOtp = (person.NumberSendOtp ?? 0) + 1;
+                _context.Entry(person).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Result.Return(true, "تم ارسال كود التحقق عبر الواتساب");
             }
             catch (Exception ex)
             {
-                return Result.Return(false, "حدث خطأ ما أثناء الإرسال" + ex.ToString());
+                return Result.Return(false, "حدث خطأ ما أثناء الإرسال" + ex.Message);
             }
         }
 

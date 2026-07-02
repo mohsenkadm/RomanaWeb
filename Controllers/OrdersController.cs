@@ -17,7 +17,8 @@ namespace RomanaWeb.Controllers
         #region Readonly 
         private readonly ILoggerRepository _logger;
         private readonly IOrdersService _OrdersService;
-        private readonly INotificationService _noteService;   
+        private readonly INotificationService _noteService;
+        private readonly IOrderHubNotifier _hubNotifier;
         public readonly IMapper _mapper;
         #endregion
 
@@ -25,12 +26,37 @@ namespace RomanaWeb.Controllers
         public OrdersController(
             ILoggerRepository logger,
             IOrdersService OrdersService,
-            INotificationService noteService, IMapper mapper)
+            INotificationService noteService,
+            IOrderHubNotifier hubNotifier,
+            IMapper mapper)
         {
             _logger = logger;
             _OrdersService = OrdersService;
             _noteService = noteService;
-            _mapper = mapper;           
+            _hubNotifier = hubNotifier;
+            _mapper = mapper;
+        }
+
+        private static string ResolveDisplayMode(string statusKey) =>
+            statusKey == "new_order" ? "fullscreen" : "banner";
+
+        private async Task PushOrderSignalR(Orders order, string title, string msg, string statusKey,
+            bool notifyUser = false, bool notifyRestaurant = false, bool notifyDriver = false, bool notifyAllDrivers = false)
+        {
+            try
+            {
+                int statusCode = OrdersService.MapOrderStatus(order);
+                string displayMode = ResolveDisplayMode(statusKey);
+                if (notifyUser && order.UserId > 0)
+                    await _hubNotifier.NotifyUserAsync(order.UserId, title, msg, order.OrderId, statusKey, statusCode, displayMode);
+                if (notifyRestaurant && order.RestaurantId > 0)
+                    await _hubNotifier.NotifyRestaurantAsync(order.RestaurantId, title, msg, order.OrderId, statusKey, statusCode, displayMode);
+                if (notifyDriver && order.SaleManId is > 0)
+                    await _hubNotifier.NotifyDriverAsync(order.SaleManId.Value, title, msg, order.OrderId, statusKey, statusCode, displayMode);
+                if (notifyAllDrivers)
+                    await _hubNotifier.NotifyAllDriversAsync(title, msg, order.OrderId, statusKey, statusCode, displayMode);
+            }
+            catch { }
         }
         #endregion
 
@@ -105,16 +131,17 @@ namespace RomanaWeb.Controllers
 
         #region Get Info order 
         [HttpGet()]
-        public async Task<IActionResult> GetAll(string? OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto,int? CountriesId,int? state)
+        public async Task<IActionResult> GetAll(string? OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto,int? CountriesId,int? state,
+            string? Phone = null, int? orderStatus = null)
         {
             try
             {
                 int? RestaurantId = 0;
-                if (UserManager.Role == "res")
+                if (UserManager?.Role == "res")
                 {
                     RestaurantId = UserManager.Id;
                 }
-                ResObj res = await _OrdersService.GetAll(OrderNo, RestaurantName, datefrom, dateto,RestaurantId, CountriesId, state);
+                ResObj res = await _OrdersService.GetAll(OrderNo, RestaurantName, datefrom, dateto,RestaurantId, CountriesId, state, Phone, orderStatus);
 
                 return Response(res.success, res.data);
             }
@@ -244,7 +271,7 @@ namespace RomanaWeb.Controllers
 
 
         #region insert  Info orders      
-        [HttpPost]
+        [HttpPost("Orders/Post")]
         public async Task<IActionResult> Post([FromBody] OrdersModel  ordersModel)
         {
             try
@@ -255,6 +282,16 @@ namespace RomanaWeb.Controllers
                 {
                     return Response(false, "مبلغ الفاتورة 0");
                 }
+
+                var u = ordersModel.Users;
+                if (u == null ||
+                    !double.TryParse(u.Lat, out var lat) || lat == 0 ||
+                    !double.TryParse(u.Long, out var lng) || lng == 0 ||
+                    u.CityId == null || u.CityId == 0)
+                {
+                    return Response(false, "يجب تحديد الموقع والمنطقة");
+                }
+
                 ResObj resuser = await _OrdersService.PostUser(ordersModel.Users);
                                                                                
                 if (resuser.success)
@@ -262,6 +299,8 @@ namespace RomanaWeb.Controllers
                     Users user = (Users)resuser.data;
                    Orders.UserId=user.UserId;
                    Orders.UserName=user.Name;
+                   Orders.Lat = user.Lat;
+                   Orders.Long = user.Long;
                 }
 
                 ResObj res;
@@ -276,16 +315,16 @@ namespace RomanaWeb.Controllers
                 ids.Add(orders.UserId.ToString());
                 Notification notifications = new Notification
                 {
-                    Title = "طلبك",
-                    Details = $" مرحبا {orders.UserName} لقد استلمنا طلبك بنجاح ، فضلاً انتظر الموافقة عليه  ",
+                    Title = "تم استلام طلبك",
+                    Details = "طلبك وصل للمطعم وبانتظار التاكيد.",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId,ResId=0   ,Images=""
                 };
                 await _noteService.Post(notifications);
                 try
                 {
-                    await OneSignalSenderUser(notifications.Title, notifications.Details,
-                      ids);
+                    await OneSignalSenderUserWithOrder(notifications.Title, notifications.Details, ids,
+                        orderId: orders.OrderId, statusKey: "pending", statusAr: "انتظار", accentArgb: "FFEF6C00");
                 }
                 catch (Exception ex) { }  
                 List<string> ids1 = new List<string>();
@@ -293,18 +332,20 @@ namespace RomanaWeb.Controllers
                 ids1.Add(orders.RestaurantId.ToString());
                 Notification notifications1 = new Notification
                 {
-                    Title = "طلب",
-                    Details =  $" قام {orders.UserName} بطلب منتجات بانتظار الموافقة ",
+                    Title = "طلب جديد وارد",
+                    Details = $"لديك طلب جديد من {orders.UserName} بانتظار المراجعة.",
                     DateInsert = Key.DateTimeIQ,
                     ResId = orders.RestaurantId, UserId=0,Images=""
                 };                                     
                 await _noteService.Post(notifications1);
                 try
                 {
-                    await OneSignalSenderRes(notifications1.Title, notifications1.Details,
-                      ids1);
+                    await OneSignalSenderResWithOrder(notifications1.Title, notifications1.Details, ids1,
+                        orders.OrderId, "new_order", "طلب جديد", "FFEF6C00", statusCode: 0, displayMode: "fullscreen");
                 }
                 catch (Exception ex) { }
+                await PushOrderSignalR(orders, notifications1.Title, notifications1.Details, "new_order",
+                    notifyRestaurant: true, notifyAllDrivers: true);
                 return Response(res.success, res.msg, res.data);
             }
             catch (Exception ex)
@@ -334,18 +375,19 @@ namespace RomanaWeb.Controllers
                 ids.Add(orders.UserId.ToString());
                 Notification notifications = new Notification
                 {
-                    Title = "طلبك",
-                    Details = $" مرحبا {Name}  تمت الموافقة على الطلب ، يتم تجهيز طلبك ",
+                    Title = "تم تأكيد الطلب",
+                    Details = "بدا المطعم بتحضير طلبك.",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId
                 };
                 await _noteService.Post(notifications);
                 try
                 {
-                    await OneSignalSenderUser(notifications.Title, notifications.Details,
-                      ids);
+                    await OneSignalSenderUserWithOrder(notifications.Title, notifications.Details, ids,
+                        orderId: orders.OrderId, statusKey: "approved", statusAr: "مقبول", accentArgb: "FF1B5E20");
                 }
                 catch (Exception ex) { }
+                await PushOrderSignalR(orders, notifications.Title, notifications.Details, "approved", notifyUser: true);
                 return Response(res.success, res.msg);
             }
             catch (Exception ex)
@@ -354,7 +396,7 @@ namespace RomanaWeb.Controllers
                 return Response(false, "حدث خطا اثناء عملية جلب البيانات");
             }
         }
-        #endregion 
+        #endregion
 
         #region Set Order IsCancel
         [HttpDelete("Orders/SetIsCancel/{OrderId}")]
@@ -375,16 +417,16 @@ namespace RomanaWeb.Controllers
                 ids.Add(orders.UserId.ToString());
                 Notification notifications = new Notification
                 {
-                    Title = "طلبك",
-                    Details = $"مرحبا {Name} نعتذر عن عدم قبول طلبك . يمكنك تجربة الطلب مرة اخرى . ",
+                    Title = "تم رفض الطلب",
+                    Details = "نعتذر، تم رفض الطلب. يمكنك المحاولة مرة اخرى.",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId ,      
                 };
                 await _noteService.Post(notifications);
                 try
                 {
-                    await OneSignalSenderUser(notifications.Title, notifications.Details,
-                      ids);
+                    await OneSignalSenderUserWithOrder(notifications.Title, notifications.Details, ids,
+                        orderId: orders.OrderId, statusKey: "cancel", statusAr: "مرفوض", accentArgb: "FFD32F2F");
                 }
                 catch (Exception ex) { }
 
@@ -425,8 +467,8 @@ namespace RomanaWeb.Controllers
                 ids.Add(orders.SaleManId.ToString());
                 Notification notifications = new Notification
                 {
-                    Title = "طلب جديد",
-                    Details = $"هلو {Name} نود تبليغك  ، ان هناك طلب قادم اليك .",
+                    Title = "طلب جديد متاح",
+                    Details = $"يوجد طلب قريب منك بانتظار القبول يا {Name}.",
                     DateInsert = Key.DateTimeIQ,     
                     SaleManId = SaleManId,ResId=0,UserId=0
                 };
@@ -468,16 +510,16 @@ namespace RomanaWeb.Controllers
                 ids.Add(orders.UserId.ToString());
                 Notification notifications = new Notification
                 {
-                    Title = "طلبك",
-                    Details = $"مرحبا {Name}سلمنا طلبك الى شركة التوصيل انتظر تواصلهم معك.",
+                    Title = "تم تعيين سائق",
+                    Details = "تم العثور على سائق قريب لتوصيل طلبك.",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId
                 };
                 await _noteService.Post(notifications);
                 try
                 {
-                    await OneSignalSenderUser(notifications.Title, notifications.Details,
-                      ids);
+                    await OneSignalSenderUserWithOrder(notifications.Title, notifications.Details, ids,
+                        orderId: orders.OrderId, statusKey: "done", statusAr: "منتهي", accentArgb: "FF2E7D32");
                 }
                 catch (Exception ex) { }
                 return Response(res.success, res.msg);
@@ -507,8 +549,8 @@ namespace RomanaWeb.Controllers
                 ids.Add(orders.RestaurantId.ToString());
                 Notification notifications = new Notification
                 {
-                    Title = "طلب المندوب",
-                    Details = $" {orders.OrderNo} وافق مندوبك على طلب رقم ",
+                    Title = "تم قبول الطلب",
+                    Details = $"تم قبول طلب رقم {orders.OrderNo} من قبل السائق.",
                     DateInsert = Key.DateTimeIQ,
                     ResId = orders.RestaurantId   ,UserId=0,SaleManId=0
                 };
@@ -527,8 +569,8 @@ namespace RomanaWeb.Controllers
                 idsuser.Add(orders.UserId.ToString());
                 Notification notificationsuser = new Notification
                 {
-                    Title = "طلبك",
-                    Details = $"هلو {Nameuser} نود تبليغك  ، ان هناك طلبك بيد المندوب .",
+                    Title = "تم تعيين سائق",
+                    Details = $"تم تعيين سائق لطلبك رقم {orders.OrderNo}.",
                     DateInsert = Key.DateTimeIQ,
                     SaleManId = 0,
                     ResId = 0,
@@ -537,8 +579,8 @@ namespace RomanaWeb.Controllers
                 await _noteService.Post(notificationsuser);
                 try
                 {
-                    await OneSignalSenderUser(notificationsuser.Title, notificationsuser.Details,
-                      ids);
+                    await OneSignalSenderUserWithOrder(notificationsuser.Title, notificationsuser.Details, idsuser,
+                        orderId: orders.OrderId, statusKey: "approved", statusAr: "مقبول", accentArgb: "FF1B5E20");
                 }
                 catch (Exception ex) { }
 
@@ -569,8 +611,8 @@ namespace RomanaWeb.Controllers
                 ids.Add(orders.RestaurantId.ToString());
                 Notification notifications = new Notification
                 {
-                    Title = "طلب المندوب",
-                    Details = $" {orders.OrderNo} تم الغاء الطلب من قبل مندوبك على طلب رقم ",
+                    Title = "تم إلغاء الطلب",
+                    Details = $"تم إلغاء قبول السائق لطلب رقم {orders.OrderNo}.",
                     DateInsert = Key.DateTimeIQ,
                     ResId = orders.RestaurantId   ,UserId=0 , SaleManId=0,Images=""
                 };
@@ -608,8 +650,8 @@ namespace RomanaWeb.Controllers
                 ids.Add(orders.RestaurantId.ToString());
                 Notification notifications = new Notification
                 {
-                    Title = "توصيل",
-                    Details = $" {orders.OrderNo}  عزيزي تم توصيل الطلب الى الزبون بنجاح  رقم الطلب ",
+                    Title = "تم تسليم الطلب",
+                    Details = $"تم تسليم الطلب رقم {orders.OrderNo} بنجاح.",
                     DateInsert = Key.DateTimeIQ,
                     ResId = orders.RestaurantId,
                     UserId = 0,
@@ -650,8 +692,8 @@ namespace RomanaWeb.Controllers
                 ids.Add(orders.RestaurantId.ToString());
                 Notification notifications = new Notification
                 {
-                    Title = "توصيل",
-                    Details = $" {orders.Reason} والسبب  {orders.OrderNo}  عزيزي تم رفض الطلب من قبل الزبون رقم الطلب  ",
+                    Title = "تعذر تسليم الطلب",
+                    Details = $"تم رفض استلام الطلب رقم {orders.OrderNo}. السبب: {orders.Reason}",
                     DateInsert = Key.DateTimeIQ,
                     ResId = orders.RestaurantId,
                     UserId = 0,
@@ -691,8 +733,8 @@ namespace RomanaWeb.Controllers
                 ids.Add(orders.RestaurantId.ToString());
                 Notification notifications = new Notification
                 {
-                    Title = "توصيل",
-                    Details = $" {orders.Reason2} والسبب  {orders.OrderNo}  عزيزي تم تأجيل الطلب  رقم الطلب  ",
+                    Title = "تأجيل الطلب",
+                    Details = $"تم تأجيل الطلب رقم {orders.OrderNo}. السبب: {orders.Reason2}",
                     DateInsert = Key.DateTimeIQ,
                     ResId = orders.RestaurantId,
                     UserId = 0,
@@ -751,14 +793,18 @@ namespace RomanaWeb.Controllers
         #endregion
 
         #region Get Nearby Driver Orders (for mobile app)
-        [AllowAnonymous]
-        [HttpGet("Orders/GetNearbyDriverOrders/{SaleManId},{Lat},{Lng},{RadiusKm}")]
-        public async Task<IActionResult> GetNearbyDriverOrders(int SaleManId, double Lat, double Lng, double RadiusKm)
+        [Authorize]
+        [HttpGet("Orders/GetNearbyDriverOrders/{Lat},{Lng},{RadiusKm}")]
+        public async Task<IActionResult> GetNearbyDriverOrders( double Lat, double Lng, double RadiusKm)
         {
             try
             {
-                ResObj res = await _OrdersService.GetNearbyDriverOrders(SaleManId, Lat, Lng, RadiusKm);
-                return Response(res.success, res.data);
+                if(UserManager.Role== "sal")
+                {
+                    ResObj res = await _OrdersService.GetNearbyDriverOrders(UserManager.Id, Lat, Lng, RadiusKm);
+                    return Response(res.success, res.data);
+                }
+                return Response(false, "Unauthorized");
             }
             catch (Exception ex)
             {
@@ -786,8 +832,8 @@ namespace RomanaWeb.Controllers
                 string driverName = await _OrdersService.GetSaleManPersonById(SaleManId);
                 Notification notification = new Notification
                 {
-                    Title = "مندوب جديد",
-                    Details = $"المندوب {driverName} قبل توصيل الطلب رقم {orders.OrderNo}",
+                    Title = "تم قبول الطلب",
+                    Details = $"المندوب {driverName} قبل توصيل الطلب رقم {orders.OrderNo}.",
                     DateInsert = Key.DateTimeIQ,
                     ResId = orders.RestaurantId,
                     UserId = 0,
@@ -804,8 +850,8 @@ namespace RomanaWeb.Controllers
                 string userName = await _OrdersService.GetNamePersonById(orders.UserId);
                 Notification userNotif = new Notification
                 {
-                    Title = "طلبك",
-                    Details = $"مرحبا {userName}، المندوب {driverName} في الطريق اليك لتوصيل طلبك رقم {orders.OrderNo}",
+                    Title = "تم تعيين سائق",
+                    Details = $"تم تعيين السائق {driverName} لتوصيل طلبك رقم {orders.OrderNo}.",
                     DateInsert = Key.DateTimeIQ,
                     UserId = orders.UserId,
                     ResId = 0,
@@ -813,8 +859,13 @@ namespace RomanaWeb.Controllers
                     Images = ""
                 };
                 await _noteService.Post(userNotif);
-                try { await OneSignalSenderUser(userNotif.Title, userNotif.Details, userIds); }
+                try
+                {
+                    await OneSignalSenderUserWithOrder(userNotif.Title, userNotif.Details, userIds,
+                        orders.OrderId, "driver_assigned", "تم تعيين سائق", "FF1565C0", statusCode: 3, displayMode: "banner");
+                }
                 catch { }
+                await PushOrderSignalR(orders, userNotif.Title, userNotif.Details, "driver_assigned", notifyUser: true);
 
                 return Response(res.success, res.msg, res.data);
             }
@@ -822,6 +873,139 @@ namespace RomanaWeb.Controllers
             {
                 await _logger.WriteAsync(ex, "OrdersController => ApproveOrderBySaleMan");
                 return Response(false, "حدث خطا اثناء عملية قبول الطلب");
+            }
+        }
+        #endregion
+
+        #region Driver delivery workflow
+        [HttpPost("Orders/SetDriverEnRouteToPickup/{OrderId}")]
+        public async Task<IActionResult> SetDriverEnRouteToPickup(int OrderId)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.SetDriverEnRouteToPickup(OrderId);
+                if (!res.success) return Response(res.success, res.msg);
+                Orders orders = (Orders)res.data;
+                string userName = await _OrdersService.GetNamePersonById(orders.UserId);
+                var userNotif = new Notification { Title = "السائق متجه إلى المطعم", Details = "السائق في الطريق لاستلام طلبك.", DateInsert = Key.DateTimeIQ, UserId = orders.UserId };
+                await _noteService.Post(userNotif);
+                var resNotif = new Notification { Title = "السائق متجه إلى المطعم", Details = $"السائق في الطريق لاستلام الطلب رقم {orders.OrderNo}.", DateInsert = Key.DateTimeIQ, ResId = orders.RestaurantId };
+                await _noteService.Post(resNotif);
+                try
+                {
+                    await OneSignalSenderUserWithOrder(userNotif.Title, userNotif.Details, new List<string> { orders.UserId.ToString() },
+                        orders.OrderId, "driver_en_route", "في الطريق للاستلام", "FF1565C0", statusCode: 4, displayMode: "banner");
+                }
+                catch { }
+                try
+                {
+                    await OneSignalSenderResWithOrder(resNotif.Title, resNotif.Details, new List<string> { orders.RestaurantId.ToString() },
+                        orders.OrderId, "driver_en_route", "السائق متجه", "FF1565C0", statusCode: 4, displayMode: "banner");
+                }
+                catch { }
+                await PushOrderSignalR(orders, userNotif.Title, userNotif.Details, "driver_en_route", notifyUser: true, notifyRestaurant: true);
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => SetDriverEnRouteToPickup");
+                return Response(false, "حدث خطأ");
+            }
+        }
+
+        [HttpPost("Orders/SetPickedUpFromRestaurant/{OrderId}")]
+        public async Task<IActionResult> SetPickedUpFromRestaurant(int OrderId)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.SetPickedUpFromRestaurant(OrderId);
+                if (!res.success) return Response(res.success, res.msg);
+                Orders orders = (Orders)res.data;
+                string userName = await _OrdersService.GetNamePersonById(orders.UserId);
+                var notif = new Notification { Title = "تم استلام الطلب من المطعم", Details = "السائق استلم طلبك من المطعم.", DateInsert = Key.DateTimeIQ, UserId = orders.UserId };
+                await _noteService.Post(notif);
+                try
+                {
+                    await OneSignalSenderUserWithOrder(notif.Title, notif.Details, new List<string> { orders.UserId.ToString() },
+                        orders.OrderId, "picked_up", "تم الاستلام من المطعم", "FF6A1B9A", statusCode: 5, displayMode: "banner");
+                }
+                catch { }
+                await PushOrderSignalR(orders, notif.Title, notif.Details, "picked_up", notifyUser: true, notifyRestaurant: true);
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => SetPickedUpFromRestaurant");
+                return Response(false, "حدث خطأ");
+            }
+        }
+
+        [HttpPost("Orders/SetOutForDelivery/{OrderId}")]
+        public async Task<IActionResult> SetOutForDelivery(int OrderId)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.SetOutForDelivery(OrderId);
+                if (!res.success) return Response(res.success, res.msg);
+                Orders orders = (Orders)res.data;
+                string userName = await _OrdersService.GetNamePersonById(orders.UserId);
+                var notif = new Notification { Title = "السائق في الطريق إليك", Details = "طلبك في الطريق للتوصيل.", DateInsert = Key.DateTimeIQ, UserId = orders.UserId };
+                await _noteService.Post(notif);
+                try
+                {
+                    await OneSignalSenderUserWithOrder(notif.Title, notif.Details, new List<string> { orders.UserId.ToString() },
+                        orders.OrderId, "out_for_delivery", "في الطريق إليك", "FF00838F", statusCode: 6, displayMode: "banner");
+                }
+                catch { }
+                await PushOrderSignalR(orders, notif.Title, notif.Details, "out_for_delivery", notifyUser: true);
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => SetOutForDelivery");
+                return Response(false, "حدث خطأ");
+            }
+        }
+
+        [HttpPost("Orders/SetDeliveryConfirmed/{OrderId}")]
+        public async Task<IActionResult> SetDeliveryConfirmed(int OrderId)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.SetDeliveryConfirmed(OrderId);
+                if (!res.success) return Response(res.success, res.msg);
+                Orders orders = (Orders)res.data;
+                string userName = await _OrdersService.GetNamePersonById(orders.UserId);
+                var notif = new Notification { Title = "تم تسليم الطلب", Details = "نتمنى لك وجبة شهية", DateInsert = Key.DateTimeIQ, UserId = orders.UserId };
+                await _noteService.Post(notif);
+                try
+                {
+                    await OneSignalSenderUserWithOrder(notif.Title, notif.Details, new List<string> { orders.UserId.ToString() },
+                        orders.OrderId, "confirmed", "مكتمل", "FF2E7D32", statusCode: 8, displayMode: "banner");
+                }
+                catch { }
+                await PushOrderSignalR(orders, notif.Title, notif.Details, "confirmed", notifyUser: true, notifyRestaurant: true);
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => SetDeliveryConfirmed");
+                return Response(false, "حدث خطأ");
+            }
+        }
+
+        [HttpGet("Orders/GetOrderFullDetails/{OrderId}")]
+        public async Task<IActionResult> GetOrderFullDetails(int OrderId)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.GetOrderFullDetails(OrderId);
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => GetOrderFullDetails");
+                return Response(false, "حدث خطأ");
             }
         }
         #endregion

@@ -47,6 +47,10 @@ namespace RomanaWeb.Model
             modelBuilder.ApplyConfiguration(new ZonePriceMap());
             modelBuilder.ApplyConfiguration(new ProductSizeMap());
             modelBuilder.ApplyConfiguration(new ProductIngredientMap());
+            modelBuilder.ApplyConfiguration(new PromoCodeUsageMap());
+            modelBuilder.ApplyConfiguration(new AppSplashMap());
+            modelBuilder.ApplyConfiguration(new SupportPhoneMap());
+            modelBuilder.ApplyConfiguration(new DriverLocationMap());
         }
                                       
         public DbSet<Users> Users { get; set; }         
@@ -78,5 +82,9 @@ namespace RomanaWeb.Model
         public DbSet<ZonePrice> ZonePrice { get; set; }
         public DbSet<ProductSize> ProductSize { get; set; }
         public DbSet<ProductIngredient> ProductIngredient { get; set; }
+        public DbSet<PromoCodeUsage> PromoCodeUsage { get; set; }
+        public DbSet<AppSplash> AppSplash { get; set; }
+        public DbSet<SupportPhone> SupportPhone { get; set; }
+        public DbSet<DriverLocation> DriverLocations { get; set; }
     }
 }

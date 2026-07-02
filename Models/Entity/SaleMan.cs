@@ -16,8 +16,12 @@ namespace RomanaWeb.Models.Entity
         public string? Password { get; set; }
         public bool? IsActive { get; set; }
         public bool? IsDelete { get; set; }
-        public int RestaurantId { get; set; }
-        public string RestaurantName { get; set; }
+
+        // NOTE: SaleMan is no longer joined to a restaurant.
+        // The salesman is managed exclusively by the admin (add/edit/remove).
+        // Kept as nullable for backwards compatibility with the existing DB column / SP outputs.
+        public int? RestaurantId { get; set; }
+        public string? RestaurantName { get; set; }
 
         // Driver "working/stopped" toggle. true = on shift, receives dispatch
         // notifications. false = off shift, dispatcher will skip them.

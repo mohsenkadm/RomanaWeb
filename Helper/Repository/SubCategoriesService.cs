@@ -35,12 +35,15 @@ namespace RomanaWeb.Helper.Repository
         }
         public async Task<ResObj> GetAll(string? Name)
         {
+            var query = _Context.SubCategories.AsSplitQuery().AsNoTracking().AsQueryable();
+            if (!string.IsNullOrWhiteSpace(Name))
+                query = query.Where(i => i.SubCategoriesName.Contains(Name));
 
-            var item = await _Context.SubCategories.AsSplitQuery().AsNoTracking().Where(i=>i.SubCategoriesName.Contains(Name)|| Name==null).ToListAsync();
-            if (item != null)
+            var item = await query.OrderBy(i => i.SubCategoriesName).ToListAsync();
+            if (item != null && item.Count > 0)
                 return Result.Return(true, item);
-            else
-                return Result.Return(false);
+
+            return Result.Return(true, new List<SubCategories>());
         }
         public async Task<ResObj> GetById(int Id)
         {

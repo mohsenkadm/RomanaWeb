@@ -1,4 +1,5 @@
-﻿
+﻿var _SaleManId = 0;
+
 function filltableSaleMan(data) {
     $('#tableSaleMan').empty();
     if (data.length === 0) {  
@@ -21,7 +22,6 @@ function filltableSaleMan(data) {
                 btnLabel + '</button></td>';
 
         var rows = "<tr>" + 
-            "<td>" + item.restaurantName + "</td>" +  
             "<td>" +
             "<div class='form-check'>" +
             "<label class='form-check-label'>" +
@@ -37,7 +37,8 @@ function filltableSaleMan(data) {
             "<td>" + item.address + "</td>" +   
             "<td>" + item.phone + "</td>" +
             "<td>" + item.name + "</td>"
-            + "<td> <button type='button' class='btn btn-danger' onclick='deleteSaleMan(" + item.saleManId + ")'  >حذف</button></td></tr>";
+            + "<td> <button type='button' class='btn btn-danger' onclick='deleteSaleMan(" + item.saleManId + ")'>حذف</button>"
+            + " | <button type='button' class='btn btn-primary' onclick='updateSaleMan(" + item.saleManId + ")' data-toggle='modal' data-target='#SaleManModal'>تعديل</button></td></tr>";
         $('#tableSaleMan').append(rows);  
         $('#IsActive' + item.saleManId).attr('checked', item.isActive); 
     });
@@ -63,4 +64,41 @@ function deleteSaleMan(id) {
 function RefreshSaleMan() { 
     var obj = { Name: $("#Namese").val() }
     call_ajax("GET", "SaleMan/GetAll", obj, filltableSaleMan); 
+}
+
+function openAddSaleMan() {
+    _SaleManId = 0;
+    $("#SaleManModalLabel").text("اضافة جديد");
+    $("#Name").val('');
+    $("#Phone").val('');
+    $("#Address").val('');
+    $("#Password").val('');
+    $("#IsActive").prop("checked", true);
+}
+
+function updateSaleMan(id) {
+    var object1 = { Id: id };
+    call_ajax("GET", "SaleMan/GetById", object1, setdataSaleMan);
+    _SaleManId = id;
+    $("#SaleManModalLabel").text("تعديل المندوب");
+}
+
+function setdataSaleMan(data) {
+    $("#Name").val(data.name);
+    $("#Phone").val(data.phone);
+    $("#Address").val(data.address || '');
+    $("#Password").val(data.password);
+    $("#IsActive").prop("checked", !!data.isActive);
+}
+
+function aftersaveSaleMan() {
+    $("#Name").val('');
+    $("#Phone").val('');
+    $("#Address").val('');
+    $("#Password").val('');
+    $("#IsActive").prop("checked", true);
+    _SaleManId = 0;
+    $("#SaleManModalLabel").text("اضافة جديد");
+    $('#SaleManModal').modal('hide');
+    RefreshSaleMan();
 }

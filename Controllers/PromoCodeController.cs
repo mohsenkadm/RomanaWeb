@@ -192,11 +192,12 @@ namespace RomanaWeb.Controllers
         #region Validate PromoCode
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> ValidatePromoCode(string promoName, int restaurantId)
+        public async Task<IActionResult> ValidatePromoCode(string promoName, int restaurantId, int userId = 0)
         {
             try
             {
-                ResObj res = await _PromoCodeService.ValidatePromoCode(promoName, restaurantId);
+                if (userId == 0 && UserManager != null) userId = UserManager.Id;
+                ResObj res = await _PromoCodeService.ValidatePromoCode(promoName, restaurantId, userId);
                 return Response(res.success, res.msg, res.data);
             }
             catch (Exception ex)
@@ -210,11 +211,12 @@ namespace RomanaWeb.Controllers
         #region Apply PromoCode to order
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> ApplyPromoCode(string promoName, int restaurantId, decimal orderTotal)
+        public async Task<IActionResult> ApplyPromoCode(string promoName, int restaurantId, decimal orderTotal, int userId = 0)
         {
             try
             {
-                ResObj res = await _PromoCodeService.ApplyPromoCode(promoName, restaurantId, orderTotal);
+                if (userId == 0 && UserManager != null) userId = UserManager.Id;
+                ResObj res = await _PromoCodeService.ApplyPromoCode(promoName, restaurantId, orderTotal, userId);
                 return Response(res.success, res.msg, res.data);
             }
             catch (Exception ex)

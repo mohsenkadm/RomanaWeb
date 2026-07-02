@@ -62,6 +62,25 @@
                         <input type="date" name="dateto" id="dateto" class="form-control alignright" />
                     </div>
                     <div class="col-lg-4 col-md-6 col-sm-12 ">
+                        <label class="mb-2">رقم الهاتف</label>
+                        <input type="text" id="FilterPhone" class="form-control alignright" placeholder="بحث برقم الهاتف" />
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12 ">
+                        <label class="mb-2">حالة الطلب</label>
+                        <select id="FilterOrderStatus" class="form-control alignright">
+                            <option value="">الكل</option>
+                            <option value="0">انتظار الموافقة</option>
+                            <option value="1">موافق عليه</option>
+                            <option value="3">قبل السائق</option>
+                            <option value="4">السائق في الطريق للاستلام</option>
+                            <option value="5">تم الاستلام من المطعم</option>
+                            <option value="6">قيد التوصيل</option>
+                            <option value="7">تم التوصيل</option>
+                            <option value="8">تم تأكيد الاستلام</option>
+                            <option value="9">ملغي</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-4 col-md-6 col-sm-12 ">
                         <p>اختيار المحافظة</p>
                         <select class="form-control text-right" name="CountriesId" id="CountriesId">
                         </select>
@@ -88,6 +107,7 @@
                                 <table class="table table-hover">
                                     <thead class=" ">
                                         <tr>
+                                            <th scope="col" class="rm-actions-cell">تفاصيل</th>
                                             <th scope="col">منتهي</th>
                                             <th scope="col">موافقة</th>
                                             <th scope="col">ملغي</th>
@@ -105,8 +125,6 @@
                                             <th scope="col">القسم</th>
                                             <th scope="col">تاريخ الطلب</th>
                                             <th scope="col">رقم الطلب</th>
-                                            <th scope="col"></th>
-                                            <th scope="col"></th>
                                         </tr>
                                     </thead>
                                     <tbody id="tableOrders">

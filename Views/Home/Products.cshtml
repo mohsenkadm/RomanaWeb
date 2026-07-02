@@ -49,16 +49,15 @@
                                 <table class="table table-hover">
                                             <thead style="text-align: center;">
                                                 <tr>
-                                                     <th scope="col">الصنف</th> 
-                                                    <th scope="col"> صورة</th> 
-                                                    <th scope="col">السعر</th>
-                                                    <th scope="col">التفاصيل</th>
-                                                    <th scope="col">الاسم</th>
+                                                    <th scope="col" class="rm-actions-cell">إجراءات</th>
+                                                    <th scope="col" class="rm-actions-cell">المكونات</th>
+                                                    <th scope="col" class="rm-actions-cell">الأحجام</th>
                                                     <th scope="col">اسم المطعم</th>
-                                                    <th scope="col">الأحجام</th>
-                                                    <th scope="col">المكونات</th>
-                                                    <th scope="col"></th>
-                                                    <th scope="col"></th> 
+                                                    <th scope="col">الاسم</th>
+                                                    <th scope="col" class="rm-wrap-cell">التفاصيل</th>
+                                                    <th scope="col">السعر</th>
+                                                    <th scope="col">صورة</th>
+                                                    <th scope="col">الصنف</th>
                                                 </tr>
                                             </thead>
                                             <tbody style="text-align: center;" id="tableProducts">
@@ -114,6 +113,10 @@
                     <div class="form-group col-md-6  alignright">
                         <label class="text-primary">سعر المنتج</label>
                         <input type="number" id="ProductsPrice" autocomplete="off" name="ProductsPrice" class="form-control alignright" placeholder="اكتب سعر المنتج" />
+                    </div>
+                    <div class="form-group col-md-6  alignright">
+                        <label class="text-primary">وقت التحضير (دقيقة)</label>
+                        <input type="number" id="PreparationTimeMinutes" autocomplete="off" class="form-control alignright" placeholder="15" value="15" />
                     </div>
                     <div class="form-group col-md-6  alignright">
                         <label class="text-primary">اسم الصنف</label>
@@ -287,6 +290,7 @@
             data.append('ProductsId', _ProductsId);
             data.append('ProductsName', $("#ProductsName").val());
             data.append('ProductsPrice', $("#ProductsPrice").val());
+            data.append('PreparationTimeMinutes', $("#PreparationTimeMinutes").val() || 15);
             data.append('ProductsDetails', $("#ProductsDetails").val());
             data.append('SubCategoriesId', $("#SubCategoriesId").val());
             data.append('RestaurantId', $("#RestaurantId").val());

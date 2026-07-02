@@ -1,12 +1,10 @@
-using OneSignalApi.Api;
-using OneSignalApi.Client;
-using OneSignalApi.Model;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using System.Net.Http.Headers;
 using RomanaWeb.Classes;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Model;
 using RomanaWeb.Models.Entity;
-using Configuration = OneSignalApi.Client.Configuration;
 
 namespace RomanaWeb.Helper.Repository
 {
@@ -110,28 +108,44 @@ namespace RomanaWeb.Helper.Repository
                     return;
                 }
 
-                var cfg = new Configuration { BasePath = "https://onesignal.com/api/v1", AccessToken = apiKey };
-                var api = new DefaultApi(cfg);
-
-                var n = new OneSignalApi.Model.Notification(appId: appId)
+                var pushPayload = new Dictionary<string, object?>
                 {
-                    Contents = new StringMap(payload.Body ?? ""),
-                    Headings = new StringMap(payload.Title ?? ""),
-                    Subtitle = new StringMap(payload.Body ?? ""),
-                    LargeIcon = "https://mazyadmohammed-001-site1.anytempurl.com//Uplouds/IMG_2984.png"
+                    ["app_id"] = appId,
+                    ["headings"] = new { ar = payload.Title ?? "", en = payload.Title ?? "" },
+                    ["contents"] = new { ar = payload.Body ?? "", en = payload.Body ?? "" },
+                    ["subtitle"] = new { ar = payload.Body ?? "", en = payload.Body ?? "" },
+                    ["large_icon"] = "https://mazyadmohammed-001-site1.anytempurl.com//Uplouds/IMG_2984.png",
+                    ["priority"] = 10,
+                    ["android_visibility"] = 1,
+                    ["ttl"] = 86400,
+                    ["small_icon"] = "ic_stat_onesignal_default"
                 };
 
+                if (payload.Data != null && payload.Data.Count > 0)
+                    pushPayload["data"] = payload.Data;
+
                 if (broadcast)
-                {
-                    n.IncludedSegments = new List<string> { "Total Subscriptions" };
-                }
+                    pushPayload["included_segments"] = new[] { "Total Subscriptions" };
                 else
                 {
-                    n.IncludeExternalUserIds = externalIds;
-                    n.ChannelForExternalUserIds = "push";
+                    pushPayload["target_channel"] = "push";
+                    pushPayload["include_external_user_ids"] = externalIds ?? new List<string>();
+                    pushPayload["channel_for_external_user_ids"] = "push";
                 }
 
-                await api.CreateNotificationAsync(n);
+                using var http = new HttpClient();
+                http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", apiKey);
+                http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                var json = JsonConvert.SerializeObject(pushPayload);
+                using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+                using var response = await http.PostAsync("https://onesignal.com/api/v1/notifications", content);
+                var responseBody = await response.Content.ReadAsStringAsync();
+                if (!response.IsSuccessStatusCode)
+                {
+                    await _logger.WriteAsync(
+                        new Exception($"OneSignal push failed ({response.StatusCode}) for {section}: {responseBody}"),
+                        "NotificationDispatcher => PushExternal");
+                }
             }
             catch (Exception ex)
             {

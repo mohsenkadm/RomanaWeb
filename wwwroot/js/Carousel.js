@@ -1,5 +1,15 @@
 ﻿
 var _CarouseId = 0;
+
+function getCarouselAppTypeLabel(appType) {
+    switch (parseInt(appType, 10)) {
+        case 1: return 'تطبيق الزبون';
+        case 2: return 'تطبيق المتجر';
+        case 3: return 'تطبيق السائقين';
+        default: return '-';
+    }
+}
+
 function filltableCarousel(data) {
     $('#tableCarousel').empty();
     $.each(data, function (i, item) {
@@ -14,10 +24,11 @@ function filltableCarousel(data) {
             "</label>" +
             "</div>" +
             "</td>" + 
-            "<td><img src='" + item.image + "' alt='' border=3 height=50 width=50></img></td>" +
+            "<td class='rm-img-cell'><img src='" + item.image + "' alt='' class='rm-table-thumb'></td>" +
             "<td>" + item.url + "</td>"+
             "<td>" + item.image + "</td>"+
-            "<td>" + item.countryName + "</td>"
+            "<td>" + item.countryName + "</td>"+
+            "<td>" + getCarouselAppTypeLabel(item.appType) + "</td>"
             + "<td> <button type='button' class='btn btn-danger' onclick='deleteCarousel(" + item.carouseId + ")'  >حذف</button>" +
             "  |  <button type='button' class='btn btn-primary' onclick='updateCarousel(" + item.carouseId + ")'  data-toggle='modal' data-target='#CarouselModal'>تعديل</button></td></tr>";
         $('#tableCarousel').append(rows);
@@ -48,7 +59,8 @@ function updateCarousel(id) {
 
 function setdataCarousel(data) {
     $("#Url").val(data.url);
-    $("#CountriesId").val(data.countriesId).change();
+    $("#CountriesId").val(data.countryId).change();
+    $("#AppType").val(data.appType || 1).change();
 
     if (data.isShow === true) {
         $("#IsShowca").prop("checked", true);
@@ -61,6 +73,7 @@ function aftersaveCarousel(Carousel) {
     $("#imageca").val('');
     $("#Url").val('');
     $("#CountriesId").val(0).change();
+    $("#AppType").val('').change();
     $("#IsShowca").prop("checked", false);
     _CarouseId = 0;
     call_ajax("GET", "Carousel/GetAll", null, filltableCarousel);

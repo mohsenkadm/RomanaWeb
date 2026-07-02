@@ -6,7 +6,7 @@ namespace RomanaWeb.Helper.Interface
 {
     public interface ICarouselService
     {
-        Task<ResObj> GetAllApp(int? CountryId = 0);
+        Task<ResObj> GetAllApp(int? CountryId = 0, int? AppType = null);
         Task<ResObj> GetAll();
         Task<ResObj> Post(Carousel Carousel); 
         Task<ResObj> Update(Carousel Carousel);

@@ -1,0 +1,95 @@
+
+@{
+    ViewData["Title"] = "إدخال سريع للمنتجات";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="content dark-edition">
+        <div class="container-fluid">
+
+            <div class="rm-page-summary">
+                <div class="rm-summary-icon bg-indigo"><i class="material-icons">playlist_add</i></div>
+                <div class="rm-summary-body">
+                    <h4>إدخال سريع للمنتجات</h4>
+                    <p>أضف عدة منتجات لمطعم واحد دفعة واحدة. اختر المطعم، أدخل البيانات في الجدول، ثم احفظ الكل.</p>
+                </div>
+                <div class="rm-summary-stats">
+                    <div class="rm-stat">
+                        <strong id="qpReadyCount">0</strong>
+                        <span>جاهز للحفظ</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rm-filter-bar qp-toolbar">
+                <div class="row align-items-end">
+                    <div class="col-lg-3 col-md-6 mb-2">
+                        <label class="mb-1">المطعم <span class="text-danger">*</span></label>
+                        <select id="qpRestaurantId" class="form-control alignright">
+                            <option value="0">— اختر المطعم —</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-2">
+                        <label class="mb-1">الصنف الافتراضي</label>
+                        <select id="qpDefaultSubCat" class="form-control alignright">
+                            <option value="0">— بدون —</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-2 col-md-4 mb-2">
+                        <label class="mb-1">وقت التحضير (د)</label>
+                        <input type="number" id="qpDefaultPrep" class="form-control alignright" value="15" min="1" />
+                    </div>
+                    <div class="col-lg-4 col-md-8 mb-2 text-left">
+                        <button type="button" class="btn btn-secondary" id="qpAddRowBtn"><i class="material-icons" style="font-size:18px;vertical-align:middle;">add</i> إضافة صف</button>
+                        <button type="button" class="btn btn-success" id="qpSaveAllBtn"><i class="material-icons" style="font-size:18px;vertical-align:middle;">save</i> حفظ الكل</button>
+                        <button type="button" class="btn btn-outline-danger" id="qpClearAllBtn"><i class="material-icons" style="font-size:18px;vertical-align:middle;">delete_sweep</i> مسح الكل</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header card-header-primary" style="text-align:right">
+                            <h4 class="card-title">جدول الإدخال</h4>
+                            <p class="card-category">اضغط Enter في حقل السعر لإضافة صف جديد</p>
+                        </div>
+                        <div class="card-body">
+                            <div id="qpProgress" class="qp-progress" style="display:none;">
+                                <div class="progress" style="height:8px;border-radius:4px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" id="qpProgressBar" style="width:0%"></div>
+                                </div>
+                                <p id="qpProgressText" class="text-muted mt-2 mb-0" style="font-size:0.85rem;"></p>
+                            </div>
+                            <div id="qpResultSummary" class="qp-result-summary" style="display:none;"></div>
+                            <div class="table-responsive">
+                                <table class="table table-hover rm-quick-entry-table rm-rtl-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:40px">#</th>
+                                            <th>اسم المنتج *</th>
+                                            <th style="width:120px">السعر *</th>
+                                            <th style="width:160px">الصنف</th>
+                                            <th>التفاصيل</th>
+                                            <th style="width:140px">صورة</th>
+                                            <th style="width:60px"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="qpRows"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        qpInit();
+    });
+</script>

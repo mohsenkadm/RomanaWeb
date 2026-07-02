@@ -1,0 +1,138 @@
+
+@{
+    ViewData["Title"] = "أرقام الدعم الفني";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="content dark-edition">
+        <div class="container-fluid">
+
+            <div class="rm-page-summary">
+                <div class="rm-summary-icon bg-teal"><i class="material-icons">support_agent</i></div>
+                <div class="rm-summary-body">
+                    <h4>أرقام الدعم الفني</h4>
+                    <p>إدارة أرقام التواصل مع الدعم الفني لكل تطبيق: الزبائن، المتاجر، والسائقين. يمكن لكل تطبيق امتلاك رقم واحد فقط.</p>
+                </div>
+            </div>
+
+            <div class="rm-filter-bar">
+                <div class="row">
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                        <div class="text-center wow fadeInDown">
+                            <label class="mb-2"> </label>
+                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" onclick="openAddSupportPhone()" data-toggle="modal" data-target="#SupportPhoneModal">اضافة جديد <i class='material-icons'>add</i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header card-header-primary" style="text-align:right">
+                            <h4 class="card-title">أرقام الدعم</h4>
+                            <p class="card-category">رقم واحد لكل تطبيق — يُعرض عبر API للتطبيقات</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive" style="text-align: right;">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">نشط</th>
+                                            <th scope="col">ملاحظة</th>
+                                            <th scope="col">رقم الهاتف</th>
+                                            <th scope="col">التطبيق</th>
+                                            <th scope="col"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableSupportPhone">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="SupportPhoneModal" tabindex="-1" role="dialog" aria-labelledby="SupportPhoneModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title" id="SupportPhoneModalLabel">اضافة رقم دعم</h5>
+                <button type="button" id="closeSupportPhone1" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="form-group col-md-12 alignright">
+                        <label class="text-primary">التطبيق</label>
+                        <select class="form-control text-right" id="AppType">
+                            <option value="1">تطبيق الزبائن</option>
+                            <option value="2">تطبيق المتاجر</option>
+                            <option value="3">تطبيق السائقين (الدلفري)</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-12 alignright">
+                        <label class="text-primary">رقم الهاتف</label>
+                        <input type="text" id="Phone" class="form-control alignright" placeholder="مثال: 07701234567" autocomplete="off" />
+                    </div>
+                    <div class="form-group col-md-12 alignright">
+                        <label class="text-primary">ملاحظة (اختياري)</label>
+                        <input type="text" id="Label" class="form-control alignright" placeholder="مثال: الدعم الفني" autocomplete="off" />
+                    </div>
+                    <div class="form-group col-md-12 alignright">
+                        <label class="text-primary">نشط</label>
+                        <div class='form-check col-md-6 alignright'>
+                            <label class='form-check-label'>
+                                <input class='form-check-input' type='checkbox' id='IsActive' checked>
+                                <span class='form-check-sign'><span class='check'></span></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="closeSupportPhone" data-dismiss="modal">اغلاق</button>
+                <button type="button" class="btn btn-success" id="saveSupportPhone">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="mydiv">
+    <script>
+        $("#closeSupportPhone").on("click", (e) => {
+            e.preventDefault();
+            aftersaveSupportPhone();
+        });
+        $("#closeSupportPhone1").on("click", (e) => {
+            e.preventDefault();
+            aftersaveSupportPhone();
+        });
+        $(document).ready(function () {
+            RefreshSupportPhone();
+        });
+        $("#saveSupportPhone").on("click", (e) => {
+            e.preventDefault();
+            var object = {
+                SupportPhoneId: _SupportPhoneId,
+                AppType: parseInt($("#AppType").val(), 10),
+                Phone: $("#Phone").val(),
+                Label: $("#Label").val(),
+                IsActive: $("#IsActive").is(":checked")
+            };
+
+            if (!object.Phone || object.Phone.trim() === "") {
+                md.showNotification("رجاءا ادخل رقم الهاتف");
+                return;
+            }
+
+            call_ajax("POST", "SupportPhone/Post", object, aftersaveSupportPhone);
+        });
+    </script>
+</div>

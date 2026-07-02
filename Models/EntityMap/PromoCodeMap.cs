@@ -21,6 +21,7 @@ namespace RomanaWeb.Models.EntityMap
             builder.Property(x => x.DiscountType).HasMaxLength(20);
             builder.Property(x => x.MaxDiscountAmount).HasColumnType("decimal(18,2)").HasDefaultValue(0);
             builder.Property(x => x.FirstUsedAt);
+            builder.Property(x => x.MaxUsagePerUser).HasDefaultValue(1);
             builder.Ignore(x => x.RestaurantName);
         }
     }

@@ -91,6 +91,7 @@ namespace RomanaWeb.Helper.Repository
                     item.DiscountAmount = PromoCode.DiscountAmount;
                     item.DiscountType = PromoCode.DiscountType;
                     item.MaxDiscountAmount = PromoCode.MaxDiscountAmount;
+                    item.MaxUsagePerUser = PromoCode.MaxUsagePerUser;
                     item.IsActive = PromoCode.IsActive;
                     _Context.Entry(item).State = EntityState.Modified;
                 }
@@ -99,7 +100,22 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true, "تم الحفظ بنجاح", PromoCode);
         }
 
-        public async Task<ResObj> ValidatePromoCode(string promoName, int restaurantId)
+        private async Task<ResObj?> CheckPerUserLimitAsync(PromoCode promo, int userId)
+        {
+            if (userId <= 0 || promo.MaxUsagePerUser <= 0)
+                return null;
+
+            var usage = await _Context.PromoCodeUsage
+                .FirstOrDefaultAsync(u => u.PromoCodeId == promo.PromoCodeId && u.UserId == userId);
+
+            int used = usage?.UsedCount ?? 0;
+            if (used >= promo.MaxUsagePerUser)
+                return Result.Return(false, "لقد استخدمت هذا الكود الحد الأقصى المسموح لك");
+
+            return null;
+        }
+
+        public async Task<ResObj> ValidatePromoCode(string promoName, int restaurantId, int userId = 0)
         {
             var promo = await _Context.PromoCodes.AsSplitQuery().AsNoTracking()
                 .FirstOrDefaultAsync(i => i.PromoName == promoName);
@@ -118,6 +134,9 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(false, "كود الخصم تجاوز الحد الاقصى للاستخدام");
             }
 
+            var perUser = await CheckPerUserLimitAsync(promo, userId);
+            if (perUser != null) return perUser;
+
             // Section 3.2: scope check.
             // First-time activation safety net: if enabled and the promo has never been used,
             // treat it as GLOBAL regardless of its stored scope.
@@ -130,7 +149,7 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true, "كود الخصم صالح", promo);
         }
 
-        public async Task<ResObj> ApplyPromoCode(string promoName, int restaurantId, decimal orderTotal)
+        public async Task<ResObj> ApplyPromoCode(string promoName, int restaurantId, decimal orderTotal, int userId = 0)
         {
             var promo = await _Context.PromoCodes
                 .FirstOrDefaultAsync(i => i.PromoName == promoName);
@@ -148,6 +167,9 @@ namespace RomanaWeb.Helper.Repository
                 await _Context.SaveChangesAsync();
                 return Result.Return(false, "كود الخصم تجاوز الحد الاقصى للاستخدام");
             }
+
+            var perUserCheck = await CheckPerUserLimitAsync(promo, userId);
+            if (perUserCheck != null) return perUserCheck;
 
             bool isFirstUse = promo.FirstUsedAt == null;
             bool effectiveGlobal = promo.IsForAllStores || (FirstUseForceGlobal && isFirstUse);
@@ -184,6 +206,22 @@ namespace RomanaWeb.Helper.Repository
             if (isFirstUse) promo.FirstUsedAt = DateTime.UtcNow;
             if (promo.MaxOrders > 0 && promo.UsedOrders >= promo.MaxOrders)
                 promo.IsActive = false;
+
+            if (userId > 0 && promo.MaxUsagePerUser > 0)
+            {
+                var usage = await _Context.PromoCodeUsage
+                    .FirstOrDefaultAsync(u => u.PromoCodeId == promo.PromoCodeId && u.UserId == userId);
+                if (usage == null)
+                {
+                    usage = new PromoCodeUsage { PromoCodeId = promo.PromoCodeId, UserId = userId, UsedCount = 1 };
+                    await _Context.PromoCodeUsage.AddAsync(usage);
+                }
+                else
+                {
+                    usage.UsedCount += 1;
+                    _Context.Entry(usage).State = EntityState.Modified;
+                }
+            }
 
             _Context.Entry(promo).State = EntityState.Modified;
             await _Context.SaveChangesAsync();

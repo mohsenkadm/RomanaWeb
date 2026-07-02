@@ -154,6 +154,26 @@ namespace RomanaWeb.Controllers
                 return Response(false, "حدث خطا اثناء عملية جلب البيانات");
             }
         }
+        #endregion      
+
+        #region Get delivery fee for restaurant + city
+        [HttpGet("RestaurantCity/GetDeliveryFee/{restaurantId}/{cityId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetDeliveryFee(int restaurantId, int cityId)
+        {
+            try
+            {
+                ResObj res = await _RestaurantCityService.GetDeliveryFee(restaurantId, cityId);
+                if (!res.success)
+                    return Response(false, res.msg ?? "لا يوجد سعر توصيل لهذه المنطقة");
+                return Response(true, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantCityController => GetDeliveryFee");
+                return Response(false, "حدث خطأ");
+            }
+        }
         #endregion
     }
 }

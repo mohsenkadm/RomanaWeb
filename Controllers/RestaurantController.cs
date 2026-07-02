@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using RomanaWeb.Classes;
@@ -11,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using RomanaWeb.Models.EntityMapper;
 using AutoMapper;
 using RomanaWeb.UploadService;
+using System.Data;
 
 namespace RomanaWeb.Controllers
 {
@@ -182,6 +184,82 @@ namespace RomanaWeb.Controllers
             {
                 await _logger.WriteAsync(ex, "RestaurantController => GetAll => name:");
                 return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
+            }
+        }
+
+        [HttpGet]
+        public async Task<FileResult> GetExcelAll(string? Name)
+        {
+            try
+            {
+                ResObj res = await _RestaurantService.GetAll(Name);
+                return GenerateExcel("report-restaurant-" + Key.DateTimeIQ + ".xlsx", (List<Restaurant>)res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantController => GetExcelAll");
+                return null;
+            }
+        }
+
+        [NonAction]
+        private static FileResult GenerateExcel(string fileName, IEnumerable<Restaurant> restaurants)
+        {
+            DataTable dataTable = new DataTable("Restaurant");
+            dataTable.Columns.AddRange(new DataColumn[]
+            {
+                new DataColumn("الاسم"),
+                new DataColumn("التفاصيل"),
+                new DataColumn("القسم"),
+                new DataColumn("خلفية"),
+                new DataColumn("لوكو"),
+                new DataColumn("العنوان"),
+                new DataColumn("تقييم"),
+                new DataColumn("مفتوح"),
+                new DataColumn("نشط"),
+                new DataColumn("مفضلة"),
+                new DataColumn("اسم المستخدم"),
+                new DataColumn("كلمة المرور"),
+                new DataColumn("Long"),
+                new DataColumn("Lat"),
+                new DataColumn("اقل سعر"),
+                new DataColumn("اسم المنطقة"),
+                new DataColumn("كود"),
+            });
+
+            foreach (var r in restaurants)
+            {
+                dataTable.Rows.Add(
+                    r.Name,
+                    r.Details,
+                    r.CategoriesName,
+                    r.Background,
+                    r.Logo,
+                    r.Address,
+                    r.IsStars == true ? "نعم" : "لا",
+                    r.IsClosed == true ? "لا" : "نعم",
+                    r.IsActive == true ? "نعم" : "لا",
+                    r.IsTop == true ? "نعم" : "لا",
+                    r.UserName,
+                    r.Password,
+                    r.Long,
+                    r.Lat,
+                    r.MinimumPrice,
+                    r.Areaname,
+                    r.Code);
+            }
+
+            using (XLWorkbook wb = new XLWorkbook())
+            {
+                wb.Worksheets.Add(dataTable);
+                using MemoryStream stream = new MemoryStream();
+                wb.SaveAs(stream);
+                return new FileContentResult(
+                    stream.ToArray(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                {
+                    FileDownloadName = fileName
+                };
             }
         }
         #endregion

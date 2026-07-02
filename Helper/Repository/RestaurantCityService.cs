@@ -84,5 +84,15 @@ namespace RomanaWeb.Helper.Repository
             
                 return Result.Return(true, "تم الحفظ");  
         }
+
+        public async Task<ResObj> GetDeliveryFee(int restaurantId, int cityId)
+        {
+            var row = await _Context.RestaurantCity.AsNoTracking()
+                .FirstOrDefaultAsync(rc => rc.RestaurantId == restaurantId && rc.CityId == cityId);
+            if (row?.CostDelivery is not > 0)
+                return Result.Return(false, "لا يوجد سعر توصيل لهذه المنطقة");
+
+            return Result.Return(true, new { restaurantId, cityId, costDelivery = row.CostDelivery });
+        }
     }
 }

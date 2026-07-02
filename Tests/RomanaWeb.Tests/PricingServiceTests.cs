@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Configuration;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Helper.Repository;
 using RomanaWeb.Models.Entity;
@@ -7,9 +6,6 @@ namespace RomanaWeb.Tests;
 
 public class PricingServiceTests
 {
-    private static IConfiguration EmptyConfig() =>
-        new ConfigurationBuilder().AddInMemoryCollection().Build();
-
     private static PricingService NewService(out RomanaWeb.Model.DB_Context ctx, AppSettings? settings = null)
     {
         ctx = TestDbContext.New();
@@ -19,7 +15,7 @@ public class PricingServiceTests
             ctx.SaveChanges();
             ctx.ChangeTracker.Clear();
         }
-        return new PricingService(ctx);
+        return new PricingService(ctx, new DistanceService());
     }
 
     [Fact]
@@ -37,8 +33,9 @@ public class PricingServiceTests
         var res = await svc.Quote(new QuoteRequest { DistanceKm = 0.8 });
 
         Assert.True(res.success);
-        Assert.True(ObjectAccess.Get<bool>(res.data!, "min_charge_applied"));
-        Assert.Equal(500m, ObjectAccess.Get<decimal>(res.data!, "total"));
+        var quote = Assert.IsType<QuoteResponse>(res.data);
+        Assert.True(quote.MinChargeApplied);
+        Assert.Equal(500m, quote.Total);
     }
 
     [Fact]
@@ -52,14 +49,47 @@ public class PricingServiceTests
             RoundingMode = "Ceil"
         });
 
-        // 4.2 km ⇒ ceil ⇒ 5 km * 500 = 2500
         var res = await svc.Quote(new QuoteRequest { DistanceKm = 4.2 });
 
         Assert.True(res.success);
-        Assert.False(ObjectAccess.Get<bool>(res.data!, "min_charge_applied"));
-        Assert.Equal(2500m, ObjectAccess.Get<decimal>(res.data!, "total"));
-        Assert.Equal(2500m, ObjectAccess.Get<decimal>(res.data!, "per_km_total"));
-        Assert.Equal(0m, ObjectAccess.Get<decimal>(res.data!, "zone_fee"));
+        var quote = Assert.IsType<QuoteResponse>(res.data);
+        Assert.False(quote.MinChargeApplied);
+        Assert.Equal(2500m, quote.Total);
+        Assert.Equal(2500m, quote.DistanceFee);
+        Assert.Equal(0m, quote.ZoneFee);
+        Assert.Equal(4.2, quote.DistanceKm);
+    }
+
+    [Fact]
+    public async Task Quote_FromCoords_CalculatesDistanceKm()
+    {
+        var svc = NewService(out _, new AppSettings
+        {
+            PricePerKm = 500,
+            MinChargeKmThreshold = 0.5m,
+            MinChargeAmount = 500m,
+            RoundingMode = "Ceil"
+        });
+
+        var res = await svc.Quote(new QuoteRequest
+        {
+            PickupLat = 33.30,
+            PickupLng = 44.35,
+            DropoffLat = 33.32,
+            DropoffLng = 44.38
+        });
+
+        Assert.True(res.success);
+        var quote = Assert.IsType<QuoteResponse>(res.data);
+        Assert.True(quote.DistanceKm > 0);
+    }
+
+    [Fact]
+    public async Task Quote_RejectsZeroCoords()
+    {
+        var svc = NewService(out _);
+        var res = await svc.Quote(new QuoteRequest { PickupLat = 0, PickupLng = 44.35, DropoffLat = 33.32, DropoffLng = 44.38 });
+        Assert.False(res.success);
     }
 
     [Fact]
@@ -73,11 +103,11 @@ public class PricingServiceTests
             RoundingMode = "Floor"
         });
 
-        // 4.9 km ⇒ floor ⇒ 4 km * 500 = 2000
         var res = await svc.Quote(new QuoteRequest { DistanceKm = 4.9 });
 
         Assert.True(res.success);
-        Assert.Equal(2000m, ObjectAccess.Get<decimal>(res.data!, "total"));
+        var quote = Assert.IsType<QuoteResponse>(res.data);
+        Assert.Equal(2000m, quote.Total);
     }
 
     [Fact]
@@ -86,8 +116,8 @@ public class PricingServiceTests
         var svc = NewService(out _);
         var res = await svc.Quote(new QuoteRequest { DistanceKm = 3.0 });
         Assert.True(res.success);
-        // Defaults: PricePerKm=500, Ceil ⇒ 3 * 500 = 1500
-        Assert.Equal(1500m, ObjectAccess.Get<decimal>(res.data!, "total"));
+        var quote = Assert.IsType<QuoteResponse>(res.data);
+        Assert.Equal(1500m, quote.Total);
     }
 
     [Fact]
@@ -121,7 +151,7 @@ public class PricingServiceTests
         ctx.SaveChanges();
         ctx.ChangeTracker.Clear();
 
-        var svc = new PricingService(ctx);
+        var svc = new PricingService(ctx, new DistanceService());
         var res = await svc.Quote(new QuoteRequest
         {
             PickupLng = 0.5, PickupLat = 0.5,
@@ -129,9 +159,12 @@ public class PricingServiceTests
         });
 
         Assert.True(res.success);
-        Assert.Equal(4000m, ObjectAccess.Get<decimal>(res.data!, "zone_fee"));
-        Assert.Equal(1500m, ObjectAccess.Get<decimal>(res.data!, "per_km_total")); // 3 km cap * 500
-        Assert.Equal(5500m, ObjectAccess.Get<decimal>(res.data!, "total"));
+        var quote = Assert.IsType<QuoteResponse>(res.data);
+        Assert.Equal(4000m, quote.ZoneFee);
+        Assert.Equal(1500m, quote.DistanceFee);
+        Assert.Equal(5500m, quote.Total);
+        Assert.Equal("A", quote.FromZone);
+        Assert.Equal("B", quote.ToZone);
     }
 
     [Fact]
@@ -154,7 +187,7 @@ public class PricingServiceTests
         ctx.SaveChanges();
         ctx.ChangeTracker.Clear();
 
-        var svc = new PricingService(ctx);
+        var svc = new PricingService(ctx, new DistanceService());
         var res = await svc.Quote(new QuoteRequest
         {
             PickupLng = 1, PickupLat = 1,
@@ -163,7 +196,43 @@ public class PricingServiceTests
         });
 
         Assert.True(res.success);
-        Assert.Equal(0m, ObjectAccess.Get<decimal>(res.data!, "zone_fee"));
-        Assert.Equal(2000m, ObjectAccess.Get<decimal>(res.data!, "total")); // 4 * 500
+        var quote = Assert.IsType<QuoteResponse>(res.data);
+        Assert.Equal(0m, quote.ZoneFee);
+        Assert.Equal(2000m, quote.Total);
+    }
+
+    [Fact]
+    public async Task Quote_RestaurantCityFee_TakesPriority()
+    {
+        var ctx = TestDbContext.New();
+        ctx.AppSettings.Add(new AppSettings
+        {
+            PricePerKm = 500,
+            MinChargeKmThreshold = 1.5m,
+            MinChargeAmount = 500m,
+            RoundingMode = "Ceil"
+        });
+        ctx.RestaurantCity.Add(new RestaurantCity
+        {
+            RestaurantId = 10,
+            CityId = 5,
+            CostDelivery = 3000m
+        });
+        ctx.SaveChanges();
+        ctx.ChangeTracker.Clear();
+
+        var svc = new PricingService(ctx, new DistanceService());
+        var res = await svc.Quote(new QuoteRequest
+        {
+            RestaurantId = 10,
+            CityId = 5,
+            DistanceKm = 3
+        });
+
+        Assert.True(res.success);
+        var quote = Assert.IsType<QuoteResponse>(res.data);
+        Assert.Equal(3000m, quote.Total);
+        Assert.Equal(3000m, quote.CityFee);
+        Assert.Equal("city", quote.PricingSource);
     }
 }

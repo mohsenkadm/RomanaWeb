@@ -30,6 +30,7 @@ namespace RomanaWeb.Controllers
             public int SaleManId { get; set; }
             public double Lat { get; set; }
             public double Lng { get; set; }
+            public int? OrderId { get; set; }
         }
 
         // Admin/system can fire dispatch (e.g., new order arrived).
@@ -74,13 +75,39 @@ namespace RomanaWeb.Controllers
             try
             {
                 if (req == null || req.SaleManId <= 0) return Response(false, "بيانات غير صحيحة");
-                var res = await _dispatch.UpdateDriverLocation(req.SaleManId, req.Lat, req.Lng);
+                var res = await _dispatch.UpdateDriverLocation(req.SaleManId, req.Lat, req.Lng, req.OrderId);
                 return Response(res.success, res.msg);
             }
             catch (Exception ex)
             {
                 await _logger.WriteAsync(ex, "DriverDispatchController => UpdateLocation");
                 return Response(false, "حدث خطأ اثناء تحديث الموقع");
+            }
+        }
+
+        // Customer: live driver location for an order they own.
+        [HttpGet("orders/{orderId:int}/driver-location")]
+        public async Task<IActionResult> GetDriverLocation(int orderId)
+        {
+            try
+            {
+                if (UserManager == null || !string.Equals(UserManager.Role, "user", StringComparison.OrdinalIgnoreCase))
+                    return Forbid();
+
+                var (ok, httpStatus, data, msg) = await _dispatch.GetDriverLocationForOrder(orderId, UserManager.Id);
+                if (!ok)
+                {
+                    if (httpStatus == StatusCodes.Status403Forbidden)
+                        return StatusCode(StatusCodes.Status403Forbidden, new { success = false, msg });
+                    return NotFound(new { success = false, msg });
+                }
+
+                return Ok(new { success = true, data });
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "DriverDispatchController => GetDriverLocation");
+                return Response(false, "حدث خطأ اثناء جلب موقع السائق");
             }
         }
     }

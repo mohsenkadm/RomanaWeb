@@ -16,8 +16,14 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> SetIsDone(int id);
         Task<ResObj> Delete(int Id);
         Task<ResObj> GetById(int Id);        
-        Task<ResObj> GetAll(string? orderNo, string? UserName, DateTime datefrom, DateTime dateto, int? RestaurantId,int? CountriesId,int? state);
+        Task<ResObj> GetAll(string? orderNo, string? UserName, DateTime datefrom, DateTime dateto, int? RestaurantId,int? CountriesId,int? state,
+            string? phone = null, int? orderStatus = null);
         Task<ResObj> GetOrdersWithDetailAll(int Id);
+        Task<ResObj> GetOrderFullDetails(int orderId);
+        Task<ResObj> SetDriverEnRouteToPickup(int id);
+        Task<ResObj> SetPickedUpFromRestaurant(int id);
+        Task<ResObj> SetOutForDelivery(int id);
+        Task<ResObj> SetDeliveryConfirmed(int id);
         Task<ResObj> Post(Orders Orders);
         Task<ResObj> DeleteDetails(int id);
         Task<ResObj> GetOrdersByOrderNoAndUserId(string orderNo, int? id);

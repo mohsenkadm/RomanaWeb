@@ -13,6 +13,8 @@ namespace RomanaWeb.Models.Entity
         public string? Url { get; set; }
         public bool IsShow { get; set; }
         public int CountryId { get; set; }
+        /// <summary>1 = customer, 2 = restaurant, 3 = delivery</summary>
+        public int AppType { get; set; } = 1;
         public int CountryName { get; set; }
     }
 }

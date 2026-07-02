@@ -16,7 +16,9 @@ namespace RomanaWeb.Models.EntityMapper
         public decimal ProductsPrice { get; set; }  
         public bool? IsFree { get; set; }
         public int RestaurantId { get; set; }
-        public int SubCategoriesId { get; set; }      
+        public int SubCategoriesId { get; set; }
+        public int PreparationTimeMinutes { get; set; } = 15;
+        public bool IsAvailable { get; set; } = true;
         public List<IFormFile> FileChoose { get; set; }
     }
 }

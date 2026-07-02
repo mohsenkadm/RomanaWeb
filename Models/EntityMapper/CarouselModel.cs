@@ -14,5 +14,6 @@ namespace RomanaWeb.Models.EntityMapper
         public bool IsShow { get; set; }
         public string Url { get; set; }
         public int CountryId { get; set; }
+        public int AppType { get; set; } = 1;
     }
 }
