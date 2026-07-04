@@ -398,6 +398,28 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
+        #region Set Order IsPreparing
+        [HttpPost("Orders/SetIsPreparing/{OrderId}")]
+        public async Task<IActionResult> SetIsPreparing(int OrderId)
+        {
+            try
+            {
+                ResObj res = await _OrdersService.SetIsPreparing(OrderId);
+                if (!res.success)
+                    return Response(res.success, res.msg);
+                Orders orders = (Orders)res.data;
+                await PushOrderSignalR(orders, "قيد التحضير", "المطعم يحضّر طلبك", "preparing",
+                    notifyUser: true, notifyDriver: orders.SaleManId is > 0);
+                return Response(res.success, res.msg);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => SetIsPreparing");
+                return Response(false, "حدث خطأ");
+            }
+        }
+        #endregion
+
         #region Set Order IsCancel
         [HttpDelete("Orders/SetIsCancel/{OrderId}")]
         public async Task<IActionResult> SetIsCancel(int OrderId)

@@ -39,6 +39,12 @@ namespace RomanaWeb.Models.Entity
         public SaleMan? Driver { get; set; }
 
         public decimal? CostDelivery { get; set; }
+        public string? PricingSource { get; set; }
+        public string? PricingFromZone { get; set; }
+        public string? PricingToZone { get; set; }
+        public decimal? RouteDistanceKm { get; set; }
+        public decimal? PricingZoneFee { get; set; }
+        public decimal? PricingEcaFee { get; set; }
         // for show
         public string? UserName { get; set; }
         public string? Phone { get; set; }      

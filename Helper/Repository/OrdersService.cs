@@ -4,6 +4,7 @@ using RomanaWeb.Models.EntityMapper;
 using RomanaWeb.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using RomanaWeb.Helper;
 using RomanaWeb.Helper.Interface;
 using System.Globalization;
 using static NuGet.Packaging.PackagingConstants;
@@ -118,6 +119,7 @@ namespace RomanaWeb.Helper.Repository
             if (o.IsPickedUpFromRestaurant) return 5;
             if (o.IsDriverEnRouteToPickup) return 4;
             if (o.IsSaleManApprove == true) return 3;
+            if (o.IsPreparing) return 2;
             if (o.IsApporve) return 1;
             return 0;
         }
@@ -166,7 +168,50 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(false,"اسم المطعم غير موجود");
             }
 
-            // Verify order cost / delivery cost — prefer per-city fee when configured
+            var userForZone = await _context.Users.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.UserId == orders.UserId);
+            string? dropLatStr = !string.IsNullOrWhiteSpace(orders.Lat) ? orders.Lat : userForZone?.Lat;
+            string? dropLngStr = !string.IsNullOrWhiteSpace(orders.Long) ? orders.Long : userForZone?.Long;
+            int? customerZoneId = await ZoneCoverageHelper.ResolveZoneIdAsync(_pricing, _distance, dropLatStr, dropLngStr);
+            if (!customerZoneId.HasValue)
+                return Result.Return(false, "موقعك خارج مناطق التغطية");
+
+            var restaurantZones = await ZoneCoverageHelper.GetRestaurantZoneIdsAsync(_context, orders.RestaurantId);
+            if (!ZoneCoverageHelper.ServesZone(restaurantZones, customerZoneId))
+                return Result.Return(false, "هذا المطعم لا يخدم منطقتك");
+
+            var zonesWithDrivers = await ZoneCoverageHelper.GetZonesWithAvailableDriversAsync(_context);
+            if (!zonesWithDrivers.Contains(customerZoneId.Value))
+                return Result.Return(false, "لا يوجد مندوب متاح في منطقتك حالياً");
+
+            // Server-side delivery fee via pricing engine (LZA/ECA)
+            double pickupLat = 0, pickupLng = 0, dropLat = 0, dropLng = 0;
+            if (_distance.TryParseCoord(checkshop.Lat, checkshop.Long, out pickupLat, out pickupLng))
+            {
+                if (_distance.TryParseCoord(dropLatStr, dropLngStr, out dropLat, out dropLng))
+                {
+                    var quoteRes = await _pricing.Quote(new QuoteRequest
+                    {
+                        RestaurantId = orders.RestaurantId,
+                        CityId = userForZone?.CityId,
+                        PickupLat = pickupLat,
+                        PickupLng = pickupLng,
+                        DropoffLat = dropLat,
+                        DropoffLng = dropLng
+                    });
+                    if (quoteRes.success && quoteRes.data is QuoteResponse quote)
+                    {
+                        orders.CostDelivery = quote.Total;
+                        orders.PricingSource = quote.PricingSource;
+                        orders.PricingFromZone = quote.FromZone;
+                        orders.PricingToZone = quote.ToZone;
+                        orders.RouteDistanceKm = (decimal)quote.RouteDistanceKm;
+                        orders.PricingZoneFee = quote.ZoneFee;
+                        orders.PricingEcaFee = quote.EcaFee;
+                    }
+                }
+            }
+
             if (orders.CostDelivery == null || orders.CostDelivery < 0)
             {
                 var user = await _context.Users.AsNoTracking()
@@ -198,6 +243,7 @@ namespace RomanaWeb.Helper.Repository
             orders.IsNotDelivered = false;
             orders.IsDelivered = false;
             orders.IsWaiting = false;
+            orders.IsPreparing = false;
             orders.IsDriverEnRouteToPickup = false;
             orders.IsPickedUpFromRestaurant = false;
             orders.IsOutForDelivery = false;
@@ -267,6 +313,19 @@ namespace RomanaWeb.Helper.Repository
             }
 
             return Result.Return(true, "تمت الموافقة", orders);
+        }
+
+        public async Task<ResObj> SetIsPreparing(int id)
+        {
+            var orders = await GetOrdersById(id);
+            if (!orders.IsApporve)
+                return Result.Return(false, "يجب الموافقة على الطلب أولاً");
+            if (orders.IsPreparing)
+                return Result.Return(false, "الطلب قيد التحضير بالفعل");
+            orders.IsPreparing = true;
+            _context.Entry(orders).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+            return Result.Return(true, "الطلب قيد التحضير", orders);
         }
 
         public async Task<ResObj> SetDriverEnRouteToPickup(int id)
@@ -560,6 +619,10 @@ namespace RomanaWeb.Helper.Repository
 
             try { await _dispatch.UpdateDriverLocation(saleManId, lat, lng); } catch { }
 
+            var driverZones = await ZoneCoverageHelper.GetDriverZoneIdsAsync(_context, saleManId);
+            if (driverZones.Count == 0)
+                return Result.Return(false, "لم يتم تحديد زونات العمل للمندوب — راجع الإدارة");
+
             var pendingOrders = await _context.Orders
                 .Where(o => o.IsApporve && !o.IsDone && !o.IsCancel && (o.SaleManId == null || o.SaleManId == 0))
                 .ToListAsync();
@@ -583,6 +646,10 @@ namespace RomanaWeb.Helper.Repository
                 if (!_distance.TryParseCoord(dropLatStr, dropLngStr, out double dropoffLat, out double dropoffLng))
                     continue;
 
+                int? dropoffZoneId = await ZoneCoverageHelper.ResolveZoneIdAsync(_pricing, _distance, dropLatStr, dropLngStr);
+                if (!ZoneCoverageHelper.ServesZone(driverZones, dropoffZoneId))
+                    continue;
+
                 double distanceToPickupKm = _distance.RoundKm(_distance.HaversineKm(lat, lng, pickupLat, pickupLng));
                 if (distanceToPickupKm > radiusKm) continue;
 
@@ -592,6 +659,8 @@ namespace RomanaWeb.Helper.Repository
                 decimal estimatedFee = order.CostDelivery ?? 0;
                 var quoteRes = await _pricing.Quote(new QuoteRequest
                 {
+                    RestaurantId = order.RestaurantId,
+                    CityId = user?.CityId,
                     PickupLat = pickupLat,
                     PickupLng = pickupLng,
                     DropoffLat = dropoffLat,
@@ -664,6 +733,9 @@ namespace RomanaWeb.Helper.Repository
 
             if (await _dispatch.DriverHasActiveOrderAsync(saleManId, orderId))
                 return Result.Return(false, "لديك طلب نشط، أكمله قبل قبول طلب جديد");
+
+            if (!await _dispatch.DriverServesOrderZoneAsync(saleManId, order))
+                return Result.Return(false, "هذا الطلب خارج زونات عملك");
 
             order.SaleManId = saleManId;
             order.IsSaleManApprove = true;

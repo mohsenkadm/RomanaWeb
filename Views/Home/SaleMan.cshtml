@@ -13,7 +13,7 @@
                 <div class="rm-summary-icon bg-orange"><i class="material-icons">badge</i></div>
                 <div class="rm-summary-body">
                     <h4>ادارة المندوبين</h4>
-                    <p>عرض وادارة السائقين/المندوبين من قبل الادمن فقط (غير مرتبطين بمطعم محدد). يمكنك البحث بالاسم ومراجعة بياناتهم وحالة العمل.</p>
+                    <p>عرض وادارة السائقين/المندوبين من قبل الادمن. حدّد زونات العمل لكل مندوب (PDF §2.3.1).</p>
                 </div>
             </div>
 
@@ -55,7 +55,8 @@
                                             <th scope="col">العنوان</th>
                                             <th scope="col">رقم الهاتف</th>
                                             <th scope="col">اسم المندوب</th>
-                                            <th scope="col"></th> 
+                                            <th scope="col">زونات العمل</th>
+                                            <th scope="col"></th>
                                         </tr>
                                     </thead>
                                     <tbody id="tableSaleMan">
@@ -72,7 +73,7 @@
 
 <!-- Modal -->
 <div class="modal fade" id="SaleManModal" tabindex="-1" role="dialog" aria-labelledby="SaleManModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content dark-edition">
             <div class="modal-header">
                 <h5 class="modal-title" id="SaleManModalLabel">اضافة جديد</h5>
@@ -109,6 +110,11 @@
                             </label>
                         </div>
                     </div>
+                    <div class="form-group col-md-12 alignright">
+                        <label class="text-primary">زونات العمل</label>
+                        <small class="d-block text-muted mb-2">يستلم المندوب طلبات الزبائن داخل هذه الزونات فقط (PDF §2.3.1)</small>
+                        <div id="saleManZonePicker" class="zone-picker-box"></div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -134,7 +140,13 @@
             RefreshSaleMan();
         });
         $(document).ready(function () {
-            call_ajax("GET", "SaleMan/GetAll", null, filltableSaleMan);
+            if (typeof ZonePicker !== 'undefined') {
+                ZonePicker.loadSummary(function () {
+                    call_ajax("GET", "SaleMan/GetAll", null, filltableSaleMan);
+                });
+            } else {
+                call_ajax("GET", "SaleMan/GetAll", null, filltableSaleMan);
+            }
         });
         $("#save").on("click", (e) => {
             e.preventDefault();
@@ -161,7 +173,10 @@
                 return;
             }
 
-            call_ajax("POST", "SaleMan/Post", object, aftersaveSaleMan);
+            call_ajax("POST", "SaleMan/Post", object, function (saved) {
+                var sid = _SaleManId || (saved && (saved.saleManId || saved.SaleManId));
+                ZonePicker.saveSaleMan(sid, 'saleManZonePicker', aftersaveSaleMan);
+            });
         });
     </script>
 </div>

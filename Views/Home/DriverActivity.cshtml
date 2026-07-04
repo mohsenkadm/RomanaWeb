@@ -1,0 +1,64 @@
+@{
+    ViewData["Title"] = "نشاط المندوبين";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="container-fluid" style="direction:rtl;">
+        <div class="rm-page-summary">
+            <div class="rm-summary-icon bg-orange"><i class="material-icons">assignment</i></div>
+            <div class="rm-summary-body">
+                <h4>تقرير نشاط المندوبين</h4>
+                <p>عدد الطلبات، التوصيلات المكتملة، رسوم التوصيل، ومسافة الطريق — حسب الفترة المحددة (PDF §2.3.2).</p>
+            </div>
+        </div>
+
+        <div class="rm-filter-bar mb-3">
+            <div class="row align-items-end">
+                <div class="col-md-3 form-group">
+                    <label>من تاريخ</label>
+                    <input type="date" class="form-control" id="actDateFrom" />
+                </div>
+                <div class="col-md-3 form-group">
+                    <label>إلى تاريخ</label>
+                    <input type="date" class="form-control" id="actDateTo" />
+                </div>
+                <div class="col-md-3 form-group">
+                    <label>بحث بالاسم</label>
+                    <input type="text" class="form-control" id="actDriverName" placeholder="اسم المندوب" />
+                </div>
+                <div class="col-md-3 form-group">
+                    <button type="button" class="btn btn-info btn-block" id="btnActSearch"><i class="material-icons" style="font-size:16px;vertical-align:middle">search</i> بحث</button>
+                    <button type="button" class="btn btn-success btn-block mt-2" id="btnActExcel"><i class="material-icons" style="font-size:16px;vertical-align:middle">file_download</i> تصدير Excel</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header card-header-warning" style="text-align:right">
+                <h4 class="card-title">ملخص النشاط</h4>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>المندوب</th>
+                            <th>الهاتف</th>
+                            <th>حالة العمل</th>
+                            <th>معينة</th>
+                            <th>تم التوصيل</th>
+                            <th>ملغي</th>
+                            <th>رسوم توصيل (د.ع)</th>
+                            <th>مسافة (كم)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="driverActivityBody">
+                        <tr><td colspan="8" class="text-center text-muted">اختر الفترة واضغط بحث</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/DriverActivity.js" asp-append-version="true"></script>

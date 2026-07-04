@@ -138,7 +138,7 @@ namespace RomanaWeb.Controllers
         }
         public IActionResult AppSettings()
         {
-            return View();
+            return RedirectToAction(nameof(Zones));
         }                          
         public IActionResult Questions()
         {
@@ -153,6 +153,18 @@ namespace RomanaWeb.Controllers
             return View();
         }
         public IActionResult Zones()
+        {
+            return View();
+        }
+        public IActionResult DriverActivity()
+        {
+            return View();
+        }
+        public IActionResult EmergencyOrders()
+        {
+            return View();
+        }
+        public IActionResult CoverageRequests()
         {
             return View();
         }

@@ -40,6 +40,12 @@ namespace RomanaWeb.Model.EntityMap
             builder.Property(x => x.IsDeliveryConfirmed);
             builder.Property(x => x.Lat);
             builder.Property(x => x.Long);
+            builder.Property(x => x.PricingSource).HasMaxLength(30);
+            builder.Property(x => x.PricingFromZone).HasMaxLength(200);
+            builder.Property(x => x.PricingToZone).HasMaxLength(200);
+            builder.Property(x => x.RouteDistanceKm).HasColumnType("decimal(8,2)");
+            builder.Property(x => x.PricingZoneFee).HasColumnType("decimal(18,0)");
+            builder.Property(x => x.PricingEcaFee).HasColumnType("decimal(18,0)");
             builder.Ignore(x => x.Driver);
             builder.Ignore(x => x.RestaurantLat);
             builder.Ignore(x => x.RestaurantLong);

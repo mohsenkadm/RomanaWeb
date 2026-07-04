@@ -3,33 +3,28 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RomanaWeb.Classes;
+using RomanaWeb.Helper;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Model;
 using RomanaWeb.Models.Entity;
 
 namespace RomanaWeb.Controllers
 {
-    // Section 2.2 - Zones (admin only).
-    // Excel format expected (first sheet):
-    //   Column A: Zone Name
-    //   Column B: GeoJSON Polygon (single-line). Example:
-    //     {"type":"Polygon","coordinates":[[[44.36,33.31],[44.40,33.31],[44.40,33.34],[44.36,33.34],[44.36,33.31]]]}
-    //
-    // Zone-to-zone matrix Excel (second optional endpoint):
-    //   Column A: From Zone Name
-    //   Column B: To Zone Name
-    //   Column C: Price (IQD)
     [Authorize]
     [Route("zones")]
     public class ZonesController : MasterController
     {
         private readonly ILoggerRepository _logger;
         private readonly DB_Context _context;
+        private readonly IPricingService _pricing;
+        private readonly IRoutingService _routing;
 
-        public ZonesController(ILoggerRepository logger, DB_Context context)
+        public ZonesController(ILoggerRepository logger, DB_Context context, IPricingService pricing, IRoutingService routing)
         {
             _logger = logger;
             _context = context;
+            _pricing = pricing;
+            _routing = routing;
         }
 
         private bool IsAdmin() =>
@@ -41,10 +36,36 @@ namespace RomanaWeb.Controllers
             try
             {
                 if (!IsAdmin()) return Response(false, "غير مصرح");
-                var zones = await _context.Zone.AsNoTracking().ToListAsync();
+                var zones = await _context.Zone.AsNoTracking().OrderBy(z => z.Name).ToListAsync();
                 return Response(true, zones);
             }
             catch (Exception ex) { await _logger.WriteAsync(ex, "ZonesController => List"); return Response(false, "خطأ"); }
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> Get(int id)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                var zone = await _context.Zone.AsNoTracking().FirstOrDefaultAsync(z => z.ZoneId == id);
+                if (zone == null) return Response(false, "المنطقة غير موجودة");
+                return Response(true, zone);
+            }
+            catch (Exception ex) { await _logger.WriteAsync(ex, "ZonesController => Get"); return Response(false, "خطأ"); }
+        }
+
+        [HttpGet("{id:int}/geojson")]
+        public async Task<IActionResult> GeoJson(int id)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                var zone = await _context.Zone.AsNoTracking().FirstOrDefaultAsync(z => z.ZoneId == id);
+                if (zone == null) return Response(false, "المنطقة غير موجودة");
+                return Response(true, new { zone.ZoneId, zone.Name, geoJson = zone.GeoJson });
+            }
+            catch (Exception ex) { await _logger.WriteAsync(ex, "ZonesController => GeoJson"); return Response(false, "خطأ"); }
         }
 
         [HttpPost("upload")]
@@ -61,22 +82,43 @@ namespace RomanaWeb.Controllers
                 var sheet = workbook.Worksheets.First();
 
                 int added = 0, updated = 0;
-                foreach (var row in sheet.RowsUsed().Skip(1)) // skip header
+                foreach (var row in sheet.RowsUsed().Skip(1))
                 {
                     string name = row.Cell(1).GetString().Trim();
                     string geo = row.Cell(2).GetString().Trim();
                     if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(geo)) continue;
 
+                    decimal? basePrice = ParseDecimal(row.Cell(3).GetString());
+                    decimal lza = ParseDecimal(row.Cell(4).GetString()) ?? 3m;
+                    decimal ecaPrice = ParseDecimal(row.Cell(5).GetString()) ?? 250m;
+                    decimal maxEca = ParseDecimal(row.Cell(6).GetString()) ?? 2500m;
+                    decimal? nearPrice = ParseDecimal(row.Cell(7).GetString());
+
                     var existing = await _context.Zone.FirstOrDefaultAsync(z => z.Name == name);
                     if (existing == null)
                     {
-                        await _context.Zone.AddAsync(new Zone { Name = name, GeoJson = geo, IsActive = true });
+                        await _context.Zone.AddAsync(new Zone
+                        {
+                            Name = name,
+                            GeoJson = geo,
+                            IsActive = true,
+                            BaseDeliveryPrice = basePrice,
+                            LzaKm = lza,
+                            EcaPricePerKm = ecaPrice,
+                            MaxEcaFee = maxEca,
+                            NearRestaurantPrice = nearPrice
+                        });
                         added++;
                     }
                     else
                     {
                         existing.GeoJson = geo;
                         existing.IsActive = true;
+                        existing.BaseDeliveryPrice = basePrice;
+                        existing.LzaKm = lza;
+                        existing.EcaPricePerKm = ecaPrice;
+                        existing.MaxEcaFee = maxEca;
+                        existing.NearRestaurantPrice = nearPrice;
                         _context.Entry(existing).State = EntityState.Modified;
                         updated++;
                     }
@@ -121,12 +163,7 @@ namespace RomanaWeb.Controllers
                         .FirstOrDefaultAsync(p => p.FromZoneId == fromId && p.ToZoneId == toId);
                     if (existing == null)
                     {
-                        await _context.ZonePrice.AddAsync(new ZonePrice
-                        {
-                            FromZoneId = fromId,
-                            ToZoneId = toId,
-                            Price = price
-                        });
+                        await _context.ZonePrice.AddAsync(new ZonePrice { FromZoneId = fromId, ToZoneId = toId, Price = price });
                         added++;
                     }
                     else
@@ -142,34 +179,30 @@ namespace RomanaWeb.Controllers
             catch (Exception ex)
             {
                 await _logger.WriteAsync(ex, "ZonesController => UploadMatrix");
-                return Response(false, "حدث خطأ اثناء قراءة الملف");
+                return Response(false, "حدث خطأ");
             }
         }
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreateZone([FromBody] CreateZoneRequest request)
+        public async Task<IActionResult> CreateZone([FromBody] ZoneUpsertRequest request)
         {
             try
             {
                 if (!IsAdmin()) return Response(false, "غير مصرح");
-                string name = (request.Name ?? "").Trim();
-                string geo = (request.GeoJson ?? "").Trim();
-                if (string.IsNullOrWhiteSpace(name))
-                    return Response(false, "رجاءا ادخل اسم المنطقة");
-                if (string.IsNullOrWhiteSpace(geo))
-                    return Response(false, "رجاءا ادخل GeoJSON للمنطقة");
+                var validation = ValidateZoneRequest(request);
+                if (validation != null) return Response(false, validation);
 
-                var existing = await _context.Zone.FirstOrDefaultAsync(z => z.Name == name);
+                var existing = await _context.Zone.FirstOrDefaultAsync(z => z.Name == request.Name!.Trim());
                 if (existing != null)
                 {
-                    existing.GeoJson = geo;
-                    existing.IsActive = request.IsActive;
+                    ApplyZoneFields(existing, request);
                     _context.Entry(existing).State = EntityState.Modified;
                     await _context.SaveChangesAsync();
                     return Response(true, "تم تحديث المنطقة بنجاح", existing);
                 }
 
-                var zone = new Zone { Name = name, GeoJson = geo, IsActive = request.IsActive };
+                var zone = new Zone();
+                ApplyZoneFields(zone, request);
                 await _context.Zone.AddAsync(zone);
                 await _context.SaveChangesAsync();
                 return Response(true, "تم اضافة المنطقة بنجاح", zone);
@@ -178,6 +211,94 @@ namespace RomanaWeb.Controllers
             {
                 await _logger.WriteAsync(ex, "ZonesController => CreateZone");
                 return Response(false, "حدث خطأ اثناء الحفظ");
+            }
+        }
+
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> UpdateZone(int id, [FromBody] ZoneUpsertRequest request)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                var zone = await _context.Zone.FirstOrDefaultAsync(z => z.ZoneId == id);
+                if (zone == null) return Response(false, "المنطقة غير موجودة");
+                var validation = ValidateZoneRequest(request);
+                if (validation != null) return Response(false, validation);
+
+                ApplyZoneFields(zone, request);
+                _context.Entry(zone).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Response(true, "تم التحديث", zone);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ZonesController => UpdateZone");
+                return Response(false, "خطأ");
+            }
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> DeleteZone(int id)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                var zone = await _context.Zone.FirstOrDefaultAsync(z => z.ZoneId == id);
+                if (zone == null) return Response(false, "غير موجود");
+                zone.IsActive = false;
+                _context.Entry(zone).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Response(true, "تم التعطيل");
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ZonesController => DeleteZone");
+                return Response(false, "خطأ");
+            }
+        }
+
+        [HttpPost("route")]
+        public async Task<IActionResult> GetRoute([FromBody] RouteRequest request)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                if (request == null) return Response(false, "بيانات غير صالحة");
+
+                var route = await _routing.GetRouteDistanceKmAsync(
+                    request.FromLat, request.FromLng, request.ToLat, request.ToLng);
+
+                return Response(true, new
+                {
+                    distanceKm = route.DistanceKm,
+                    source = route.Source,
+                    path = route.Path?.Select(p => new { lat = p.Lat, lng = p.Lng }).ToList()
+                });
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ZonesController => GetRoute");
+                return Response(false, "تعذر حساب المسار");
+            }
+        }
+
+        [HttpPost("simulate")]
+        public async Task<IActionResult> SimulatePricing([FromBody] QuoteRequest request)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                request ??= new QuoteRequest();
+                request.ForceZonePricing = true;
+                var res = await _pricing.Quote(request);
+                if (!res.success)
+                    return Response(false, res.msg ?? "تعذر الحساب");
+                return Response(true, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ZonesController => SimulatePricing");
+                return Response(false, "خطأ");
             }
         }
 
@@ -191,11 +312,6 @@ namespace RomanaWeb.Controllers
                     return Response(false, "رجاءا اختر منطقة المصدر والوجهة");
                 if (request.Price < 0)
                     return Response(false, "السعر غير صالح");
-
-                var fromExists = await _context.Zone.AsNoTracking().AnyAsync(z => z.ZoneId == request.FromZoneId);
-                var toExists = await _context.Zone.AsNoTracking().AnyAsync(z => z.ZoneId == request.ToZoneId);
-                if (!fromExists || !toExists)
-                    return Response(false, "المنطقة المختارة غير موجودة");
 
                 var existing = await _context.ZonePrice
                     .FirstOrDefaultAsync(p => p.FromZoneId == request.FromZoneId && p.ToZoneId == request.ToZoneId);
@@ -220,7 +336,26 @@ namespace RomanaWeb.Controllers
             catch (Exception ex)
             {
                 await _logger.WriteAsync(ex, "ZonesController => CreateMatrixEntry");
-                return Response(false, "حدث خطأ اثناء الحفظ");
+                return Response(false, "خطأ");
+            }
+        }
+
+        [HttpDelete("matrix/{id:int}")]
+        public async Task<IActionResult> DeleteMatrixEntry(int id)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                var entry = await _context.ZonePrice.FirstOrDefaultAsync(p => p.ZonePriceId == id);
+                if (entry == null) return Response(false, "السعر غير موجود");
+                _context.ZonePrice.Remove(entry);
+                await _context.SaveChangesAsync();
+                return Response(true, "تم الحذف");
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ZonesController => DeleteMatrixEntry");
+                return Response(false, "خطأ");
             }
         }
 
@@ -247,11 +382,161 @@ namespace RomanaWeb.Controllers
             catch (Exception ex) { await _logger.WriteAsync(ex, "ZonesController => Matrix"); return Response(false, "خطأ"); }
         }
 
-        // --------------------------------------------------------------------
-        // Excel template downloads (Section 2.2).
-        // [AllowAnonymous] so the browser can download via a plain anchor tag
-        // (no JWT header). Templates contain no sensitive data.
-        // --------------------------------------------------------------------
+        [HttpGet("links-summary")]
+        public async Task<IActionResult> LinksSummary()
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+
+                var zones = await _context.Zone.AsNoTracking()
+                    .Where(z => z.IsActive)
+                    .OrderBy(z => z.Name)
+                    .Select(z => new { z.ZoneId, z.Name })
+                    .ToListAsync();
+
+                var byRestaurant = await _context.RestaurantZone.AsNoTracking()
+                    .GroupBy(rz => rz.RestaurantId)
+                    .ToDictionaryAsync(g => g.Key, g => g.Select(x => x.ZoneId).ToList());
+
+                var bySaleMan = await _context.SaleManZone.AsNoTracking()
+                    .GroupBy(sz => sz.SaleManId)
+                    .ToDictionaryAsync(g => g.Key, g => g.Select(x => x.ZoneId).ToList());
+
+                return Response(true, new { zones, byRestaurant, bySaleMan });
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ZonesController => LinksSummary");
+                return Response(false, "خطأ");
+            }
+        }
+
+        [HttpGet("restaurant/{restaurantId:int}")]
+        public async Task<IActionResult> GetRestaurantZones(int restaurantId)
+        {
+            try
+            {
+                var ids = await _context.RestaurantZone.AsNoTracking()
+                    .Where(rz => rz.RestaurantId == restaurantId)
+                    .Select(rz => rz.ZoneId)
+                    .ToListAsync();
+                return Response(true, ids);
+            }
+            catch (Exception ex) { await _logger.WriteAsync(ex, "ZonesController => GetRestaurantZones"); return Response(false, "خطأ"); }
+        }
+
+        [HttpPut("restaurant/{restaurantId:int}")]
+        public async Task<IActionResult> SetRestaurantZones(int restaurantId, [FromBody] int[] zoneIds)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                var existing = await _context.RestaurantZone.Where(rz => rz.RestaurantId == restaurantId).ToListAsync();
+                _context.RestaurantZone.RemoveRange(existing);
+                foreach (var zid in zoneIds ?? Array.Empty<int>())
+                {
+                    if (zid > 0)
+                        await _context.RestaurantZone.AddAsync(new RestaurantZone { RestaurantId = restaurantId, ZoneId = zid });
+                }
+                await _context.SaveChangesAsync();
+                return Response(true, "تم تحديث زونات المطعم");
+            }
+            catch (Exception ex) { await _logger.WriteAsync(ex, "ZonesController => SetRestaurantZones"); return Response(false, "خطأ"); }
+        }
+
+        [HttpGet("saleman/{saleManId:int}")]
+        public async Task<IActionResult> GetSaleManZones(int saleManId)
+        {
+            try
+            {
+                if (!IsAdmin() && UserManager?.Id != saleManId)
+                    return Response(false, "غير مصرح");
+                var ids = await _context.SaleManZone.AsNoTracking()
+                    .Where(sz => sz.SaleManId == saleManId)
+                    .Select(sz => sz.ZoneId)
+                    .ToListAsync();
+                return Response(true, ids);
+            }
+            catch (Exception ex) { await _logger.WriteAsync(ex, "ZonesController => GetSaleManZones"); return Response(false, "خطأ"); }
+        }
+
+        [HttpPut("saleman/{saleManId:int}")]
+        public async Task<IActionResult> SetSaleManZones(int saleManId, [FromBody] int[] zoneIds)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                var existing = await _context.SaleManZone.Where(sz => sz.SaleManId == saleManId).ToListAsync();
+                _context.SaleManZone.RemoveRange(existing);
+                foreach (var zid in zoneIds ?? Array.Empty<int>())
+                {
+                    if (zid > 0)
+                        await _context.SaleManZone.AddAsync(new SaleManZone { SaleManId = saleManId, ZoneId = zid });
+                }
+                await _context.SaveChangesAsync();
+                return Response(true, "تم تحديث زونات المندوب");
+            }
+            catch (Exception ex) { await _logger.WriteAsync(ex, "ZonesController => SetSaleManZones"); return Response(false, "خطأ"); }
+        }
+
+        [HttpGet("system-settings")]
+        public async Task<IActionResult> GetSystemSettings()
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                var s = await _context.AppSettings.AsNoTracking().FirstOrDefaultAsync();
+                if (s == null)
+                {
+                    s = new AppSettings { PricePerKm = 500, DefaultOrderCost = 3000, IqdRoundingStep = 250 };
+                    await _context.AppSettings.AddAsync(s);
+                    await _context.SaveChangesAsync();
+                }
+                return Response(true, new
+                {
+                    s.IqdRoundingStep,
+                    s.AllowBusyDriverDispatch,
+                    s.PricePerKm,
+                    s.MinChargeKmThreshold,
+                    s.MinChargeAmount,
+                    s.RoundingMode
+                });
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ZonesController => GetSystemSettings");
+                return Response(false, "خطأ");
+            }
+        }
+
+        [HttpPut("system-settings")]
+        public async Task<IActionResult> UpdateSystemSettings([FromBody] SystemSettingsRequest request)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                var s = await _context.AppSettings.FirstOrDefaultAsync();
+                if (s == null)
+                {
+                    s = new AppSettings();
+                    await _context.AppSettings.AddAsync(s);
+                }
+                s.IqdRoundingStep = request.IqdRoundingStep > 0 ? request.IqdRoundingStep : 250;
+                s.AllowBusyDriverDispatch = request.AllowBusyDriverDispatch;
+                s.PricePerKm = request.PricePerKm > 0 ? request.PricePerKm : 500;
+                s.MinChargeKmThreshold = request.MinChargeKmThreshold >= 0 ? request.MinChargeKmThreshold : 1.5m;
+                s.MinChargeAmount = request.MinChargeAmount >= 0 ? request.MinChargeAmount : 500m;
+                s.RoundingMode = string.IsNullOrWhiteSpace(request.RoundingMode) ? "Ceil" : request.RoundingMode.Trim();
+                await _context.SaveChangesAsync();
+                return Response(true, "تم حفظ إعدادات النظام");
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "ZonesController => UpdateSystemSettings");
+                return Response(false, "خطأ");
+            }
+        }
 
         [AllowAnonymous]
         [HttpGet("template/zones")]
@@ -259,40 +544,22 @@ namespace RomanaWeb.Controllers
         {
             using var wb = new XLWorkbook();
             var ws = wb.Worksheets.Add("Zones");
-
             ws.Cell(1, 1).Value = "Name";
             ws.Cell(1, 2).Value = "GeoJsonPolygon";
-            var header = ws.Range(1, 1, 1, 2);
-            header.Style.Font.Bold = true;
-            header.Style.Fill.BackgroundColor = XLColor.LightGray;
+            ws.Cell(1, 3).Value = "BaseDeliveryPrice";
+            ws.Cell(1, 4).Value = "LzaKm";
+            ws.Cell(1, 5).Value = "EcaPricePerKm";
+            ws.Cell(1, 6).Value = "MaxEcaFee";
+            ws.Cell(1, 7).Value = "NearRestaurantPrice";
+            ws.Range(1, 1, 1, 7).Style.Font.Bold = true;
 
-            ws.Cell(2, 1).Value = "Karada";
-            ws.Cell(2, 2).Value =
-                "{\"type\":\"Polygon\",\"coordinates\":[[[44.40,33.30],[44.45,33.30],[44.45,33.34],[44.40,33.34],[44.40,33.30]]]}";
-
-            ws.Cell(3, 1).Value = "Mansour";
-            ws.Cell(3, 2).Value =
-                "{\"type\":\"Polygon\",\"coordinates\":[[[44.32,33.30],[44.38,33.30],[44.38,33.34],[44.32,33.34],[44.32,33.30]]]}";
-
-            ws.Cell(4, 1).Value = "Karkh";
-            ws.Cell(4, 2).Value =
-                "{\"type\":\"Polygon\",\"coordinates\":[[[44.36,33.32],[44.40,33.32],[44.40,33.36],[44.36,33.36],[44.36,33.32]]]}";
-
-            ws.Cell(1, 4).Value = "Notes:";
-            ws.Cell(2, 4).Value = "Column A = zone name (unique)";
-            ws.Cell(3, 4).Value = "Column B = GeoJSON Polygon, single line, [lng, lat] order";
-            ws.Cell(4, 4).Value = "Re-uploading the same name updates the polygon";
-
-            ws.Column(1).Width = 22;
-            ws.Column(2).Width = 110;
-            ws.Column(4).Width = 60;
+            ws.Cell(2, 1).Value = "قضاء المدينة";
+            ws.Cell(2, 2).Value = "{\"type\":\"Polygon\",\"coordinates\":[[[47.75,30.48],[47.82,30.48],[47.82,30.52],[47.75,30.52],[47.75,30.48]]]}";
+            ws.Cell(2, 3).Value = 3000; ws.Cell(2, 4).Value = 3; ws.Cell(2, 5).Value = 250; ws.Cell(2, 6).Value = 2500; ws.Cell(2, 7).Value = 1500;
 
             using var ms = new MemoryStream();
             wb.SaveAs(ms);
-            return File(
-                ms.ToArray(),
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "zones_template.xlsx");
+            return File(ms.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "zones_template.xlsx");
         }
 
         [AllowAnonymous]
@@ -301,45 +568,60 @@ namespace RomanaWeb.Controllers
         {
             using var wb = new XLWorkbook();
             var ws = wb.Worksheets.Add("Matrix");
-
             ws.Cell(1, 1).Value = "FromZoneName";
             ws.Cell(1, 2).Value = "ToZoneName";
             ws.Cell(1, 3).Value = "PriceIQD";
-            var header = ws.Range(1, 1, 1, 3);
-            header.Style.Font.Bold = true;
-            header.Style.Fill.BackgroundColor = XLColor.LightGray;
-
-            ws.Cell(2, 1).Value = "Karada"; ws.Cell(2, 2).Value = "Mansour"; ws.Cell(2, 3).Value = 4000;
-            ws.Cell(3, 1).Value = "Mansour"; ws.Cell(3, 2).Value = "Karada"; ws.Cell(3, 3).Value = 4000;
-            ws.Cell(4, 1).Value = "Karada"; ws.Cell(4, 2).Value = "Karkh"; ws.Cell(4, 3).Value = 3500;
-            ws.Cell(5, 1).Value = "Karkh"; ws.Cell(5, 2).Value = "Karada"; ws.Cell(5, 3).Value = 3500;
-            ws.Cell(6, 1).Value = "Mansour"; ws.Cell(6, 2).Value = "Karkh"; ws.Cell(6, 3).Value = 3000;
-            ws.Cell(7, 1).Value = "Karkh"; ws.Cell(7, 2).Value = "Mansour"; ws.Cell(7, 3).Value = 3000;
-
-            ws.Cell(1, 5).Value = "Notes:";
-            ws.Cell(2, 5).Value = "Column A = source zone name (must already exist)";
-            ws.Cell(3, 5).Value = "Column B = destination zone name (must already exist)";
-            ws.Cell(4, 5).Value = "Column C = delivery price in IQD";
-            ws.Cell(5, 5).Value = "Re-uploading the same From/To pair updates the price";
-
-            ws.Column(1).Width = 22;
-            ws.Column(2).Width = 22;
-            ws.Column(3).Width = 14;
-            ws.Column(5).Width = 60;
-
+            ws.Range(1, 1, 1, 3).Style.Font.Bold = true;
+            ws.Cell(2, 1).Value = "قضاء المدينة"; ws.Cell(2, 2).Value = "الامام الصادق"; ws.Cell(2, 3).Value = 3000;
             using var ms = new MemoryStream();
             wb.SaveAs(ms);
-            return File(
-                ms.ToArray(),
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                "zones_matrix_template.xlsx");
+            return File(ms.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "zones_matrix_template.xlsx");
         }
 
-        public class CreateZoneRequest
+        private static decimal? ParseDecimal(string? s)
+        {
+            if (string.IsNullOrWhiteSpace(s)) return null;
+            return decimal.TryParse(s.Trim(), out decimal v) ? v : null;
+        }
+
+        private static string? ValidateZoneRequest(ZoneUpsertRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Name))
+                return "رجاءا ادخل اسم المنطقة";
+            if (string.IsNullOrWhiteSpace(request.GeoJson))
+                return "رجاءا ادخل GeoJSON";
+            if (!ZoneGeometryHelper.TryNormalizeToPolygonGeoJson(request.GeoJson.Trim(), out var normalized))
+                return "GeoJSON غير صالح — تأكد من Polygon وترتيب [lng,lat]";
+            request.GeoJson = normalized;
+            return null;
+        }
+
+        private static void ApplyZoneFields(Zone zone, ZoneUpsertRequest request)
+        {
+            zone.Name = request.Name!.Trim();
+            zone.GeoJson = request.GeoJson!.Trim();
+            zone.IsActive = request.IsActive;
+            zone.BaseDeliveryPrice = request.BaseDeliveryPrice;
+            zone.LzaKm = request.LzaKm > 0 ? request.LzaKm : 3m;
+            zone.EcaPricePerKm = request.EcaPricePerKm > 0 ? request.EcaPricePerKm : 250m;
+            zone.MaxEcaFee = request.MaxEcaFee > 0 ? request.MaxEcaFee : 2500m;
+            zone.MaxTotalDeliveryFee = request.MaxTotalDeliveryFee > 0 ? request.MaxTotalDeliveryFee : null;
+            zone.NearRestaurantPrice = request.NearRestaurantPrice;
+            zone.NearRestaurantKm = request.NearRestaurantKm > 0 ? request.NearRestaurantKm : 1m;
+        }
+
+        public class ZoneUpsertRequest
         {
             public string? Name { get; set; }
             public string? GeoJson { get; set; }
             public bool IsActive { get; set; } = true;
+            public decimal? BaseDeliveryPrice { get; set; }
+            public decimal LzaKm { get; set; } = 3m;
+            public decimal EcaPricePerKm { get; set; } = 250m;
+            public decimal MaxEcaFee { get; set; } = 2500m;
+            public decimal? MaxTotalDeliveryFee { get; set; }
+            public decimal? NearRestaurantPrice { get; set; }
+            public decimal NearRestaurantKm { get; set; } = 1m;
         }
 
         public class CreateMatrixRequest
@@ -347,6 +629,24 @@ namespace RomanaWeb.Controllers
             public int FromZoneId { get; set; }
             public int ToZoneId { get; set; }
             public decimal Price { get; set; }
+        }
+
+        public class RouteRequest
+        {
+            public double FromLat { get; set; }
+            public double FromLng { get; set; }
+            public double ToLat { get; set; }
+            public double ToLng { get; set; }
+        }
+
+        public class SystemSettingsRequest
+        {
+            public int IqdRoundingStep { get; set; } = 250;
+            public bool AllowBusyDriverDispatch { get; set; }
+            public decimal PricePerKm { get; set; } = 500m;
+            public decimal MinChargeKmThreshold { get; set; } = 1.5m;
+            public decimal MinChargeAmount { get; set; } = 500m;
+            public string RoundingMode { get; set; } = "Ceil";
         }
     }
 }

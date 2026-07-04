@@ -1,4 +1,5 @@
 using RomanaWeb.Classes;
+using RomanaWeb.Models.Entity;
 
 namespace RomanaWeb.Helper.Interface
 {
@@ -17,5 +18,6 @@ namespace RomanaWeb.Helper.Interface
         Task SetActiveOrderAsync(int saleManId, int orderId);
         Task ClearActiveOrderAsync(int saleManId);
         Task<bool> DriverHasActiveOrderAsync(int saleManId, int? excludeOrderId = null);
+        Task<bool> DriverServesOrderZoneAsync(int saleManId, Orders order);
     }
 }

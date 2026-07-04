@@ -219,5 +219,29 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
+        [HttpGet("drivers/me/zones")]
+        public async Task<IActionResult> GetMyZones()
+        {
+            try
+            {
+                int driverId = UserManager?.Id ?? 0;
+                if (driverId <= 0) return Response(false, "غير مصرح");
+                var ids = await _Context.SaleManZone.AsNoTracking()
+                    .Where(sz => sz.SaleManId == driverId)
+                    .Select(sz => sz.ZoneId)
+                    .ToListAsync();
+                var names = await _Context.Zone.AsNoTracking()
+                    .Where(z => ids.Contains(z.ZoneId))
+                    .Select(z => new { z.ZoneId, z.Name })
+                    .ToListAsync();
+                return Response(true, names);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "SaleManController => GetMyZones");
+                return Response(false, "خطأ");
+            }
+        }
+
     }
 }

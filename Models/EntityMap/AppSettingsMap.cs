@@ -17,6 +17,8 @@ namespace RomanaWeb.Models.EntityMap
             builder.Property(x => x.RoundingMode).HasMaxLength(10).HasDefaultValue("Ceil");
             builder.Property(x => x.ZoneMaxKm).HasColumnType("decimal(18,2)").HasDefaultValue(0m);
             builder.Property(x => x.ZoneMinKm).HasColumnType("decimal(18,2)").HasDefaultValue(0m);
+            builder.Property(x => x.AllowBusyDriverDispatch).HasDefaultValue(false);
+            builder.Property(x => x.IqdRoundingStep).HasDefaultValue(250);
         }
     }
 }

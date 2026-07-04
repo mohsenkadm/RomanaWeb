@@ -48,8 +48,9 @@ public class NearbyDriverOrdersTests
     private static OrdersService NewOrdersService(RomanaWeb.Model.DB_Context ctx)
     {
         var distance = new DistanceService();
-        var pricing = new PricingService(ctx, distance);
-        var dispatch = new DriverDispatchService(ctx, new FakeNotifier(), new FakeHub(), new FakeLogger(), new MemoryCache(new MemoryCacheOptions()));
+        var pricing = new PricingService(ctx, distance, new FakeRoutingService());
+        var dispatch = new DriverDispatchService(ctx, new FakeNotifier(), new FakeHub(), new FakeLogger(),
+            new MemoryCache(new MemoryCacheOptions()), pricing, distance);
         return new OrdersService(
             ctx,
             new FakeDapper<Orders>(),
@@ -65,6 +66,14 @@ public class NearbyDriverOrdersTests
     public async Task GetNearbyDriverOrders_CalculatesDistances()
     {
         var ctx = TestDbContext.New();
+        ctx.Zone.Add(new Zone
+        {
+            Name = "TestZone",
+            GeoJson = "{\"type\":\"Polygon\",\"coordinates\":[[[44.30,33.30],[44.42,33.30],[44.42,33.34],[44.30,33.34],[44.30,33.30]]]}",
+            IsActive = true,
+            LzaKm = 3,
+            EcaPricePerKm = 250
+        });
         ctx.Restaurant.Add(new Restaurant
         {
             RestaurantId = 1,
@@ -96,6 +105,10 @@ public class NearbyDriverOrdersTests
             RoundingMode = "Ceil"
         });
         ctx.SaveChanges();
+        var zoneId = ctx.Zone.Single().ZoneId;
+        ctx.SaleMan.Add(new SaleMan { SaleManId = 8, Name = "Driver", Phone = "07", IsAvailable = true, IsActive = true });
+        ctx.SaleManZone.Add(new SaleManZone { SaleManId = 8, ZoneId = zoneId });
+        ctx.SaveChanges();
         ctx.ChangeTracker.Clear();
 
         var svc = NewOrdersService(ctx);
@@ -114,6 +127,8 @@ public class NearbyDriverOrdersTests
     public async Task GetNearbyDriverOrders_SkipsOrdersWithZeroCoords()
     {
         var ctx = TestDbContext.New();
+        var zoneId = ZoneTestSeeder.SeedZone(ctx);
+        ZoneTestSeeder.SeedAvailableDriver(ctx, 8, zoneId);
         ctx.Restaurant.Add(new Restaurant { RestaurantId = 1, Name = "R", Phone = "1", Lat = "0", Long = "0" });
         ctx.Users.Add(new Users { UserId = 5, Name = "Ali", Phone = "07", Lat = "0", Long = "0" });
         ctx.Orders.Add(new Orders

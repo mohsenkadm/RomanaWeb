@@ -390,9 +390,7 @@ namespace RomanaWeb.Controllers
                 if (Restaurant.RestaurantId == 0)
                 {
                     Restaurant.Code = "";
-                    Restaurant.IsApproved = true;
-                    Restaurant.IsActive = true;
-                    res = await _RestaurantService.Post(Restaurant);
+                    res = await _RestaurantService.Post(Restaurant, autoApprove: true);
                 }
                 else
                 {
@@ -463,11 +461,7 @@ namespace RomanaWeb.Controllers
 
                 if (Restaurant.RestaurantId == 0)
                 {
-
-                    Restaurant.IsApproved = false;
-                    Restaurant.IsActive = true;
-                    Restaurant.IsTop = false;
-                    res = await _RestaurantService.Post(Restaurant);
+                    res = await _RestaurantService.Post(Restaurant, autoApprove: false);
 
                    // code.IsFree = false;
                   //  await _RestaurantService.UpdateCode(code);

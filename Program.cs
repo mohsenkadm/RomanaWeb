@@ -79,6 +79,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient();
 
 builder.Services.AddDbContext<DB_Context>(
     option => option.UseSqlServer(DBConn.ConnectionString),

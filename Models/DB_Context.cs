@@ -45,6 +45,9 @@ namespace RomanaWeb.Model
             modelBuilder.ApplyConfiguration(new DriverStarsMap());
             modelBuilder.ApplyConfiguration(new ZoneMap());
             modelBuilder.ApplyConfiguration(new ZonePriceMap());
+            modelBuilder.ApplyConfiguration(new RestaurantZoneMap());
+            modelBuilder.ApplyConfiguration(new SaleManZoneMap());
+            modelBuilder.ApplyConfiguration(new ServiceCoverageRequestMap());
             modelBuilder.ApplyConfiguration(new ProductSizeMap());
             modelBuilder.ApplyConfiguration(new ProductIngredientMap());
             modelBuilder.ApplyConfiguration(new PromoCodeUsageMap());
@@ -80,6 +83,9 @@ namespace RomanaWeb.Model
         public DbSet<DriverStars> DriverStars { get; set; }
         public DbSet<Zone> Zone { get; set; }
         public DbSet<ZonePrice> ZonePrice { get; set; }
+        public DbSet<RestaurantZone> RestaurantZone { get; set; }
+        public DbSet<SaleManZone> SaleManZone { get; set; }
+        public DbSet<ServiceCoverageRequest> ServiceCoverageRequests { get; set; }
         public DbSet<ProductSize> ProductSize { get; set; }
         public DbSet<ProductIngredient> ProductIngredient { get; set; }
         public DbSet<PromoCodeUsage> PromoCodeUsage { get; set; }

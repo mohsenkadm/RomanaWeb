@@ -1,0 +1,75 @@
+@{
+    ViewData["Title"] = "لوحة الطوارئ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="container-fluid" style="direction:rtl;">
+        <div class="rm-page-summary">
+            <div class="rm-summary-icon bg-danger"><i class="material-icons">warning</i></div>
+            <div class="rm-summary-body">
+                <h4>لوحة الطوارئ — طلبات بدون مندوب</h4>
+                <p>طلبات وافق عليها المطعم ولم يُقبلها أي مندوب (PDF §2.3.1). يمكنك إعادة الإرسال أو تعيين مندوب يدوياً.</p>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-muted" id="emergencyCount">—</span>
+            <button type="button" class="btn btn-info btn-sm" id="btnEmergencyRefresh">
+                <i class="material-icons" style="font-size:16px;vertical-align:middle">refresh</i> تحديث
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-header card-header-danger" style="text-align:right">
+                <h4 class="card-title">طلبات تنتظر مندوباً</h4>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>المطعم</th>
+                            <th>الزبون</th>
+                            <th>الهاتف</th>
+                            <th>المبلغ</th>
+                            <th>التوصيل</th>
+                            <th>انتظار (د)</th>
+                            <th>إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="emergencyBody">
+                        <tr><td colspan="8" class="text-center text-muted">جاري التحميل...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- تعيين مندوب -->
+<div class="modal fade" id="assignDriverModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="direction:rtl;text-align:right">
+            <div class="modal-header">
+                <h5 class="modal-title">تعيين مندوب يدوياً</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="assignOrderId" />
+                <div class="form-group">
+                    <label>المندوب</label>
+                    <select class="form-control" id="assignDriverSelect">
+                        <option value="">— اختر —</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">إلغاء</button>
+                <button type="button" class="btn btn-success" id="btnConfirmAssign">تعيين</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/EmergencyOrders.js" asp-append-version="true"></script>

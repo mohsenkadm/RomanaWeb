@@ -21,6 +21,10 @@ function filltableSaleMan(data) {
                 'onclick="toggleSaleManAvailability(' + item.saleManId + ',' + (!working) + ')">' +
                 btnLabel + '</button></td>';
 
+        var zoneCell = typeof ZonePicker !== 'undefined'
+            ? '<td class="zone-tags-cell">' + ZonePicker.saleManZoneLabels(item.saleManId) + '</td>'
+            : '<td>—</td>';
+
         var rows = "<tr>" + 
             "<td>" +
             "<div class='form-check'>" +
@@ -36,7 +40,8 @@ function filltableSaleMan(data) {
             "<td>" + item.password + "</td>" +  
             "<td>" + item.address + "</td>" +   
             "<td>" + item.phone + "</td>" +
-            "<td>" + item.name + "</td>"
+            "<td>" + item.name + "</td>" +
+            zoneCell
             + "<td> <button type='button' class='btn btn-danger' onclick='deleteSaleMan(" + item.saleManId + ")'>حذف</button>"
             + " | <button type='button' class='btn btn-primary' onclick='updateSaleMan(" + item.saleManId + ")' data-toggle='modal' data-target='#SaleManModal'>تعديل</button></td></tr>";
         $('#tableSaleMan').append(rows);  
@@ -62,8 +67,14 @@ function deleteSaleMan(id) {
     }
 }
 function RefreshSaleMan() { 
-    var obj = { Name: $("#Namese").val() }
-    call_ajax("GET", "SaleMan/GetAll", obj, filltableSaleMan); 
+    var obj = { Name: $("#Namese").val() };
+    if (typeof ZonePicker !== 'undefined') {
+        ZonePicker.loadSummary(function () {
+            call_ajax("GET", "SaleMan/GetAll", obj, filltableSaleMan);
+        });
+    } else {
+        call_ajax("GET", "SaleMan/GetAll", obj, filltableSaleMan); 
+    }
 }
 
 function openAddSaleMan() {
@@ -74,6 +85,9 @@ function openAddSaleMan() {
     $("#Address").val('');
     $("#Password").val('');
     $("#IsActive").prop("checked", true);
+    if (typeof ZonePicker !== 'undefined') {
+        ZonePicker.render('saleManZonePicker', []);
+    }
 }
 
 function updateSaleMan(id) {
@@ -81,6 +95,9 @@ function updateSaleMan(id) {
     call_ajax("GET", "SaleMan/GetById", object1, setdataSaleMan);
     _SaleManId = id;
     $("#SaleManModalLabel").text("تعديل المندوب");
+    if (typeof ZonePicker !== 'undefined') {
+        ZonePicker.loadSaleMan(id, 'saleManZonePicker');
+    }
 }
 
 function setdataSaleMan(data) {
@@ -97,6 +114,9 @@ function aftersaveSaleMan() {
     $("#Address").val('');
     $("#Password").val('');
     $("#IsActive").prop("checked", true);
+    if (typeof ZonePicker !== 'undefined') {
+        ZonePicker.render('saleManZonePicker', []);
+    }
     _SaleManId = 0;
     $("#SaleManModalLabel").text("اضافة جديد");
     $('#SaleManModal').modal('hide');

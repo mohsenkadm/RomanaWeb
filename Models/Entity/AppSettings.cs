@@ -16,5 +16,11 @@ namespace RomanaWeb.Models.Entity
         // Section 2.2 (zones): max km billed per zone; 0 = no cap.
         public decimal ZoneMaxKm { get; set; } = 0m;
         public decimal ZoneMinKm { get; set; } = 0m;
+
+        /// <summary>When true, drivers with active orders still receive dispatch notifications.</summary>
+        public bool AllowBusyDriverDispatch { get; set; }
+
+        /// <summary>Round final IQD prices to nearest step (e.g. 250).</summary>
+        public int IqdRoundingStep { get; set; } = 250;
     }
 }

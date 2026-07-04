@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
 using RomanaWeb.Classes;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Model;
@@ -8,17 +7,20 @@ using RomanaWeb.Models.Entity;
 namespace RomanaWeb.Helper.Repository
 {
     /// <summary>
-    /// Section 2 - Single pricing engine used by Customer/Merchant/Driver apps.
+    /// Unified pricing engine: near-restaurant → zone LZA/ECA → city → minimum → distance.
+    /// PDF Rev.0001: FinalPrice = ZonePrice + min(ECA × EcaPricePerKm, MaxEcaFee).
     /// </summary>
     public class PricingService : IPricingService, IRegisterScopped
     {
         private readonly DB_Context _context;
         private readonly IDistanceService _distance;
+        private readonly IRoutingService _routing;
 
-        public PricingService(DB_Context context, IDistanceService distance)
+        public PricingService(DB_Context context, IDistanceService distance, IRoutingService routing)
         {
             _context = context;
             _distance = distance;
+            _routing = routing;
         }
 
         public async Task<ResObj> Quote(QuoteRequest request)
@@ -33,64 +35,138 @@ namespace RomanaWeb.Helper.Repository
                                DefaultOrderCost = 3000,
                                MinChargeKmThreshold = 1.5m,
                                MinChargeAmount = 500m,
-                               RoundingMode = "Ceil"
+                               RoundingMode = "Ceil",
+                               IqdRoundingStep = 250
                            };
 
-            double distanceKm;
-            if (request.DistanceKm.HasValue)
-            {
-                distanceKm = request.DistanceKm.Value;
-            }
-            else
-            {
-                if (!_distance.IsValidCoord(request.PickupLat, request.PickupLng) ||
-                    !_distance.IsValidCoord(request.DropoffLat, request.DropoffLng))
-                    return Result.Return(false, "يجب تحديد إحداثيات الاستلام والتسليم");
+            int iqdStep = settings.IqdRoundingStep > 0 ? settings.IqdRoundingStep : 250;
 
-                distanceKm = _distance.HaversineKm(
-                    request.PickupLat, request.PickupLng,
-                    request.DropoffLat, request.DropoffLng);
+            if (request.DistanceKm.HasValue && request.DistanceKm.Value > 0
+                && request.PickupLat == 0 && request.DropoffLat == 0)
+            {
+                return await QuoteFromDistanceOnlyAsync(request, settings, iqdStep);
             }
 
-            distanceKm = _distance.RoundKm(distanceKm);
+            if (!_distance.IsValidCoord(request.PickupLat, request.PickupLng) ||
+                !_distance.IsValidCoord(request.DropoffLat, request.DropoffLng))
+                return Result.Return(false, "يجب تحديد إحداثيات الاستلام والتسليم");
 
-            if (distanceKm <= 0)
-                return Result.Return(false, "المسافة غير صالحة");
+            double pickupToDropoffKm = _distance.RoundKm(_distance.HaversineKm(
+                request.PickupLat, request.PickupLng, request.DropoffLat, request.DropoffLng));
 
-            var cityResult = await TryCityPricing(request, settings, distanceKm);
-            if (cityResult != null)
-                return Result.Return(true, cityResult);
+            var zones = await _context.Zone.AsNoTracking().Where(z => z.IsActive).ToListAsync();
+            var pickupZone = ResolveZoneEntity(zones, request.PickupLng, request.PickupLat);
+            var dropoffZone = ResolveZoneEntity(zones, request.DropoffLng, request.DropoffLat);
 
-            var response = new QuoteResponse
+            var nearResult = TryNearRestaurantPricing(pickupZone, dropoffZone, pickupToDropoffKm, iqdStep);
+            if (nearResult != null)
+                return Result.Return(true, nearResult);
+
+            if (!request.ForceZonePricing)
             {
-                DistanceKm = distanceKm,
-                PricePerKm = settings.PricePerKm,
-                MinimumCharge = settings.MinChargeAmount
-            };
-
-            if ((decimal)distanceKm < settings.MinChargeKmThreshold)
-            {
-                response.MinChargeApplied = true;
-                response.DistanceFee = 0;
-                response.ZoneFee = 0;
-                response.Total = settings.MinChargeAmount;
-                response.PricingSource = "minimum";
-                return Result.Return(true, response);
+                var cityResult = await TryCityPricingAsync(request, settings, pickupToDropoffKm, iqdStep);
+                if (cityResult != null)
+                    return Result.Return(true, cityResult);
             }
 
-            var zoneResult = await TryZonePricing(request, settings, distanceKm);
+            var zoneResult = await TryZoneEcaPricingAsync(request, settings, zones, pickupZone, dropoffZone, iqdStep);
             if (zoneResult != null)
                 return Result.Return(true, zoneResult);
 
-            decimal billableKm = ApplyRounding((decimal)distanceKm, settings.RoundingMode);
-            response.DistanceFee = billableKm * settings.PricePerKm;
-            response.ZoneFee = 0;
-            response.Total = response.DistanceFee;
-            response.PricingSource = "distance";
-            return Result.Return(true, response);
+            if ((decimal)pickupToDropoffKm < settings.MinChargeKmThreshold)
+            {
+                return Result.Return(true, new QuoteResponse
+                {
+                    DistanceKm = pickupToDropoffKm,
+                    PricePerKm = settings.PricePerKm,
+                    MinimumCharge = settings.MinChargeAmount,
+                    MinChargeApplied = true,
+                    Total = RoundIqd(settings.MinChargeAmount, iqdStep),
+                    PricingSource = "minimum"
+                });
+            }
+
+            decimal billableKm = ApplyKmRounding((decimal)pickupToDropoffKm, settings.RoundingMode);
+            decimal distanceFee = billableKm * settings.PricePerKm;
+            return Result.Return(true, new QuoteResponse
+            {
+                DistanceKm = pickupToDropoffKm,
+                RouteDistanceKm = pickupToDropoffKm,
+                PricePerKm = settings.PricePerKm,
+                DistanceFee = distanceFee,
+                Total = RoundIqd(distanceFee, iqdStep),
+                PricingSource = "distance"
+            });
         }
 
-        private async Task<QuoteResponse?> TryCityPricing(QuoteRequest request, AppSettings settings, double distanceKm)
+        public async Task<(bool covered, Zone? zone)> ResolveZoneAtPointAsync(double lat, double lng)
+        {
+            var zones = await _context.Zone.AsNoTracking().Where(z => z.IsActive).ToListAsync();
+            var zone = ResolveZoneEntity(zones, lng, lat);
+            return (zone != null, zone);
+        }
+
+        private async Task<ResObj> QuoteFromDistanceOnlyAsync(QuoteRequest request, AppSettings settings, int iqdStep)
+        {
+            double distanceKm = request.DistanceKm!.Value;
+            if (distanceKm <= 0)
+                return Result.Return(false, "المسافة غير صالحة");
+
+            if ((decimal)distanceKm < settings.MinChargeKmThreshold)
+            {
+                return Result.Return(true, new QuoteResponse
+                {
+                    DistanceKm = distanceKm,
+                    RouteDistanceKm = distanceKm,
+                    MinChargeApplied = true,
+                    Total = RoundIqd(settings.MinChargeAmount, iqdStep),
+                    PricingSource = "minimum"
+                });
+            }
+
+            decimal billable = ApplyKmRounding((decimal)distanceKm, settings.RoundingMode);
+            decimal fee = billable * settings.PricePerKm;
+            return Result.Return(true, new QuoteResponse
+            {
+                DistanceKm = distanceKm,
+                RouteDistanceKm = distanceKm,
+                DistanceFee = fee,
+                Total = RoundIqd(fee, iqdStep),
+                PricingSource = "distance"
+            });
+        }
+
+        private static QuoteResponse? TryNearRestaurantPricing(
+            Zone? pickupZone, Zone? dropoffZone, double pickupToDropoffKm, int iqdStep)
+        {
+            var zone = dropoffZone ?? pickupZone;
+            if (zone?.NearRestaurantPrice is not > 0) return null;
+
+            double threshold = (double)zone.NearRestaurantKm;
+            if (threshold <= 0) threshold = 1;
+
+            if (pickupToDropoffKm >= threshold) return null;
+
+            decimal total = RoundIqd(zone.NearRestaurantPrice.Value, iqdStep);
+            bool maxTotalCapApplied = ApplyMaxTotalCap(zone, ref total, iqdStep);
+
+            return new QuoteResponse
+            {
+                DistanceKm = pickupToDropoffKm,
+                RouteDistanceKm = pickupToDropoffKm,
+                ZoneFee = zone.NearRestaurantPrice.Value,
+                Total = total,
+                NearRestaurantApplied = true,
+                MaxTotalCapApplied = maxTotalCapApplied,
+                MaxTotalDeliveryFee = zone.MaxTotalDeliveryFee,
+                PricingSource = "near_restaurant",
+                FromZone = pickupZone?.Name,
+                ToZone = dropoffZone?.Name ?? pickupZone?.Name
+            };
+        }
+
+        private async Task<QuoteResponse?> TryCityPricingAsync(
+            QuoteRequest request, AppSettings settings, double distanceKm, int iqdStep)
         {
             if (request.RestaurantId is not > 0 || request.CityId is not > 0)
                 return null;
@@ -103,91 +179,139 @@ namespace RomanaWeb.Helper.Repository
             return new QuoteResponse
             {
                 DistanceKm = distanceKm,
-                PricePerKm = settings.PricePerKm,
-                MinimumCharge = settings.MinChargeAmount,
+                RouteDistanceKm = distanceKm,
                 CityFee = cityRow.CostDelivery.Value,
-                Total = cityRow.CostDelivery.Value,
+                Total = RoundIqd(cityRow.CostDelivery.Value, iqdStep),
                 PricingSource = "city"
             };
         }
 
-        private async Task<QuoteResponse?> TryZonePricing(QuoteRequest request, AppSettings settings, double distanceKm)
+        private async Task<QuoteResponse?> TryZoneEcaPricingAsync(
+            QuoteRequest request, AppSettings settings, List<Zone> zones,
+            Zone? pickupZone, Zone? dropoffZone, int iqdStep)
         {
-            var zones = await _context.Zone.AsNoTracking().Where(z => z.IsActive).ToListAsync();
-            if (zones.Count == 0) return null;
+            if (pickupZone == null || dropoffZone == null)
+                return null;
 
-            int? pickupZone = ResolveZone(zones, request.PickupLng, request.PickupLat);
-            int? dropoffZone = ResolveZone(zones, request.DropoffLng, request.DropoffLat);
-            if (pickupZone == null || dropoffZone == null) return null;
+            decimal zoneFee;
+            if (pickupZone.ZoneId == dropoffZone.ZoneId)
+            {
+                zoneFee = pickupZone.BaseDeliveryPrice ?? 0m;
+                if (zoneFee <= 0) return null;
 
-            string? fromName = zones.FirstOrDefault(z => z.ZoneId == pickupZone)?.Name;
-            string? toName = zones.FirstOrDefault(z => z.ZoneId == dropoffZone)?.Name;
+                decimal sameZoneTotal = RoundIqd(zoneFee, iqdStep);
+                bool sameZoneMaxCap = ApplyMaxTotalCap(pickupZone, ref sameZoneTotal, iqdStep);
 
-            if (pickupZone.Value == dropoffZone.Value) return null;
+                return new QuoteResponse
+                {
+                    DistanceKm = _distance.RoundKm(_distance.HaversineKm(
+                        request.PickupLat, request.PickupLng, request.DropoffLat, request.DropoffLng)),
+                    RouteDistanceKm = _distance.RoundKm(_distance.HaversineKm(
+                        request.PickupLat, request.PickupLng, request.DropoffLat, request.DropoffLng)),
+                    ZoneFee = zoneFee,
+                    Total = sameZoneTotal,
+                    FromZone = pickupZone.Name,
+                    ToZone = dropoffZone.Name,
+                    LzaKm = pickupZone.LzaKm,
+                    MaxTotalCapApplied = sameZoneMaxCap,
+                    MaxTotalDeliveryFee = pickupZone.MaxTotalDeliveryFee,
+                    PricingSource = "zone"
+                };
+            }
 
-            var entry = await _context.ZonePrice.AsNoTracking()
-                .FirstOrDefaultAsync(p => p.FromZoneId == pickupZone.Value && p.ToZoneId == dropoffZone.Value);
-            decimal zoneFee = entry?.Price ?? 0m;
+            var matrix = await _context.ZonePrice.AsNoTracking()
+                .FirstOrDefaultAsync(p => p.FromZoneId == pickupZone.ZoneId && p.ToZoneId == dropoffZone.ZoneId);
+            zoneFee = matrix?.Price ?? dropoffZone.BaseDeliveryPrice ?? pickupZone.BaseDeliveryPrice ?? 0m;
 
-            decimal billable = ApplyRounding((decimal)distanceKm, settings.RoundingMode);
-            if (settings.ZoneMinKm > 0 && billable < settings.ZoneMinKm) billable = settings.ZoneMinKm;
-            if (settings.ZoneMaxKm > 0 && billable > settings.ZoneMaxKm) billable = settings.ZoneMaxKm;
-            decimal perKm = billable * settings.PricePerKm;
+            double routeKm;
+            string routeSource;
+            if (request.DistanceKm.HasValue && request.DistanceKm.Value > 0)
+            {
+                routeKm = request.DistanceKm.Value;
+                routeSource = "manual";
+            }
+            else
+            {
+                double approachLat = request.DriverLat is > 0 && _distance.IsValidCoord(request.DriverLat.Value, request.DriverLng ?? 0)
+                    ? request.DriverLat.Value
+                    : request.PickupLat;
+                double approachLng = request.DriverLng is > 0 && _distance.IsValidCoord(request.DriverLat ?? 0, request.DriverLng.Value)
+                    ? request.DriverLng.Value
+                    : request.PickupLng;
+
+                if (!ZoneGeometryHelper.TryParseRing(dropoffZone.GeoJson, out var ring))
+                    return null;
+
+                var (entryLng, entryLat) = ZoneGeometryHelper.ClosestPointOnBoundary(ring, approachLng, approachLat);
+                var route = await _routing.GetRouteDistanceKmAsync(entryLat, entryLng, request.DropoffLat, request.DropoffLng);
+                routeKm = route.DistanceKm;
+                routeSource = route.Source;
+            }
+
+            decimal lza = dropoffZone.LzaKm;
+            decimal ecaKm = routeKm > (double)lza ? (decimal)(routeKm - (double)lza) : 0m;
+            ecaKm = Math.Round(ecaKm, 2, MidpointRounding.AwayFromZero);
+
+            decimal ecaRaw = ecaKm * dropoffZone.EcaPricePerKm;
+            bool ecaCapApplied = false;
+            decimal ecaFee = ecaRaw;
+            if (dropoffZone.MaxEcaFee > 0 && ecaRaw > dropoffZone.MaxEcaFee)
+            {
+                ecaFee = dropoffZone.MaxEcaFee;
+                ecaCapApplied = true;
+            }
+
+            decimal total = RoundIqd(zoneFee + ecaFee, iqdStep);
+            bool maxTotalCapApplied = ApplyMaxTotalCap(dropoffZone, ref total, iqdStep);
 
             return new QuoteResponse
             {
-                DistanceKm = distanceKm,
-                PricePerKm = settings.PricePerKm,
-                DistanceFee = perKm,
+                DistanceKm = _distance.RoundKm(_distance.HaversineKm(
+                    request.PickupLat, request.PickupLng, request.DropoffLat, request.DropoffLng)),
+                RouteDistanceKm = routeKm,
+                RouteSource = routeSource,
                 ZoneFee = zoneFee,
-                MinimumCharge = settings.MinChargeAmount,
-                Total = zoneFee + perKm,
-                FromZone = fromName,
-                ToZone = toName,
-                MinChargeApplied = false,
-                PricingSource = "zone"
+                EcaFee = ecaFee,
+                EcaKm = ecaKm,
+                LzaKm = lza,
+                EcaPricePerKm = dropoffZone.EcaPricePerKm,
+                Total = total,
+                FromZone = pickupZone.Name,
+                ToZone = dropoffZone.Name,
+                PricingSource = ecaKm > 0 ? "zone_eca" : "zone",
+                EcaCapApplied = ecaCapApplied,
+                MaxTotalCapApplied = maxTotalCapApplied,
+                MaxTotalDeliveryFee = dropoffZone.MaxTotalDeliveryFee
             };
         }
 
-        private static int? ResolveZone(List<Zone> zones, double lng, double lat)
+        private static bool ApplyMaxTotalCap(Zone zone, ref decimal total, int iqdStep)
+        {
+            if (zone.MaxTotalDeliveryFee is not > 0) return false;
+            decimal cap = RoundIqd(zone.MaxTotalDeliveryFee.Value, iqdStep);
+            if (total <= cap) return false;
+            total = cap;
+            return true;
+        }
+
+        private static Zone? ResolveZoneEntity(List<Zone> zones, double lng, double lat)
         {
             foreach (var z in zones)
             {
-                try
-                {
-                    var poly = JObject.Parse(z.GeoJson);
-                    var coords = poly["coordinates"] as JArray;
-                    if (coords == null || coords.Count == 0) continue;
-                    var ring = coords[0] as JArray;
-                    if (ring == null) continue;
-
-                    var pts = ring.Select(p =>
-                    {
-                        var arr = (JArray)p;
-                        return (X: (double)arr[0]!, Y: (double)arr[1]!);
-                    }).ToList();
-                    if (PointInPolygon(pts, lng, lat)) return z.ZoneId;
-                }
-                catch { /* ignore malformed geo */ }
+                if (!ZoneGeometryHelper.TryParseRing(z.GeoJson, out var ring)) continue;
+                if (ZoneGeometryHelper.PointInPolygon(ring, lng, lat)) return z;
             }
             return null;
         }
 
-        private static bool PointInPolygon(List<(double X, double Y)> polygon, double x, double y)
+        public static decimal RoundIqd(decimal amount, int step = 250)
         {
-            bool inside = false;
-            for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
-            {
-                var pi = polygon[i];
-                var pj = polygon[j];
-                bool intersect = ((pi.Y > y) != (pj.Y > y)) &&
-                                 (x < (pj.X - pi.X) * (y - pi.Y) / ((pj.Y - pi.Y) == 0 ? 1e-12 : (pj.Y - pi.Y)) + pi.X);
-                if (intersect) inside = !inside;
-            }
-            return inside;
+            if (step <= 0)
+                return Math.Round(amount, 0, MidpointRounding.AwayFromZero);
+            return Math.Round(amount / step, 0, MidpointRounding.AwayFromZero) * step;
         }
 
-        private static decimal ApplyRounding(decimal km, string mode)
+        private static decimal ApplyKmRounding(decimal km, string mode)
         {
             if (string.Equals(mode, "Floor", StringComparison.OrdinalIgnoreCase))
                 return Math.Floor(km);

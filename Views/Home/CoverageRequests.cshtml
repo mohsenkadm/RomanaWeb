@@ -1,0 +1,76 @@
+@{
+    ViewData["Title"] = "طلبات توفير الخدمة";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="content">
+    <div class="container-fluid" style="direction:rtl;">
+        <div class="rm-page-summary">
+            <div class="rm-summary-icon bg-info"><i class="material-icons">location_searching</i></div>
+            <div class="rm-summary-body">
+                <h4>طلبات توفير الخدمة</h4>
+                <p>طلبات الزبائن من خارج نطاق التغطية الحالي. راجع البيانات وحدّد الطلبات التي تمت معالجتها.</p>
+            </div>
+            <div class="rm-summary-stats">
+                <div class="rm-stat"><span class="rm-stat-value" id="covTotal">-</span><span class="rm-stat-label">الإجمالي</span></div>
+                <div class="rm-stat"><span class="rm-stat-value" id="covPending">-</span><span class="rm-stat-label">بانتظار المعالجة</span></div>
+            </div>
+        </div>
+
+        <div class="rm-filter-bar mb-3">
+            <div class="row">
+                <div class="col-lg-3 col-md-4 col-sm-12">
+                    <label class="mb-2">الحالة</label>
+                    <select id="covFilterStatus" class="form-control alignright">
+                        <option value="">الكل</option>
+                        <option value="false">بانتظار المعالجة</option>
+                        <option value="true">تمت المعالجة</option>
+                    </select>
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-12">
+                    <label class="mb-2">بحث بالاسم</label>
+                    <input type="text" id="covFilterName" class="form-control alignright" placeholder="اسم الزبون" autocomplete="off" />
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-12">
+                    <label class="mb-2">بحث بالهاتف</label>
+                    <input type="text" id="covFilterPhone" class="form-control alignright" placeholder="رقم الهاتف" autocomplete="off" />
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-6">
+                    <label class="mb-2">&nbsp;</label>
+                    <button type="button" id="covSearchBtn" class="btn btn-info btn-block">بحث <i class="material-icons">search</i></button>
+                </div>
+                <div class="col-lg-1 col-md-3 col-sm-6">
+                    <label class="mb-2">&nbsp;</label>
+                    <button type="button" id="covRefreshBtn" class="btn btn-secondary btn-block" title="تحديث"><i class="material-icons">refresh</i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header card-header-info" style="text-align:right">
+                <h4 class="card-title"><i class="material-icons">list</i> قائمة الطلبات</h4>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>الاسم</th>
+                            <th>الهاتف</th>
+                            <th>العنوان</th>
+                            <th>الموقع</th>
+                            <th>التاريخ</th>
+                            <th>الحالة</th>
+                            <th>إجراء</th>
+                        </tr>
+                    </thead>
+                    <tbody id="covTableBody">
+                        <tr><td colspan="8" class="text-center text-muted">جاري التحميل...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/CoverageRequests.js" asp-append-version="true"></script>

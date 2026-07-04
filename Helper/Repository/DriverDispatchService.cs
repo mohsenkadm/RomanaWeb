@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using RomanaWeb.Classes;
+using RomanaWeb.Helper;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Model;
 using RomanaWeb.Models.Entity;
@@ -11,28 +12,34 @@ namespace RomanaWeb.Helper.Repository
     public class DriverDispatchService : IDriverDispatchService, IRegisterScopped
     {
         private static readonly TimeSpan LocationBroadcastThrottle = TimeSpan.FromSeconds(4);
+        private static readonly double[] TierRadiiKm = { 1, 2, 3, 4 };
 
         private readonly DB_Context _context;
         private readonly INotificationDispatcher _notifier;
         private readonly IOrderHubNotifier _hubNotifier;
         private readonly ILoggerRepository _logger;
         private readonly IMemoryCache _cache;
+        private readonly IPricingService _pricing;
+        private readonly IDistanceService _distance;
 
         public DriverDispatchService(
             DB_Context context,
             INotificationDispatcher notifier,
             IOrderHubNotifier hubNotifier,
             ILoggerRepository logger,
-            IMemoryCache cache)
+            IMemoryCache cache,
+            IPricingService pricing,
+            IDistanceService distance)
         {
             _context = context;
             _notifier = notifier;
             _hubNotifier = hubNotifier;
             _logger = logger;
             _cache = cache;
+            _pricing = pricing;
+            _distance = distance;
         }
 
-        // Section 6: push the order to every nearby driver. First to accept wins.
         public async Task<ResObj> DispatchOrder(int orderId, double radiusKm = 5d)
         {
             var order = await _context.Orders.FirstOrDefaultAsync(o => o.OrderId == orderId);
@@ -46,19 +53,39 @@ namespace RomanaWeb.Helper.Repository
                 !double.TryParse(pickup.Long, out double pLng))
                 return Result.Return(false, "موقع المطعم غير محدد");
 
-            var busyDriverIds = await GetBusyDriverIdsAsync();
+            var settings = await _context.AppSettings.AsNoTracking().FirstOrDefaultAsync()
+                           ?? new AppSettings();
+            bool allowBusy = settings.AllowBusyDriverDispatch;
 
-            // Section 6: working/stopped flag - drivers with IsAvailable=false are
-            // off-shift and must not receive any dispatch notification.
+            var busyDriverIds = allowBusy
+                ? new List<int>()
+                : await GetBusyDriverIdsAsync();
+
             var drivers = await _context.SaleMan.AsNoTracking()
                 .Where(d => d.IsActive != false && d.IsDelete != true && d.IsAvailable)
                 .Where(d => !busyDriverIds.Contains(d.SaleManId))
                 .ToListAsync();
 
             if (drivers.Count == 0)
-                return Result.Return(false, "لا يوجد سائقين متاحين");
+                return Result.Return(false, "لا يوجد سائقين متاحين — يرجى التخصيص من لوحة التحكم");
 
-            var nearby = drivers
+            int? dropoffZoneId = await ResolveOrderDropoffZoneIdAsync(order);
+
+            var driverZones = await _context.SaleManZone.AsNoTracking().ToListAsync();
+            var zonesByDriver = driverZones.GroupBy(z => z.SaleManId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.ZoneId).ToHashSet());
+
+            var eligible = drivers.Where(d =>
+            {
+                if (!zonesByDriver.TryGetValue(d.SaleManId, out var zoneSet) || zoneSet.Count == 0)
+                    return false;
+                return dropoffZoneId.HasValue && zoneSet.Contains(dropoffZoneId.Value);
+            }).ToList();
+
+            if (eligible.Count == 0)
+                return Result.Return(false, "لا يوجد سائقين لهذا الزون — يرجى التخصيص من لوحة الحالات");
+
+            var ranked = eligible
                 .Select(d =>
                 {
                     if (string.IsNullOrWhiteSpace(d.Lat) || string.IsNullOrWhiteSpace(d.Long) ||
@@ -67,14 +94,23 @@ namespace RomanaWeb.Helper.Repository
                         return null;
                     return new { Driver = d, Distance = Haversine(pLat, pLng, dLat, dLng) };
                 })
-                .Where(x => x != null && x!.Distance <= radiusKm)
+                .Where(x => x != null)
                 .OrderBy(x => x!.Distance)
-                .Select(x => x!.Driver.SaleManId)
+                .Select(x => new { x!.Driver.SaleManId, x.Distance })
                 .ToList();
 
-            // Fallback: if no driver has a stored location in range, notify every on-shift driver.
+            List<int> nearby = new();
+            foreach (double tier in TierRadiiKm)
+            {
+                nearby = ranked.Where(x => x.Distance <= tier).Select(x => x.SaleManId).ToList();
+                if (nearby.Count > 0) break;
+            }
+
             if (nearby.Count == 0)
-                nearby = drivers.Select(d => d.SaleManId).ToList();
+                nearby = ranked.Where(x => x.Distance <= radiusKm).Select(x => x.SaleManId).ToList();
+
+            if (nearby.Count == 0)
+                nearby = eligible.Select(d => d.SaleManId).ToList();
 
             string title = "طلب جديد متاح";
             string body = $"طلب رقم {order.OrderNo} متاح للقبول";
@@ -106,6 +142,19 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true, $"تم ارسال الطلب الى {nearby.Count} سائق");
         }
 
+        private async Task<int?> ResolveOrderDropoffZoneIdAsync(Orders order)
+        {
+            var user = await _context.Users.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.UserId == order.UserId);
+            string? latStr = !string.IsNullOrWhiteSpace(order.Lat) ? order.Lat : user?.Lat;
+            string? lngStr = !string.IsNullOrWhiteSpace(order.Long) ? order.Long : user?.Long;
+            if (!_distance.TryParseCoord(latStr, lngStr, out double lat, out double lng))
+                return null;
+
+            var (_, zone) = await _pricing.ResolveZoneAtPointAsync(lat, lng);
+            return zone?.ZoneId;
+        }
+
         // Section 6: a driver cancels an accepted order ⇒ append reason, free the order, re-dispatch.
         public async Task<ResObj> CancelByDriver(int orderId, int saleManId, string reason)
         {
@@ -124,7 +173,6 @@ namespace RomanaWeb.Helper.Repository
 
             await ClearActiveOrderAsync(saleManId);
 
-            // Notify customer of the delay (Section 7 audience: User).
             if (order.UserId > 0)
             {
                 await _notifier.SendAsync(NotificationAudience.User, order.UserId, new NotificationPayload
@@ -134,7 +182,6 @@ namespace RomanaWeb.Helper.Repository
                 });
             }
 
-            // Re-dispatch.
             return await DispatchOrder(orderId);
         }
 
@@ -229,6 +276,15 @@ namespace RomanaWeb.Helper.Repository
             loc.ActiveOrderId = null;
             _context.Entry(loc).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> DriverServesOrderZoneAsync(int saleManId, Orders order)
+        {
+            var dropoffZoneId = await ResolveOrderDropoffZoneIdAsync(order);
+            if (!dropoffZoneId.HasValue) return false;
+
+            var driverZones = await ZoneCoverageHelper.GetDriverZoneIdsAsync(_context, saleManId);
+            return ZoneCoverageHelper.ServesZone(driverZones, dropoffZoneId);
         }
 
         public async Task<bool> DriverHasActiveOrderAsync(int saleManId, int? excludeOrderId = null)

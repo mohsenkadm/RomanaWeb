@@ -49,6 +49,9 @@ function filltableRestaurant(data) {
     }
     $.each(data, function (i, item) {
         var safeName = rmEscAttr(item.name);
+        var zoneCell = typeof ZonePicker !== 'undefined'
+            ? '<td class="zone-tags-cell">' + ZonePicker.restaurantZoneLabels(item.restaurantId) + '</td>'
+            : '<td>—</td>';
         var rows = "<tr>" +
             "<td class='rm-actions-cell'><div class='rm-actions'>" +
             "<button type='button' class='btn btn-primary btn-sm' onclick='updateRestaurant(" + item.restaurantId + ")' data-toggle='modal' data-target='#RestaurantModal'>تعديل</button> " +
@@ -57,6 +60,7 @@ function filltableRestaurant(data) {
             "<td><strong>" + (item.name || '') + "</strong></td>" +
             "<td>" + (item.categoriesName || '') + "</td>" +
             "<td class='rm-wrap-cell'>" + (item.address || '') + "</td>" +
+            zoneCell +
             rmRestStatusBadges(item) +
             rmRestOpenCloseCell(item) +
             "</tr>";
@@ -97,7 +101,13 @@ function deleteRestaurant(id) {
 function RefreshRestaurant() {
     var count = $("#indexid").text();
     var obj = { Name: $("#Namese").val(), index: count };
-    call_ajax("GET", "Restaurant/GetAll", obj, filltableRestaurant);
+    if (typeof ZonePicker !== 'undefined') {
+        ZonePicker.loadSummary(function () {
+            call_ajax("GET", "Restaurant/GetAll", obj, filltableRestaurant);
+        });
+    } else {
+        call_ajax("GET", "Restaurant/GetAll", obj, filltableRestaurant);
+    }
 }
 
 function RefreshResNotApprove() {
@@ -108,10 +118,21 @@ function SetIsApproveShop(id) {
     call_ajax("POST", "Restaurant/SetIsApproved", obj, RefreshResNotApprove);
 }
 
+function openAddRestaurant() {
+    _RestaurantId = 0;
+    resetRestaurantFormFields();
+    if (typeof ZonePicker !== 'undefined') {
+        ZonePicker.render('restaurantZonePicker', []);
+    }
+}
+
 function updateRestaurant(id) {
     var object1 = { Id: id };
     call_ajax("GET", "Restaurant/GetById", object1, setdataRestaurant);
     _RestaurantId = id;
+    if (typeof ZonePicker !== 'undefined') {
+        ZonePicker.loadRestaurant(id, 'restaurantZonePicker');
+    }
 }
 
 function setdataRestaurant(data) {
@@ -135,7 +156,7 @@ function setdataRestaurant(data) {
     $("#IsTop").prop("checked", data.isTop === true);
 }
 
-function aftersaveRestaurant() {
+function resetRestaurantFormFields() {
     $("#Name").val('');
     $("#Details").val('');
     $("#Address").val('');
@@ -156,9 +177,25 @@ function aftersaveRestaurant() {
     $("#IsActive").prop("checked", true);
     $("#IsClosed").prop("checked", false);
     $("#IsTop").prop("checked", false);
+}
+
+function aftersaveRestaurant() {
+    resetRestaurantFormFields();
+    if (typeof ZonePicker !== 'undefined') {
+        ZonePicker.render('restaurantZonePicker', []);
+    }
     _RestaurantId = 0;
     RefreshRestaurant();
 }
+
+$(document).ready(function () {
+    if (typeof ZonePicker !== 'undefined') {
+        ZonePicker.loadSummary(function () { });
+        $('#Lat, #Long').on('change blur', function () {
+            ZonePicker.suggestFromCoords($('#Lat').val(), $('#Long').val(), 'restaurantZonePicker');
+        });
+    }
+});
 
 var _resProdRestaurantId = 0;
 var _resProdEditId = 0;

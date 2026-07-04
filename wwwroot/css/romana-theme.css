@@ -2759,3 +2759,46 @@ body.rm-app .pagination .page-item.active .page-link {
 .qp-progress {
     margin-bottom: 1rem;
 }
+
+/* Zone picker — مطاعم / مندوبين (PDF §2.2 / §2.3.1) */
+.zone-picker-box {
+    border: 1px solid var(--rm-border, #e2e8f0);
+    border-radius: var(--rm-radius-sm, 8px);
+    padding: 10px 12px;
+    max-height: 200px;
+    overflow-y: auto;
+    background: var(--rm-surface-muted, #f8fafc);
+}
+.zone-picker-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 4px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    cursor: pointer;
+    margin: 0;
+    font-weight: 500;
+}
+.zone-picker-item:last-child {
+    border-bottom: none;
+}
+.zone-picker-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.zone-tag {
+    display: inline-block;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin: 2px 0 2px 4px;
+    white-space: nowrap;
+}
+.zone-tags-cell {
+    max-width: 220px;
+    line-height: 1.6;
+}

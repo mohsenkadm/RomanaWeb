@@ -71,7 +71,9 @@ public class DriverLocationServiceTests
             new FakeNotifier(),
             hub,
             new FakeLogger(),
-            cache ?? new MemoryCache(new MemoryCacheOptions()));
+            cache ?? new MemoryCache(new MemoryCacheOptions()),
+            new PricingService(ctx, new DistanceService(), new FakeRoutingService()),
+            new DistanceService());
     }
 
     private static OrdersService NewOrdersService(
@@ -80,7 +82,8 @@ public class DriverLocationServiceTests
     {
         ctx = TestDbContext.New();
         var hub = new FakeHubNotifier();
-        dispatch ??= new DriverDispatchService(ctx, new FakeNotifier(), hub, new FakeLogger(), new MemoryCache(new MemoryCacheOptions()));
+        dispatch ??= new DriverDispatchService(ctx, new FakeNotifier(), hub, new FakeLogger(), new MemoryCache(new MemoryCacheOptions()),
+            new PricingService(ctx, new DistanceService(), new FakeRoutingService()), new DistanceService());
         var config = new ConfigurationBuilder().AddInMemoryCollection().Build();
         return new OrdersService(
             ctx,
@@ -88,22 +91,44 @@ public class DriverLocationServiceTests
             new FakeDapper<OrderDetail>(),
             dispatch,
             new DistanceService(),
-            new PricingService(ctx, new DistanceService()),
+            new PricingService(ctx, new DistanceService(), new FakeRoutingService()),
             new ConfigurationBuilder().Build(),
             new FakeLogger());
     }
 
-    private static SaleMan SeedDriver(RomanaWeb.Model.DB_Context ctx, int id = 8)
+    private static SaleMan SeedDriver(RomanaWeb.Model.DB_Context ctx, int id = 8, bool assignDefaultZone = true)
     {
         var d = new SaleMan { SaleManId = id, Name = "Driver", Phone = "1", IsAvailable = true, IsActive = true };
         ctx.SaleMan.Add(d);
+        if (assignDefaultZone)
+        {
+            var zoneId = ZoneTestSeeder.SeedZone(ctx);
+            ZoneTestSeeder.AssignDriverToZone(ctx, id, zoneId);
+        }
         ctx.SaveChanges();
         ctx.ChangeTracker.Clear();
         return d;
     }
 
+    private static void SeedUserInZone(RomanaWeb.Model.DB_Context ctx, int userId)
+    {
+        ctx.Users.Add(new Users
+        {
+            UserId = userId,
+            Name = $"User{userId}",
+            Phone = "07",
+            Lat = ZoneTestSeeder.InZoneLat.ToString("F4"),
+            Long = ZoneTestSeeder.InZoneLng.ToString("F4")
+        });
+        ctx.SaveChanges();
+        ctx.ChangeTracker.Clear();
+    }
+
     private static Orders SeedOrder(RomanaWeb.Model.DB_Context ctx, int orderId, int userId, int? saleManId = null, bool approved = false)
     {
+        if (!ctx.Users.Any(u => u.UserId == userId))
+            SeedUserInZone(ctx, userId);
+
         var o = new Orders
         {
             OrderId = orderId,
@@ -209,7 +234,7 @@ public class DriverLocationServiceTests
             new FakeDapper<OrderDetail>(),
             dispatch,
             new DistanceService(),
-            new PricingService(ctx, new DistanceService()),
+            new PricingService(ctx, new DistanceService(), new FakeRoutingService()),
             new ConfigurationBuilder().Build(),
             new FakeLogger());
 

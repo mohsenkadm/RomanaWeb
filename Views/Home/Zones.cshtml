@@ -3,166 +3,434 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="content">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+<style>
+    .zones-tabs .nav-link { font-weight: 600; }
+    .zone-map-modal .modal-dialog { max-width: 920px; }
+    #zonePreviewMap { height: 420px; width: 100%; border-radius: 8px; }
+    .sim-result-ok { border-right: 4px solid #4caf50; background: #f1f8e9; border-radius: 8px; }
+    .sim-result-bad { border-right: 4px solid #f44336; background: #ffebee; border-radius: 8px; }
+    .zones-table td { vertical-align: middle !important; }
+    .zones-map-card { border: none; box-shadow: 0 2px 12px rgba(0,0,0,.08); overflow: hidden; }
+    .zones-map-card .card-header { background: linear-gradient(135deg, #1a237e 0%, #283593 100%); color: #fff; }
+    #simulatorMap, #matrixOverviewMap { height: 460px; width: 100%; }
+    .map-legend { padding: 10px 14px; background: #fafafa; border-top: 1px solid #eee; display: flex; flex-wrap: wrap; gap: 8px; max-height: 90px; overflow-y: auto; }
+    .zone-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; background: #fff; border: 1px solid #e0e0e0; border-radius: 20px; }
+    .zone-legend-item i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+    .zone-legend-inactive { opacity: .5; text-decoration: line-through; }
+    .sim-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .sim-map-mode.active { box-shadow: inset 0 0 0 2px #fff, 0 0 0 2px #ff9800; }
+    .sim-panel { background: #f8f9fa; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+    .sim-panel-title { font-weight: 700; font-size: 13px; color: #555; margin-bottom: 8px; }
+    .sim-zone-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; background: #e3f2fd; color: #1565c0; margin-top: 4px; }
+    .zone-map-pin { background: transparent; border: none; }
+    .zone-pin-inner { width: 34px; height: 34px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; font-size: 16px; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.35); }
+    .zone-pin-inner { transform: rotate(-45deg); }
+    .zone-pin-inner { line-height: 1; }
+    .zone-route-label { background: transparent; border: none; }
+    .route-km-badge { background: #1565C0; color: #fff; padding: 4px 8px; border-radius: 6px; text-align: center; font-size: 11px; font-weight: 700; box-shadow: 0 2px 6px rgba(0,0,0,.25); white-space: nowrap; }
+    .btn-action-group .btn { margin-left: 2px; }
+    .pricing-breakdown dt { font-weight: 600; color: #666; }
+    .pricing-breakdown dd { margin-bottom: 8px; }
+    .zones-help-panel { background: #e8eaf6; border-right: 4px solid #3f51b5; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; font-size: 13px; line-height: 1.7; }
+    .zones-help-panel h6 { font-weight: 700; color: #283593; margin-bottom: 8px; }
+    .zones-help-panel ul { margin: 0; padding-right: 18px; }
+    .zones-field-hint { display: block; font-size: 11px; color: #888; margin-top: 3px; }
+    .zones-formula-box { background: #fff3e0; border: 1px solid #ffe0b2; border-radius: 6px; padding: 10px 12px; font-size: 12px; margin-bottom: 12px; direction: ltr; text-align: left; }
+
+    /* Modern toggle switches — واضحة ومستقلة عن Material Dashboard */
+    .zones-page .rm-switch {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        user-select: none;
+        margin: 8px 0;
+    }
+    .zones-page .rm-switch input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+        pointer-events: none;
+    }
+    .zones-page .rm-switch-track {
+        width: 52px;
+        height: 28px;
+        background: #cbd5e1;
+        border-radius: 28px;
+        position: relative;
+        flex-shrink: 0;
+        transition: background 0.2s ease, box-shadow 0.2s ease;
+        border: 2px solid #94a3b8;
+    }
+    .zones-page .rm-switch-track::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        top: 2px;
+        right: 2px;
+        background: #fff;
+        border-radius: 50%;
+        transition: transform 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,.25);
+    }
+    .zones-page .rm-switch input:checked + .rm-switch-track {
+        background: #22c55e;
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(34,197,94,.25);
+    }
+    .zones-page .rm-switch input:checked + .rm-switch-track::after {
+        transform: translateX(-24px);
+    }
+    .zones-page .rm-switch input:focus + .rm-switch-track {
+        box-shadow: 0 0 0 3px rgba(59,130,246,.35);
+    }
+    .zones-page .rm-switch-label {
+        font-weight: 600;
+        font-size: 14px;
+        color: #334155;
+    }
+    .zones-page .rm-switch-hint {
+        display: block;
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 2px;
+        font-weight: 400;
+    }
+</style>
+
+<div class="content zones-page">
     <div class="container-fluid" style="direction:rtl;">
 
         <div class="rm-page-summary">
             <div class="rm-summary-icon bg-info"><i class="material-icons">map</i></div>
             <div class="rm-summary-body">
-                <h4>إدارة المناطق ومصفوفة الأسعار (Zones)</h4>
-                <p>
-                    اضافة المناطق ومصفوفة الاسعار يدويا او عبر ملف Excel.
-                    تستخدمها خوارزمية التسعير لاحتساب اجور التوصيل بين المناطق.
-                </p>
+                <h4>إدارة المناطق — LZA / ECA</h4>
+                <p>ثلاث خطوات: <strong>① رسم المناطق</strong> → <strong>② أسعار بين المناطق</strong> → <strong>③ فحص على الخريطة</strong></p>
             </div>
             <div class="rm-summary-stats">
-                <div class="rm-stat"><span class="rm-stat-value" id="zonesCount">-</span><span class="rm-stat-label">عدد المناطق</span></div>
-                <div class="rm-stat"><span class="rm-stat-value" id="matrixCount">-</span><span class="rm-stat-label">عدد الأسعار</span></div>
+                <div class="rm-stat"><span class="rm-stat-value" id="zonesCount">-</span><span class="rm-stat-label">المناطق</span></div>
+                <div class="rm-stat"><span class="rm-stat-value" id="matrixCount">-</span><span class="rm-stat-label">أسعار المصفوفة</span></div>
             </div>
         </div>
 
-        <div class="row">
+        <ul class="nav nav-pills zones-tabs mb-3" role="tablist">
+            <li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#tabZones" role="tab" title="رسم حدود المناطق وإعدادات LZA/ECA">① المناطق</a></li>
+            <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tabMatrix" role="tab" title="سعر ثابت من منطقة مطعم إلى منطقة زبون">② مصفوفة الأسعار</a></li>
+            <li class="nav-item"><a class="nav-link" data-toggle="tab" href="#tabSimulator" role="tab" title="اختبار السعر على الخريطة">③ فحص التسعير</a></li>
+        </ul>
 
-            <!-- Upload Zones -->
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header card-header-info" style="text-align:right">
-                        <h4 class="card-title"><i class="material-icons">upload_file</i> رفع المناطق (Polygons)</h4>
+        <div class="zones-help-panel">
+            <h6><i class="material-icons" style="font-size:16px;vertical-align:middle">help_outline</i> كيف يعمل نظام التسعير؟</h6>
+            <ul>
+                <li><strong>التبويب ① المناطق:</strong> ترسم حدود كل منطقة (Polygon) وتضبط قواعد المسافة — LZA (مسافة مجانية داخل الزون) و ECA (سعر كل كم إضافي) و<strong>سقف التوصيل</strong>.</li>
+                <li><strong>التبويب ② المصفوفة:</strong> تحدد <em>سعر أساس ثابت</em> للتوصيل من منطقة المطعم → إلى منطقة الزبون (مثال: المعقل → الامام الصادق = 3,000 د.ع).</li>
+                <li><strong>التبويب ③ الفحص:</strong> تختبر على الخريطة: موقع مطعم + موقع زبون → النظام يحسب المسار (OSRM) ويعرض السعر النهائي.</li>
+            </ul>
+            <div class="zones-formula-box mt-2">
+                <strong>معادلة السعر (PDF):</strong><br>
+                FINAL = سعر المصفوفة + min( (مسافة الطريق − LZA) × سعر/كم , <strong>أقصى ECA</strong> )<br>
+                ثم إذا وُجد <strong>أقصى سعر إجمالي</strong> → FINAL = min(FINAL, أقصى إجمالي)
+            </div>
+        </div>
+
+        <div class="tab-content">
+
+            <!-- TAB: Zones -->
+            <div class="tab-pane active" id="tabZones" role="tabpanel">
+                <div class="zones-help-panel">
+                    <h6>متى تستخدم هذا التبويب؟</h6>
+                    <ul>
+                        <li>عند <strong>إضافة منطقة جغرافية جديدة</strong> (حي، قضاء، مجمع...) برسم Polygon على الخريطة.</li>
+                        <li>لضبط <strong>LZA</strong> (كم مجاناً داخل الزون قبل احتساب ECA) و <strong>ECA</strong> (سعر الكيلومتر الإضافي).</li>
+                        <li>لتحديد <strong>سقف التوصيل</strong> حتى لا يتجاوز السعر حداً معقولاً مهما طالت المسافة.</li>
+                    </ul>
+                </div>
+                <div class="row">
+                    <div class="col-lg-5">
+                        <div class="card">
+                            <div class="card-header card-header-info" style="text-align:right">
+                                <h4 class="card-title" id="zoneFormTitle">إضافة / تعديل منطقة</h4>
+                            </div>
+                            <div class="card-body">
+                                <input type="hidden" id="zoneEditId" value="" />
+                                <div class="form-group"><label>اسم المنطقة</label>
+                                    <input type="text" class="form-control" id="zoneName" placeholder="مثال: المعقل" /></div>
+                                <div class="form-group"><label>GeoJSON Polygon <small class="text-muted">[lng, lat]</small></label>
+                                    <textarea class="form-control" id="zoneGeo" rows="4" style="direction:ltr;font-size:11px;"></textarea>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-info" id="btnPreviewMap"><i class="material-icons">map</i> عرض على الخريطة</button>
+                                        <button type="button" class="btn btn-sm btn-secondary" id="btnLoadSampleGeo">مثال GeoJSON</button>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 form-group">
+                                        <label>سعر التوصيل الأساسي (د.ع)</label>
+                                        <span class="zones-field-hint">يُستخدم داخل نفس المنطقة أو كاحتياطي إن لم يوجد سعر في المصفوفة</span>
+                                        <input type="number" class="form-control" id="zoneBasePrice" value="3000" /></div>
+                                    <div class="col-md-6 form-group">
+                                        <label>مسافة LZA (كم)</label>
+                                        <span class="zones-field-hint">Limited Zone Area — أول X كم داخل الزون بدون رسوم ECA إضافية</span>
+                                        <input type="number" step="0.1" class="form-control" id="zoneLza" value="3" /></div>
+                                    <div class="col-md-6 form-group">
+                                        <label>سعر ECA لكل كم (د.ع)</label>
+                                        <span class="zones-field-hint">Extra Charge Area — سعر كل كيلومتر بعد تجاوز LZA</span>
+                                        <input type="number" class="form-control" id="zoneEcaPrice" value="250" /></div>
+                                    <div class="col-md-6 form-group">
+                                        <label>أقصى رسوم ECA (د.ع)</label>
+                                        <span class="zones-field-hint">سقف الجزء الإضافي فقط (ليس السعر الكامل). مثال: 2,500 د.ع كحد أقصى للـ ECA</span>
+                                        <input type="number" class="form-control" id="zoneMaxEca" value="2500" /></div>
+                                    <div class="col-md-6 form-group">
+                                        <label>أقصى سعر إجمالي للتوصيل (د.ع)</label>
+                                        <span class="zones-field-hint"><strong>مهم:</strong> السقف النهائي — لن يتجاوز التوصيل هذا المبلغ أبداً (اتركه فارغاً = بدون سقف إجمالي)</span>
+                                        <input type="number" class="form-control" id="zoneMaxTotal" placeholder="مثال: 5000" /></div>
+                                    <div class="col-md-6 form-group">
+                                        <label>سعر قريب من المطعم (د.ع)</label>
+                                        <span class="zones-field-hint">سعر خاص إذا كان الزبون على بعد أقل من عتبة القرب</span>
+                                        <input type="number" class="form-control" id="zoneNearPrice" value="1500" /></div>
+                                    <div class="col-md-6 form-group">
+                                        <label>عتبة القرب (كم)</label>
+                                        <span class="zones-field-hint">إذا المسافة بين المطعم والزبون &lt; هذه القيمة → سعر القرب</span>
+                                        <input type="number" step="0.1" class="form-control" id="zoneNearKm" value="1" /></div>
+                                </div>
+                                <label class="rm-switch">
+                                    <input type="checkbox" id="zoneActive" checked>
+                                    <span class="rm-switch-track"></span>
+                                    <span>
+                                        <span class="rm-switch-label">المنطقة مفعّلة</span>
+                                        <span class="rm-switch-hint">عند الإيقاف لن تُستخدم في التسعير</span>
+                                    </span>
+                                </label>
+                                <button type="button" class="btn btn-primary" id="btnSaveZone">حفظ المنطقة</button>
+                                <button type="button" class="btn btn-default" id="btnResetZoneForm">مسح</button>
+                                <div id="zoneFormResult" class="mt-2"></div>
+                                <hr />
+                                <h6>رفع Excel (A–G)</h6>
+                                <input type="file" class="form-control mb-2" id="zonesFile" accept=".xlsx,.xls" />
+                                <button type="button" class="btn btn-info btn-sm" id="uploadZonesBtn">رفع</button>
+                                <a href="/zones/template/zones" class="btn btn-secondary btn-sm" download>نموذج Excel</a>
+                                <div id="zonesUploadResult" class="mt-2"></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <p class="text-muted">
-                            صيغة الملف (الورقة الأولى):
-                            <br /><strong>العمود A:</strong> اسم المنطقة
-                            <br /><strong>العمود B:</strong> GeoJSON Polygon (سطر واحد)
-                        </p>
-                        <pre style="background:#f5f5f5;padding:8px;font-size:11px;direction:ltr;text-align:left">
-{"type":"Polygon","coordinates":[[[44.36,33.31],[44.40,33.31],[44.40,33.34],[44.36,33.34],[44.36,33.31]]]}
-                        </pre>
-                        <div class="row col-md-12 alignright" style="margin-bottom:12px">
-                            <label class="text-primary">اختر الملف</label>
-                            <input type="file" class="form-control alignright" id="zonesFile" name="zonesFile" accept=".xlsx,.xls" autocomplete="off" />
+                    <div class="col-lg-7">
+                        <div class="card">
+                            <div class="card-header card-header-primary"><h4 class="card-title">المناطق المسجلة</h4></div>
+                            <div class="card-body table-responsive">
+                                <table class="table table-hover zones-table">
+                                    <thead><tr>
+                                        <th>#</th><th>الاسم</th><th>LZA</th><th>ECA/كم</th><th>السعر</th><th>سقف إجمالي</th><th>مفعّلة</th><th>إجراءات</th>
+                                    </tr></thead>
+                                    <tbody id="zonesTableBody"></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <button id="uploadZonesBtn" type="button" class="btn btn-info">
-                            رفع المناطق <i class="material-icons">cloud_upload</i>
-                        </button>
-                        <a href="/zones/template/zones" class="btn btn-secondary" download>
-                            تنزيل ملف نموذجي <i class="material-icons">download</i>
-                        </a>
-                        <div id="zonesResult" class="mt-3"></div>
-                        <hr />
-                        <h5 class="text-primary">اضافة منطقة يدويا</h5>
-                        <div class="form-group alignright">
-                            <label class="text-primary">اسم المنطقة</label>
-                            <input type="text" class="form-control alignright" id="zoneNameManual" placeholder="مثال: الكرادة" autocomplete="off" />
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header card-header-rose" style="text-align:right">
+                                <h4 class="card-title">إعدادات النظام العامة</h4>
+                                <p class="card-category mb-0">تُستخدم عندما يكون الزبون <strong>خارج أي زون</strong> + إعدادات المندوبين والتقريب</p>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 form-group">
+                                        <label>تقريب السعر (د.ع)</label>
+                                        <span class="zones-field-hint">السعر النهائي يُقرّب لأقرب مضاعف — عادة 250</span>
+                                        <input type="number" class="form-control" id="sysIqdStep" value="250" />
+                                    </div>
+                                    <div class="col-md-4 form-group">
+                                        <label>سعر الكم الاحتياطي (د.ع/كم)</label>
+                                        <span class="zones-field-hint">فقط خارج الزونات — عندما لا يُطبَّق تسعير LZA/ECA</span>
+                                        <input type="number" class="form-control" id="sysPricePerKm" value="500" />
+                                    </div>
+                                    <div class="col-md-4 form-group">
+                                        <label>تقريب المسافة</label>
+                                        <span class="zones-field-hint">Ceil = للأعلى | Round | Floor</span>
+                                        <select class="form-control" id="sysRoundingMode">
+                                            <option value="Ceil">Ceil (للأعلى)</option>
+                                            <option value="Round">Round</option>
+                                            <option value="Floor">Floor</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 form-group">
+                                        <label>حد أدنى للمسافة (كم)</label>
+                                        <span class="zones-field-hint">إذا المسافة أقل → رسوم دنيا (خارج الزونات)</span>
+                                        <input type="number" step="0.1" class="form-control" id="sysMinKm" value="1.5" />
+                                    </div>
+                                    <div class="col-md-4 form-group">
+                                        <label>الرسوم الدنيا (د.ع)</label>
+                                        <span class="zones-field-hint">يُطبَّق عند المسافات القصيرة جداً خارج الزونات</span>
+                                        <input type="number" class="form-control" id="sysMinAmount" value="500" />
+                                    </div>
+                                    <div class="col-md-4 form-group">
+                                        <label class="rm-switch">
+                                            <input type="checkbox" id="sysAllowBusyDispatch">
+                                            <span class="rm-switch-track"></span>
+                                            <span>
+                                                <span class="rm-switch-label">إرسال لمندوبين مشغولين</span>
+                                                <span class="rm-switch-hint">المندوب الذي لديه طلب قد يستلم طلباً جديداً</span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-rose" id="btnSaveSystemSettings">حفظ إعدادات النظام</button>
+                                <div id="systemSettingsResult" class="mt-2"></div>
+                            </div>
                         </div>
-                        <div class="form-group alignright">
-                            <label class="text-primary">GeoJSON Polygon</label>
-                            <textarea class="form-control alignright" id="zoneGeoManual" rows="4" style="direction:ltr;text-align:left;font-size:11px;"
-                                      placeholder='{"type":"Polygon","coordinates":[[[44.36,33.31],[44.40,33.31],[44.40,33.34],[44.36,33.34],[44.36,33.31]]]}'></textarea>
-                        </div>
-                        <div class="form-check alignright mb-3">
-                            <label class="form-check-label">
-                                <input class="form-check-input" type="checkbox" id="zoneActiveManual" checked>
-                                <span class="form-check-sign"><span class="check"></span></span>
-                                مفعّلة
-                            </label>
-                        </div>
-                        <button id="saveZoneManualBtn" type="button" class="btn btn-primary">
-                            حفظ المنطقة <i class="material-icons">save</i>
-                        </button>
-                        <div id="zoneManualResult" class="mt-2"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Upload Price Matrix -->
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header card-header-success" style="text-align:right">
-                        <h4 class="card-title"><i class="material-icons">grid_on</i> رفع مصفوفة الأسعار</h4>
+            <!-- TAB: Matrix -->
+            <div class="tab-pane" id="tabMatrix" role="tabpanel">
+                <div class="zones-help-panel">
+                    <h6>متى تستخدم مصفوفة الأسعار؟</h6>
+                    <ul>
+                        <li>بعد رسم المناطق في التبويب ①، هنا تحدد <strong>سعر ثابت</strong> للتوصيل من منطقة → إلى منطقة.</li>
+                        <li><strong>من منطقة</strong> = حيث يقع <strong>المطعم</strong> | <strong>إلى منطقة</strong> = حيث يقع <strong>الزبون</strong>.</li>
+                        <li>مثال: مطعم في «قضاء المدينة» → زبون في «الامام الصادق» = 3,000 د.ع (قبل إضافة ECA للمسافة الطويلة).</li>
+                        <li>الخريطة في الأسفل تعرض جميع المناطق — للتأكد من أسماء المناطق قبل إدخال الأسعار.</li>
+                    </ul>
+                </div>
+                <div class="row">
+                    <div class="col-lg-5">
+                        <div class="card">
+                            <div class="card-header card-header-success"><h4 class="card-title" id="matrixFormTitle">إضافة سعر — From → To</h4></div>
+                            <div class="card-body">
+                                <input type="hidden" id="matrixEditId" value="" />
+                                <div class="form-group"><label>من منطقة (مطعم)</label><select class="form-control" id="matrixFromZone"></select></div>
+                                <div class="form-group"><label>إلى منطقة (زبون)</label><select class="form-control" id="matrixToZone"></select></div>
+                                <div class="form-group"><label>السعر (د.ع)</label><input type="number" class="form-control" id="matrixPriceManual" /></div>
+                                <button type="button" class="btn btn-primary" id="saveMatrixManualBtn">حفظ السعر</button>
+                                <button type="button" class="btn btn-default" id="btnResetMatrixForm">مسح</button>
+                                <div id="matrixManualResult" class="mt-2"></div>
+                                <hr />
+                                <input type="file" class="form-control mb-2" id="matrixFile" accept=".xlsx,.xls" />
+                                <button type="button" class="btn btn-success btn-sm" id="uploadMatrixBtn">رفع المصفوفة</button>
+                                <a href="/zones/template/matrix" class="btn btn-secondary btn-sm" download>نموذج Excel</a>
+                                <div id="matrixUploadResult" class="mt-2"></div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <p class="text-muted">
-                            ارفع المناطق أولاً، ثم ارفع المصفوفة:
-                            <br /><strong>العمود A:</strong> اسم منطقة المصدر (From)
-                            <br /><strong>العمود B:</strong> اسم منطقة الوجهة (To)
-                            <br /><strong>العمود C:</strong> السعر (IQD)
-                        </p>
-                        <div class="row col-md-12 alignright" style="margin-bottom:12px">
-                            <label class="text-primary">اختر الملف</label>
-                            <input type="file" class="form-control alignright" id="matrixFile" name="matrixFile" accept=".xlsx,.xls" autocomplete="off" />
+                    <div class="col-lg-7">
+                        <div class="card">
+                            <div class="card-body table-responsive">
+                                <table class="table table-hover">
+                                    <thead><tr><th>#</th><th>من</th><th>إلى</th><th>السعر</th><th>إجراءات</th></tr></thead>
+                                    <tbody id="matrixTableBody"></tbody>
+                                </table>
+                            </div>
                         </div>
-                        <button id="uploadMatrixBtn" type="button" class="btn btn-success">
-                            رفع المصفوفة <i class="material-icons">cloud_upload</i>
-                        </button>
-                        <a href="/zones/template/matrix" class="btn btn-secondary" download>
-                            تنزيل ملف نموذجي <i class="material-icons">download</i>
-                        </a>
-                        <div id="matrixResult" class="mt-3"></div>
-                        <hr />
-                        <h5 class="text-success">اضافة سعر يدويا</h5>
-                        <div class="form-group alignright">
-                            <label class="text-primary">من منطقة</label>
-                            <select class="form-control text-right" id="matrixFromZone"></select>
+                    </div>
+                </div>
+                <div class="card zones-map-card mt-3">
+                    <div class="card-header"><h4 class="card-title mb-0"><i class="material-icons" style="vertical-align:middle">layers</i> خريطة جميع المناطق</h4></div>
+                    <div class="card-body p-0">
+                        <div id="matrixOverviewMap"></div>
+                        <div class="map-legend" id="matrixLegend"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: Simulator -->
+            <div class="tab-pane" id="tabSimulator" role="tabpanel">
+                <div class="zones-help-panel">
+                    <h6>متى تستخدم فحص التسعير؟</h6>
+                    <ul>
+                        <li>للتأكد أن <strong>سقف التوصيل</strong> يعمل قبل تطبيق Flutter.</li>
+                        <li>حدّد 🍽 موقع المطعم و 👤 موقع الزبون على الخريطة → النظام يحسب مسار OSRM + LZA/ECA + السقف.</li>
+                        <li>إذا ظهر «خارج أي زون» → النقطة خارج Polygon — ارجع للتبويب ① ووسّع حدود المنطقة.</li>
+                    </ul>
+                </div>
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card zones-map-card">
+                            <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+                                <h4 class="card-title mb-0"><i class="material-icons" style="vertical-align:middle">explore</i> خريطة الفحص التفاعلية</h4>
+                                <small>انقر لتحديد المطعم 🍽 أو الزبون 👤 — كل منطقة بلون مختلف</small>
+                            </div>
+                            <div class="card-body p-0">
+                                <div id="simulatorMap"></div>
+                                <div class="map-legend" id="simLegend"></div>
+                            </div>
                         </div>
-                        <div class="form-group alignright">
-                            <label class="text-primary">الى منطقة</label>
-                            <select class="form-control text-right" id="matrixToZone"></select>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="card">
+                            <div class="card-header card-header-warning"><h4 class="card-title">محاكي التسعير</h4></div>
+                            <div class="card-body">
+                                <p class="text-muted small">التسعير = موقع المطعم + موقع الزبون. المسار = OSRM (طريق فعلي).</p>
+
+                                <div class="sim-toolbar">
+                                    <button type="button" class="btn btn-sm btn-warning sim-map-mode active" data-mode="pickup">🍽 تحديد مطعم</button>
+                                    <button type="button" class="btn btn-sm btn-success sim-map-mode" data-mode="dropoff">👤 تحديد زبون</button>
+                                </div>
+
+                                <div class="sim-panel">
+                                    <div class="sim-panel-title">موقع المطعم (Pickup)</div>
+                                    <div class="row">
+                                        <div class="col-6"><input type="text" class="form-control form-control-sm sim-field" id="simPickupLat" value="30.50" placeholder="Lat" style="direction:ltr" /></div>
+                                        <div class="col-6"><input type="text" class="form-control form-control-sm sim-field" id="simPickupLng" value="47.78" placeholder="Lng" style="direction:ltr" /></div>
+                                    </div>
+                                    <div id="simPickupZone" class="sim-zone-badge" style="display:none"></div>
+                                </div>
+
+                                <div class="sim-panel">
+                                    <div class="sim-panel-title">موقع الزبون (Dropoff)</div>
+                                    <div class="row">
+                                        <div class="col-6"><input type="text" class="form-control form-control-sm sim-field" id="simDropLat" value="30.50" placeholder="Lat" style="direction:ltr" /></div>
+                                        <div class="col-6"><input type="text" class="form-control form-control-sm sim-field" id="simDropLng" value="47.86" placeholder="Lng" style="direction:ltr" /></div>
+                                    </div>
+                                    <div id="simDropZone" class="sim-zone-badge" style="display:none"></div>
+                                </div>
+
+                                <div class="mb-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary sim-preset" data-preset="pdf4">PDF: 4 كم</button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary sim-preset" data-preset="pdf52">PDF: 5.2 كم</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary sim-preset" data-preset="near">قريب &lt;1 كم</button>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-6 form-group mb-0"><label class="small">مسافة يدوية (اختياري)</label>
+                                        <input type="text" class="form-control form-control-sm" id="simDistanceKm" placeholder="4.0" style="direction:ltr" /></div>
+                                    <div class="col-6 form-group mb-0"><label class="small">المتوقع (د.ع)</label>
+                                        <input type="text" class="form-control form-control-sm" id="simExpected" placeholder="3250" style="direction:ltr" /></div>
+                                </div>
+                                <button type="button" class="btn btn-warning btn-block" id="btnRunSimulator">
+                                    <i class="material-icons" style="font-size:16px;vertical-align:middle">calculate</i> احسب السعر واعرض المسار
+                                </button>
+                                <div id="simRouteInfo" class="mt-2 small text-muted" style="display:none"></div>
+                                <div id="simResult" class="mt-3" style="display:none;"></div>
+                            </div>
                         </div>
-                        <div class="form-group alignright">
-                            <label class="text-primary">السعر (د.ع)</label>
-                            <input type="number" min="0" step="1" class="form-control alignright" id="matrixPriceManual" placeholder="4000" autocomplete="off" />
-                        </div>
-                        <button id="saveMatrixManualBtn" type="button" class="btn btn-primary">
-                            حفظ السعر <i class="material-icons">save</i>
-                        </button>
-                        <div id="matrixManualResult" class="mt-2"></div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Existing Zones table -->
-        <div class="card">
-            <div class="card-header card-header-primary" style="text-align:right">
-                <h4 class="card-title"><i class="material-icons">list</i> المناطق المسجلة</h4>
-            </div>
-            <div class="card-body table-responsive">
-                <table class="table table-hover">
-                    <thead class="text-primary">
-                        <tr>
-                            <th>#</th>
-                            <th>الاسم</th>
-                            <th>مفعّلة</th>
-                            <th style="text-align:left">GeoJSON</th>
-                        </tr>
-                    </thead>
-                    <tbody id="zonesTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Existing Price Matrix table -->
-        <div class="card">
-            <div class="card-header card-header-rose" style="text-align:right">
-                <h4 class="card-title"><i class="material-icons">price_change</i> مصفوفة الأسعار</h4>
-            </div>
-            <div class="card-body table-responsive">
-                <table class="table table-hover">
-                    <thead class="text-rose">
-                        <tr>
-                            <th>#</th>
-                            <th>من منطقة</th>
-                            <th>الى منطقة</th>
-                            <th>السعر</th>
-                        </tr>
-                    </thead>
-                    <tbody id="matrixTableBody"></tbody>
-                </table>
-            </div>
-        </div>
-
     </div>
 </div>
 
+<!-- Map Modal -->
+<div class="modal fade zone-map-modal" id="zoneMapModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content" style="direction:rtl;">
+            <div class="modal-header">
+                <h5 class="modal-title">معاينة المنطقة: <span id="mapModalZoneName">-</span></h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div id="zonePreviewMap"></div>
+                <div class="mt-2 text-muted" id="mapModalMeta"></div>
+                <div class="mt-1" id="mapClickResult"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="~/js/ZonesMap.js" asp-append-version="true"></script>
 <script src="~/js/Zones.js" asp-append-version="true"></script>

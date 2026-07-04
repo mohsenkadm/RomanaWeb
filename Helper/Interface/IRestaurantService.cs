@@ -10,7 +10,7 @@ namespace RomanaWeb.Helper.Interface
         [Obsolete("Section 1.2: replaced by GetByUserLocation. Gated by feature flag Stores:AllowFetchByCity.")]
         Task<ResObj> GetAllForApp(string? Name, int CategoriesId, double Long, double Lat,int? CityId);
         Task<ResObj> GetAll(string? Name);
-        Task<ResObj> Post(Restaurant Restaurant);
+        Task<ResObj> Post(Restaurant Restaurant, bool autoApprove = false);
         Task<ResObj> Update(Restaurant Restaurant);
         Task<ResObj> UpdateAdmin(Restaurant Restaurant);
         Task<ResObj> Delete(int Id);

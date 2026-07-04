@@ -1,6 +1,7 @@
 ﻿using RomanaWeb.Models.Entity;
 using Microsoft.EntityFrameworkCore;
 using RomanaWeb.Classes;
+using RomanaWeb.Helper;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Model;
 using RomanaWeb.Model.General;
@@ -17,15 +18,18 @@ namespace RomanaWeb.Helper.Repository
         public readonly IDapperRepository<Restaurant> _repository;
         private readonly DB_Context _context;
         private readonly IDistanceService _distance;
+        private readonly IPricingService _pricing;
 
         public RestaurantService(
             DB_Context context,
             IDapperRepository<Restaurant> repository,
-            IDistanceService distance)
+            IDistanceService distance,
+            IPricingService pricing)
         {
             _context = context;
             _repository = repository;
             _distance = distance;
+            _pricing = pricing;
         }
         public async Task<ResObj> Login(string UserName, string password)
         {
@@ -79,25 +83,31 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true, Restaurant);
         }                       
 
-        public async Task<ResObj> Post(Restaurant Restaurant)
+        public async Task<ResObj> Post(Restaurant Restaurant, bool autoApprove = false)
         {                                                                              
             var checkres = await _context.Restaurant.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.Phone!.Contains(Restaurant.Phone!) && i.IsDelete==false);
             if (checkres != null) return Result.Return(false, "رقم الهاتف موجود سابقا");
 
             if (!_distance.TryParseCoord(Restaurant.Lat, Restaurant.Long, out _, out _))
                 return Result.Return(false, "يجب تحديد موقع المطعم على الخريطة");
-          
-          //  Restaurant.IsApproved = false;
-            Restaurant.IsClosed= false;
-            Restaurant.IsDelete= false;
-            Restaurant.IsTop= false;
-            Restaurant.StarCount= 0;
+
+            Restaurant.IsApproved = autoApprove;
+            Restaurant.IsActive = true;
+            Restaurant.IsClosed = false;
+            Restaurant.IsDelete = false;
+            Restaurant.IsTop = false;
+            Restaurant.StarCount = 0;
             Restaurant.CostDelivery = 3000;
-            Restaurant.Code= "";
-            Restaurant.Password= Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password!);
+            Restaurant.Code = "";
+            Restaurant.Password = Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password!);
             await _context.Restaurant.AddAsync(Restaurant);
             await _context.SaveChangesAsync();
-            return Result.Return(true, "تم الحفظ بنجاح سوف يتم الموافقة على حسابك باقرب وقت", Restaurant);
+
+            string msg = autoApprove
+                ? "تم إضافة المطعم بنجاح — مفعّل وموافق عليه"
+                : "تم التسجيل بنجاح — بانتظار موافقة الإدارة";
+
+            return Result.Return(true, msg, Restaurant);
         }
 
         public async Task<ResObj> Update(Restaurant Restaurant)
@@ -168,6 +178,7 @@ namespace RomanaWeb.Helper.Repository
             Restaurant1.Whatsapp = Restaurant.Whatsapp;
             Restaurant1.UserName = Restaurant.UserName;
             Restaurant1.IsActive = Restaurant.IsActive;
+            Restaurant1.IsApproved = true;
             Restaurant1.IsDelete = false;
             if (Restaurant.IsTop != null) Restaurant1.IsTop = Restaurant.IsTop;
             Restaurant1.IsClosed = Restaurant.IsClosed;
@@ -182,9 +193,24 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true, "تم الحفظ بنجاح", Restaurant1);
         }
 
-        // Section 1.2: fetch stores by user location, ordered by distance asc.
+        // Section 1.2 + PDF §2.2: customer zone must match restaurant zones + available driver in zone.
         public async Task<ResObj> GetByUserLocation(double lat, double lng, double? radiusKm)
         {
+            var (_, userZone) = await _pricing.ResolveZoneAtPointAsync(lat, lng);
+            int? userZoneId = userZone?.ZoneId;
+
+            if (!userZoneId.HasValue)
+                return Result.Return(true, new List<object>());
+
+            var zonesWithDrivers = await ZoneCoverageHelper.GetZonesWithAvailableDriversAsync(_context);
+            if (!zonesWithDrivers.Contains(userZoneId.Value))
+                return Result.Return(true, new List<object>());
+
+            var restaurantZones = await _context.RestaurantZone.AsNoTracking().ToListAsync();
+            var zonesByRestaurant = restaurantZones
+                .GroupBy(rz => rz.RestaurantId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.ZoneId).ToHashSet());
+
             var stores = await _context.Restaurant.AsSplitQuery().AsNoTracking()
                 .Where(r => r.IsDelete == false && r.IsActive == true && r.IsApproved == true
                             && r.Lat != null && r.Long != null && r.Lat != "" && r.Long != "")
@@ -193,11 +219,14 @@ namespace RomanaWeb.Helper.Repository
             var withDistance = stores
                 .Select(r =>
                 {
+                    if (!zonesByRestaurant.TryGetValue(r.RestaurantId, out var servedZones)
+                        || !ZoneCoverageHelper.ServesZone(servedZones, userZoneId))
+                        return null;
+
                     double sLat, sLng;
                     if (!double.TryParse(r.Lat, out sLat) || !double.TryParse(r.Long, out sLng))
                         return null;
                     double distance = Haversine(lat, lng, sLat, sLng);
-                    // Section 2.3 / 9: hide CostDelivery on listing screens.
                     r.CostDelivery = null;
                     return new { Store = r, DistanceKm = Math.Round(distance, 2) };
                 })
