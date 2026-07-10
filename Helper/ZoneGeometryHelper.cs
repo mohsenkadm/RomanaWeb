@@ -132,6 +132,70 @@ namespace RomanaWeb.Helper
             return (bestLng, bestLat);
         }
 
+        /// <summary>
+        /// Zone entry point for ECA: first boundary crossing on the path from pickup to dropoff.
+        /// When pickup is already inside the zone, returns the boundary point nearest to dropoff.
+        /// </summary>
+        public static (double Lng, double Lat) FindEntryPointOnBoundary(
+            IReadOnlyList<(double Lng, double Lat)> polygon,
+            double fromLng, double fromLat,
+            double toLng, double toLat)
+        {
+            if (polygon.Count < 3)
+                return ClosestPointOnBoundary(polygon, toLng, toLat);
+
+            bool fromInside = PointInPolygon(polygon, fromLng, fromLat);
+            var intersections = new List<(double Lng, double Lat, double T)>();
+
+            for (int i = 0; i < polygon.Count; i++)
+            {
+                var a = polygon[i];
+                var b = polygon[(i + 1) % polygon.Count];
+                if (TrySegmentIntersection(
+                        fromLng, fromLat, toLng, toLat,
+                        a.Lng, a.Lat, b.Lng, b.Lat,
+                        out double ix, out double iy, out double tOnPath)
+                    && tOnPath > 1e-9 && tOnPath <= 1.0 + 1e-9)
+                {
+                    intersections.Add((ix, iy, tOnPath));
+                }
+            }
+
+            if (intersections.Count > 0)
+            {
+                var entry = intersections.OrderBy(p => p.T).First();
+                return (entry.Lng, entry.Lat);
+            }
+
+            if (fromInside)
+                return ClosestPointOnBoundary(polygon, toLng, toLat);
+
+            return ClosestPointOnBoundary(polygon, fromLng, fromLat);
+        }
+
+        internal static bool TrySegmentIntersection(
+            double x1, double y1, double x2, double y2,
+            double x3, double y3, double x4, double y4,
+            out double ix, out double iy, out double tOnFirstSegment)
+        {
+            ix = iy = tOnFirstSegment = 0;
+            double dx1 = x2 - x1, dy1 = y2 - y1;
+            double dx2 = x4 - x3, dy2 = y4 - y3;
+            double denom = dx1 * dy2 - dy1 * dx2;
+            if (Math.Abs(denom) < 1e-12)
+                return false;
+
+            double t = ((x3 - x1) * dy2 - (y3 - y1) * dx2) / denom;
+            double u = ((x3 - x1) * dy1 - (y3 - y1) * dx1) / denom;
+            if (t < -1e-9 || t > 1.0 + 1e-9 || u < -1e-9 || u > 1.0 + 1e-9)
+                return false;
+
+            tOnFirstSegment = Math.Clamp(t, 0, 1);
+            ix = x1 + tOnFirstSegment * dx1;
+            iy = y1 + tOnFirstSegment * dy1;
+            return true;
+        }
+
         private static (double Lng, double Lat) ClosestPointOnSegment(
             double x1, double y1, double x2, double y2, double px, double py)
         {

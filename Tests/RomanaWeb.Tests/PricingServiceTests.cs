@@ -302,4 +302,145 @@ public class PricingServiceTests
         Assert.Equal(3000m, quote.Total);
         Assert.Equal("city", quote.PricingSource);
     }
+
+    [Fact]
+    public async Task Quote_SameZone_AppliesEcaWhenRouteExceedsLza()
+    {
+        var ctx = TestDbContext.New();
+        ctx.AppSettings.Add(new AppSettings { IqdRoundingStep = 250 });
+        var zone = new Zone
+        {
+            Name = "Rahmaniya",
+            IsActive = true,
+            GeoJson = "{\"type\":\"Polygon\",\"coordinates\":[[[2,0],[3,0],[3,1],[2,1],[2,0]]]}",
+            BaseDeliveryPrice = 3000m,
+            LzaKm = 3,
+            EcaPricePerKm = 250,
+            MaxEcaFee = 2500
+        };
+        ctx.Zone.Add(zone);
+        ctx.SaveChanges();
+        ctx.ChangeTracker.Clear();
+
+        var svc = new PricingService(ctx, new DistanceService(), new FakeRoutingService());
+        var res = await svc.Quote(new QuoteRequest
+        {
+            ForceZonePricing = true,
+            PickupLng = 2.2, PickupLat = 0.5,
+            DropoffLng = 2.7, DropoffLat = 0.5,
+            DistanceKm = 4.73
+        });
+
+        Assert.True(res.success);
+        var quote = Assert.IsType<QuoteResponse>(res.data);
+        Assert.Equal("zone_eca", quote.PricingSource);
+        Assert.Equal(3000m, quote.ZoneFee);
+        Assert.Equal(1.73m, quote.EcaKm);
+        Assert.Equal(250m, quote.EcaFee);
+        Assert.Equal(3250m, quote.Total);
+    }
+
+    [Fact]
+    public async Task Quote_InterZone_EntryDistanceConsistentForSameDropoff()
+    {
+        var ctx = TestDbContext.New();
+        ctx.AppSettings.Add(new AppSettings { IqdRoundingStep = 250 });
+        var city = new Zone
+        {
+            Name = "City",
+            IsActive = true,
+            GeoJson = "{\"type\":\"Polygon\",\"coordinates\":[[[0,0],[1,0],[1,1],[0,1],[0,0]]]}",
+            BaseDeliveryPrice = 3000m,
+            LzaKm = 3, EcaPricePerKm = 250, MaxEcaFee = 2500
+        };
+        var rahmaniya = new Zone
+        {
+            Name = "Rahmaniya",
+            IsActive = true,
+            GeoJson = "{\"type\":\"Polygon\",\"coordinates\":[[[2,0],[3,0],[3,1],[2,1],[2,0]]]}",
+            BaseDeliveryPrice = 3000m,
+            LzaKm = 3, EcaPricePerKm = 250, MaxEcaFee = 2500
+        };
+        ctx.Zone.AddRange(city, rahmaniya);
+        ctx.SaveChanges();
+        var cityId = ctx.Zone.Single(z => z.Name == "City").ZoneId;
+        var rahId = ctx.Zone.Single(z => z.Name == "Rahmaniya").ZoneId;
+        ctx.ZonePrice.AddRange(
+            new ZonePrice { FromZoneId = cityId, ToZoneId = rahId, Price = 3000m },
+            new ZonePrice { FromZoneId = rahId, ToZoneId = rahId, Price = 3000m });
+        ctx.SaveChanges();
+        ctx.ChangeTracker.Clear();
+
+        var svc = new PricingService(ctx, new DistanceService(), new FakeRoutingService());
+
+        var sameZone = await svc.Quote(new QuoteRequest
+        {
+            ForceZonePricing = true,
+            PickupLng = 2.2, PickupLat = 0.5,
+            DropoffLng = 2.7, DropoffLat = 0.5
+        });
+        var interZone = await svc.Quote(new QuoteRequest
+        {
+            ForceZonePricing = true,
+            PickupLng = 0.5, PickupLat = 0.5,
+            DropoffLng = 2.7, DropoffLat = 0.5
+        });
+
+        Assert.True(sameZone.success);
+        Assert.True(interZone.success);
+        var sameQuote = Assert.IsType<QuoteResponse>(sameZone.data);
+        var interQuote = Assert.IsType<QuoteResponse>(interZone.data);
+        Assert.Equal(sameQuote.RouteDistanceKm, interQuote.RouteDistanceKm, 3);
+        Assert.Equal(sameQuote.EcaKm, interQuote.EcaKm);
+        Assert.Equal(sameQuote.Total, interQuote.Total);
+    }
+
+    [Fact]
+    public async Task Quote_Report0002_Scenario_UsesEntryToDropoffNotPickupToDropoff()
+    {
+        var ctx = TestDbContext.New();
+        ctx.AppSettings.Add(new AppSettings { IqdRoundingStep = 250 });
+        var city = new Zone
+        {
+            Name = "City",
+            IsActive = true,
+            GeoJson = "{\"type\":\"Polygon\",\"coordinates\":[[[0,0],[1,0],[1,1],[0,1],[0,0]]]}",
+            BaseDeliveryPrice = 3000m,
+            LzaKm = 3, EcaPricePerKm = 250, MaxEcaFee = 2500
+        };
+        var rahmaniya = new Zone
+        {
+            Name = "Rahmaniya",
+            IsActive = true,
+            GeoJson = "{\"type\":\"Polygon\",\"coordinates\":[[[2,0],[3,0],[3,1],[2,1],[2,0]]]}",
+            BaseDeliveryPrice = 3000m,
+            LzaKm = 3, EcaPricePerKm = 250, MaxEcaFee = 2500
+        };
+        ctx.Zone.AddRange(city, rahmaniya);
+        ctx.SaveChanges();
+        ctx.ZonePrice.Add(new ZonePrice
+        {
+            FromZoneId = ctx.Zone.Single(z => z.Name == "City").ZoneId,
+            ToZoneId = ctx.Zone.Single(z => z.Name == "Rahmaniya").ZoneId,
+            Price = 3000m
+        });
+        ctx.SaveChanges();
+        ctx.ChangeTracker.Clear();
+
+        var svc = new PricingService(ctx, new DistanceService(), new FakeRoutingService());
+        var res = await svc.Quote(new QuoteRequest
+        {
+            ForceZonePricing = true,
+            PickupLng = 0.5, PickupLat = 0.5,
+            DropoffLng = 2.7, DropoffLat = 0.5,
+            DistanceKm = 1.73
+        });
+
+        Assert.True(res.success);
+        var quote = Assert.IsType<QuoteResponse>(res.data);
+        Assert.Equal(1.73, quote.RouteDistanceKm, 2);
+        Assert.Equal(0m, quote.EcaKm);
+        Assert.Equal("zone", quote.PricingSource);
+        Assert.Equal(3000m, quote.Total);
+    }
 }

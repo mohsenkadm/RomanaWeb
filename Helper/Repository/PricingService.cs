@@ -193,35 +193,13 @@ namespace RomanaWeb.Helper.Repository
             if (pickupZone == null || dropoffZone == null)
                 return null;
 
-            decimal zoneFee;
-            if (pickupZone.ZoneId == dropoffZone.ZoneId)
-            {
-                zoneFee = pickupZone.BaseDeliveryPrice ?? 0m;
-                if (zoneFee <= 0) return null;
-
-                decimal sameZoneTotal = RoundIqd(zoneFee, iqdStep);
-                bool sameZoneMaxCap = ApplyMaxTotalCap(pickupZone, ref sameZoneTotal, iqdStep);
-
-                return new QuoteResponse
-                {
-                    DistanceKm = _distance.RoundKm(_distance.HaversineKm(
-                        request.PickupLat, request.PickupLng, request.DropoffLat, request.DropoffLng)),
-                    RouteDistanceKm = _distance.RoundKm(_distance.HaversineKm(
-                        request.PickupLat, request.PickupLng, request.DropoffLat, request.DropoffLng)),
-                    ZoneFee = zoneFee,
-                    Total = sameZoneTotal,
-                    FromZone = pickupZone.Name,
-                    ToZone = dropoffZone.Name,
-                    LzaKm = pickupZone.LzaKm,
-                    MaxTotalCapApplied = sameZoneMaxCap,
-                    MaxTotalDeliveryFee = pickupZone.MaxTotalDeliveryFee,
-                    PricingSource = "zone"
-                };
-            }
-
             var matrix = await _context.ZonePrice.AsNoTracking()
                 .FirstOrDefaultAsync(p => p.FromZoneId == pickupZone.ZoneId && p.ToZoneId == dropoffZone.ZoneId);
-            zoneFee = matrix?.Price ?? dropoffZone.BaseDeliveryPrice ?? pickupZone.BaseDeliveryPrice ?? 0m;
+            decimal zoneFee = matrix?.Price
+                ?? dropoffZone.BaseDeliveryPrice
+                ?? pickupZone.BaseDeliveryPrice
+                ?? 0m;
+            if (zoneFee <= 0) return null;
 
             double routeKm;
             string routeSource;
@@ -232,18 +210,16 @@ namespace RomanaWeb.Helper.Repository
             }
             else
             {
-                double approachLat = request.DriverLat is > 0 && _distance.IsValidCoord(request.DriverLat.Value, request.DriverLng ?? 0)
-                    ? request.DriverLat.Value
-                    : request.PickupLat;
-                double approachLng = request.DriverLng is > 0 && _distance.IsValidCoord(request.DriverLat ?? 0, request.DriverLng.Value)
-                    ? request.DriverLng.Value
-                    : request.PickupLng;
-
                 if (!ZoneGeometryHelper.TryParseRing(dropoffZone.GeoJson, out var ring))
                     return null;
 
-                var (entryLng, entryLat) = ZoneGeometryHelper.ClosestPointOnBoundary(ring, approachLng, approachLat);
-                var route = await _routing.GetRouteDistanceKmAsync(entryLat, entryLng, request.DropoffLat, request.DropoffLng);
+                var (entryLng, entryLat) = ZoneGeometryHelper.FindEntryPointOnBoundary(
+                    ring,
+                    request.PickupLng, request.PickupLat,
+                    request.DropoffLng, request.DropoffLat);
+
+                var route = await _routing.GetRouteDistanceKmAsync(
+                    entryLat, entryLng, request.DropoffLat, request.DropoffLng);
                 routeKm = route.DistanceKm;
                 routeSource = route.Source;
             }

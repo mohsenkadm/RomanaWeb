@@ -180,6 +180,18 @@ namespace RomanaWeb.Helper.Repository
             if (!ZoneCoverageHelper.ServesZone(restaurantZones, customerZoneId))
                 return Result.Return(false, "هذا المطعم لا يخدم منطقتك");
 
+            var settings = await _context.AppSettings.AsNoTracking().FirstOrDefaultAsync();
+            decimal minOrder = checkshop.MinimumPrice > 0
+                ? checkshop.MinimumPrice
+                : (settings?.DefaultOrderCost ?? 3000m);
+            double itemsTotal = orders.OrderDetails?.Sum(d => d.Price * d.Count) ?? 0;
+            if (orders.NetAmount > 0)
+                itemsTotal = orders.NetAmount;
+            else if (orders.Total > 0)
+                itemsTotal = orders.Total;
+            if ((decimal)itemsTotal < minOrder)
+                return Result.Return(false, $"الحد الأدنى للطلب {minOrder:N0} د.ع");
+
             var zonesWithDrivers = await ZoneCoverageHelper.GetZonesWithAvailableDriversAsync(_context);
             if (!zonesWithDrivers.Contains(customerZoneId.Value))
                 return Result.Return(false, "لا يوجد مندوب متاح في منطقتك حالياً");
@@ -197,7 +209,8 @@ namespace RomanaWeb.Helper.Repository
                         PickupLat = pickupLat,
                         PickupLng = pickupLng,
                         DropoffLat = dropLat,
-                        DropoffLng = dropLng
+                        DropoffLng = dropLng,
+                        ForceZonePricing = true
                     });
                     if (quoteRes.success && quoteRes.data is QuoteResponse quote)
                     {
@@ -664,7 +677,8 @@ namespace RomanaWeb.Helper.Repository
                     PickupLat = pickupLat,
                     PickupLng = pickupLng,
                     DropoffLat = dropoffLat,
-                    DropoffLng = dropoffLng
+                    DropoffLng = dropoffLng,
+                    ForceZonePricing = true
                 });
                 if (quoteRes.success && quoteRes.data is QuoteResponse quote)
                     estimatedFee = quote.Total;

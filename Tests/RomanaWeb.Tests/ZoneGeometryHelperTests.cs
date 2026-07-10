@@ -47,4 +47,21 @@ public class ZoneGeometryHelperTests
         Assert.Equal(47d, ring[0].Lng);
         Assert.Equal(30d, ring[0].Lat);
     }
+
+    [Fact]
+    public void FindEntryPointOnBoundary_outsidePickup_usesPathIntersection()
+    {
+        Assert.True(ZoneGeometryHelper.TryParseRing(Polygon, out var ring));
+        var (lng, lat) = ZoneGeometryHelper.FindEntryPointOnBoundary(ring, 47.70, 30.50, 47.78, 30.50);
+        Assert.InRange(lng, 47.749, 47.751);
+        Assert.InRange(lat, 30.499, 30.501);
+    }
+
+    [Fact]
+    public void FindEntryPointOnBoundary_insidePickup_usesBoundaryNearestDropoff()
+    {
+        Assert.True(ZoneGeometryHelper.TryParseRing(Polygon, out var ring));
+        var (lng, lat) = ZoneGeometryHelper.FindEntryPointOnBoundary(ring, 47.78, 30.50, 47.80, 30.50);
+        Assert.True(lng >= 47.749 && lng <= 47.751);
+    }
 }
