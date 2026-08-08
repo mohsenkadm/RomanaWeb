@@ -30,6 +30,16 @@ namespace RomanaWeb.Models.Entity
         /// <summary>Max times a single user may apply this code (0 = unlimited).</summary>
         public int MaxUsagePerUser { get; set; } = 1;
 
+        /// <summary>Admin who created this promo (from UserManager.Id).</summary>
+        public int? CreatedByAdminId { get; set; }
+
+        /// <summary>When the promo was first created.</summary>
+        public DateTime? CreatedAt { get; set; }
+
+        /// <summary>Resolved admin display name (joined, not a table column).</summary>
+        [NotMapped]
+        public string CreatedByAdminName { get; set; }
+
         // --- Aliases mapped to existing columns (kept NotMapped so EF ignores them) ---
 
         [NotMapped]

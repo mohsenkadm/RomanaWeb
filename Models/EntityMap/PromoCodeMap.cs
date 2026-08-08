@@ -22,7 +22,10 @@ namespace RomanaWeb.Models.EntityMap
             builder.Property(x => x.MaxDiscountAmount).HasColumnType("decimal(18,2)").HasDefaultValue(0);
             builder.Property(x => x.FirstUsedAt);
             builder.Property(x => x.MaxUsagePerUser).HasDefaultValue(1);
+            builder.Property(x => x.CreatedByAdminId);
+            builder.Property(x => x.CreatedAt);
             builder.Ignore(x => x.RestaurantName);
+            builder.Ignore(x => x.CreatedByAdminName);
         }
     }
 }

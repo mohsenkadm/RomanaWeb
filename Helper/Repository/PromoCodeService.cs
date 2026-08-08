@@ -32,13 +32,43 @@ namespace RomanaWeb.Helper.Repository
         }
         public async Task<ResObj> GetAll(string? Name, int? ResId)
         {
+            var query =
+                from p in _Context.PromoCodes.AsNoTracking()
+                join r in _Context.Restaurant.AsNoTracking()
+                    on p.RestaurantId equals r.RestaurantId into rj
+                from r in rj.DefaultIfEmpty()
+                join a in _Context.Admin.AsNoTracking()
+                    on p.CreatedByAdminId equals (int?)a.AdminId into aj
+                from a in aj.DefaultIfEmpty()
+                select new
+                {
+                    Promo = p,
+                    RestaurantName = r != null ? r.Name : null,
+                    AdminName = a != null ? a.AdminName : null
+                };
 
-            var item = await _PromoCodeService.GetEntityListAsync("dbo.GetPromoCodesAll", new { Name , ResId });
-            //var item = await _Context.PromoCodes.AsSplitQuery().AsNoTracking().ToListAsync();
-            if (item != null)
-                return Result.Return(true, item);
-            else
-                return Result.Return(false);
+            if (!string.IsNullOrWhiteSpace(Name))
+            {
+                var name = Name.Trim();
+                query = query.Where(x => x.Promo.PromoName.Contains(name));
+            }
+
+            if (ResId is > 0)
+                query = query.Where(x => x.Promo.RestaurantId == ResId || x.Promo.IsForAllStores);
+
+            var rows = await query
+                .OrderByDescending(x => x.Promo.CreatedAt)
+                .ThenByDescending(x => x.Promo.PromoCodeId)
+                .ToListAsync();
+
+            var item = rows.Select(x =>
+            {
+                x.Promo.RestaurantName = x.RestaurantName;
+                x.Promo.CreatedByAdminName = x.AdminName;
+                return x.Promo;
+            }).ToList();
+
+            return Result.Return(true, item);
         }
         public async Task<ResObj> GetById(int Id)
         {
@@ -73,6 +103,8 @@ namespace RomanaWeb.Helper.Repository
                 PromoCode.IsActive = true;
                 PromoCode.UsedOrders = 0;
                 PromoCode.FirstUsedAt = null;
+                if (PromoCode.CreatedAt == null)
+                    PromoCode.CreatedAt = Key.DateTimeIQ;
                 await _Context.PromoCodes.AddAsync(PromoCode);
             }
             else
@@ -93,6 +125,7 @@ namespace RomanaWeb.Helper.Repository
                     item.MaxDiscountAmount = PromoCode.MaxDiscountAmount;
                     item.MaxUsagePerUser = PromoCode.MaxUsagePerUser;
                     item.IsActive = PromoCode.IsActive;
+                    // Preserve CreatedByAdminId / CreatedAt on update
                     _Context.Entry(item).State = EntityState.Modified;
                 }
             }

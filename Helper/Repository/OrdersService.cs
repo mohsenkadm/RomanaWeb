@@ -625,6 +625,155 @@ namespace RomanaWeb.Helper.Repository
             return await Post(newOrder);
         }
 
+        /// <summary>
+        /// Admin updates safe order header fields. Address/Phone/FunctionPoint live on Users;
+        /// Notes/CostDelivery live on Orders.
+        /// </summary>
+        public async Task<ResObj> AdminUpdateOrder(int orderId, string? address, string? phone,
+            string? functionPoint, string? notes, decimal? costDelivery)
+        {
+            var order = await GetOrdersById(orderId);
+            if (order == null)
+                return Result.Return(false, "الطلب غير موجود");
+
+            order.Notes = notes;
+            if (costDelivery.HasValue)
+                order.CostDelivery = costDelivery;
+            _context.Entry(order).State = EntityState.Modified;
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == order.UserId);
+            if (user != null)
+            {
+                if (address != null) user.Address = address;
+                if (phone != null) user.Phone = phone;
+                if (functionPoint != null) user.FunctionPoint = functionPoint;
+                _context.Entry(user).State = EntityState.Modified;
+            }
+
+            await _context.SaveChangesAsync();
+
+            order.Address = user?.Address ?? address;
+            order.Phone = user?.Phone ?? phone;
+            order.FunctionPoint = user?.FunctionPoint ?? functionPoint;
+            return Result.Return(true, "تم تحديث بيانات الطلب", order);
+        }
+
+        /// <summary>
+        /// Admin force-set lifecycle status (0..9) consistent with MapOrderStatus.
+        /// Allows reactivating a cancelled order by choosing a non-cancel status.
+        /// </summary>
+        public async Task<ResObj> AdminSetStatus(int orderId, int statusCode)
+        {
+            if (statusCode < 0 || statusCode > 9)
+                return Result.Return(false, "رمز الحالة غير صالح");
+
+            var order = await GetOrdersById(orderId);
+            if (order == null)
+                return Result.Return(false, "الطلب غير موجود");
+
+            var previousSaleManId = order.SaleManId;
+
+            // Reset flags then apply the target status ladder.
+            order.IsCancel = false;
+            order.IsApporve = false;
+            order.IsPreparing = false;
+            order.IsSaleManApprove = false;
+            order.IsSaleManCancel = false;
+            order.IsDriverEnRouteToPickup = false;
+            order.IsPickedUpFromRestaurant = false;
+            order.IsOutForDelivery = false;
+            order.IsDelivered = false;
+            order.IsNotDelivered = false;
+            order.IsWaiting = false;
+            order.IsDeliveryConfirmed = false;
+            order.IsDone = false;
+
+            switch (statusCode)
+            {
+                case 0: // pending
+                    break;
+                case 1: // approved
+                    order.IsApporve = true;
+                    break;
+                case 2: // preparing
+                    order.IsApporve = true;
+                    order.IsPreparing = true;
+                    break;
+                case 3: // driver accepted
+                    order.IsApporve = true;
+                    order.IsPreparing = true;
+                    order.IsSaleManApprove = true;
+                    break;
+                case 4: // en route to pickup
+                    order.IsApporve = true;
+                    order.IsPreparing = true;
+                    order.IsSaleManApprove = true;
+                    order.IsDriverEnRouteToPickup = true;
+                    break;
+                case 5: // picked up
+                    order.IsApporve = true;
+                    order.IsPreparing = true;
+                    order.IsSaleManApprove = true;
+                    order.IsPickedUpFromRestaurant = true;
+                    break;
+                case 6: // out for delivery
+                    order.IsApporve = true;
+                    order.IsPreparing = true;
+                    order.IsSaleManApprove = true;
+                    order.IsPickedUpFromRestaurant = true;
+                    order.IsOutForDelivery = true;
+                    break;
+                case 7: // delivered (legacy)
+                    order.IsApporve = true;
+                    order.IsPreparing = true;
+                    order.IsSaleManApprove = true;
+                    order.IsPickedUpFromRestaurant = true;
+                    order.IsOutForDelivery = true;
+                    order.IsDelivered = true;
+                    break;
+                case 8: // delivery confirmed
+                    order.IsApporve = true;
+                    order.IsPreparing = true;
+                    order.IsSaleManApprove = true;
+                    order.IsPickedUpFromRestaurant = true;
+                    order.IsDelivered = true;
+                    order.IsDeliveryConfirmed = true;
+                    order.IsDone = true;
+                    break;
+                case 9: // cancelled
+                    order.IsCancel = true;
+                    order.IsApporve = false;
+                    order.IsDone = false;
+                    break;
+            }
+
+            _context.Entry(order).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            // Clear driver active order when cancelling or confirming delivery.
+            if ((statusCode == 9 || statusCode == 8) && previousSaleManId is > 0)
+                await _dispatch.ClearActiveOrderAsync(previousSaleManId.Value);
+
+            // Auto-dispatch when admin approves an unassigned order (same as SetIsApporve).
+            if (statusCode == 1 && (order.SaleManId == null || order.SaleManId == 0))
+            {
+                try
+                {
+                    if (_config.GetValue<bool>("Dispatch:AutoDispatchOnOrderApprove", true))
+                    {
+                        double radius = _config.GetValue<double>("Dispatch:RadiusKm", 5d);
+                        await _dispatch.DispatchOrder(orderId, radius);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _logger.WriteAsync(ex, "OrdersService => AdminSetStatus => DispatchOrder");
+                }
+            }
+
+            return Result.Return(true, "تم تحديث حالة الطلب", order);
+        }
+
         public async Task<ResObj> GetNearbyDriverOrders(int saleManId, double lat, double lng, double radiusKm)
         {
             if (!_distance.IsValidCoord(lat, lng))
