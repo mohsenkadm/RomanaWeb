@@ -71,6 +71,7 @@
                             <option value="">الكل</option>
                             <option value="0">انتظار الموافقة</option>
                             <option value="1">موافق عليه</option>
+                            <option value="2">قيد التحضير</option>
                             <option value="3">قبل السائق</option>
                             <option value="4">السائق في الطريق للاستلام</option>
                             <option value="5">تم الاستلام من المطعم</option>
@@ -107,7 +108,7 @@
                                 <table class="table table-hover">
                                     <thead class=" ">
                                         <tr>
-                                            <th scope="col" class="rm-actions-cell">تفاصيل</th>
+                                            <th scope="col" class="rm-actions-cell">اجراءات</th>
                                             <th scope="col">منتهي</th>
                                             <th scope="col">موافقة</th>
                                             <th scope="col">ملغي</th>
@@ -134,6 +135,71 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Admin Order Control -->
+<div class="modal fade" id="AdminOrderControlModal" tabindex="-1" role="dialog" aria-labelledby="adminOrderControlLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="adminOrderControlLabel">تحكم بالطلب <span id="adminCtrlOrderNo" class="badge-all"></span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="direction:rtl;text-align:right;">
+                <h6 style="font-weight:700;margin-bottom:12px;"><i class="material-icons" style="vertical-align:middle;">flag</i> تغيير الحالة</h6>
+                <div class="row">
+                    <div class="form-group col-md-8">
+                        <label>حالة الطلب</label>
+                        <select id="adminCtrlStatus" class="form-control">
+                            <option value="0">انتظار الموافقة</option>
+                            <option value="1">موافق عليه</option>
+                            <option value="2">قيد التحضير</option>
+                            <option value="3">قبل السائق</option>
+                            <option value="4">السائق في الطريق للاستلام</option>
+                            <option value="5">تم الاستلام من المطعم</option>
+                            <option value="6">قيد التوصيل</option>
+                            <option value="7">تم التوصيل</option>
+                            <option value="8">تم تأكيد الاستلام</option>
+                            <option value="9">ملغي</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4" style="display:flex;align-items:flex-end;">
+                        <button type="button" class="btn btn-warning btn-block" id="adminApplyStatusBtn">تطبيق الحالة</button>
+                    </div>
+                </div>
+                <hr>
+                <h6 style="font-weight:700;margin-bottom:12px;"><i class="material-icons" style="vertical-align:middle;">edit</i> تعديل بيانات الطلب</h6>
+                <div class="row">
+                    <div class="form-group col-md-6">
+                        <label>العنوان</label>
+                        <input type="text" id="adminCtrlAddress" class="form-control" />
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>رقم الهاتف</label>
+                        <input type="text" id="adminCtrlPhone" class="form-control" />
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>اقرب نقطة دالة</label>
+                        <input type="text" id="adminCtrlFunctionPoint" class="form-control" />
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>تكلفة التوصيل</label>
+                        <input type="number" step="0.01" id="adminCtrlCostDelivery" class="form-control" />
+                    </div>
+                    <div class="form-group col-md-12">
+                        <label>الملاحظات</label>
+                        <textarea id="adminCtrlNotes" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">اغلاق</button>
+                <button type="button" class="btn btn-success" id="adminSaveFieldsBtn">حفظ البيانات</button>
             </div>
         </div>
     </div>
@@ -223,8 +289,24 @@
         });
         $("#execel-btn").on("click", (e) => {
             e.preventDefault();
-            window.open("/Orders/GetExcelAll?OrderNo=" + $("#OrderNo").val() + "&RestaurantName=" + $("#RestaurantName").val() + "&datefrom=" +
-                $("#datefrom").val() + "&dateto=" + $("#dateto").val() + "&CountriesId=" + $("#CountriesId").val() );
+            var status = $("#FilterOrderStatus").val();
+            var qs = "OrderNo=" + encodeURIComponent($("#OrderNo").val() || "") +
+                "&RestaurantName=" + encodeURIComponent($("#RestaurantName").val() || "") +
+                "&datefrom=" + encodeURIComponent($("#datefrom").val() || "") +
+                "&dateto=" + encodeURIComponent($("#dateto").val() || "") +
+                "&CountriesId=" + encodeURIComponent($("#CountriesId").val() || "") +
+                "&Phone=" + encodeURIComponent($("#FilterPhone").val() || "");
+            if (status !== '') qs += "&orderStatus=" + encodeURIComponent(status);
+            window.open("/Orders/GetExcelAll?" + qs);
+        });
+
+        $("#adminApplyStatusBtn").on("click", function (e) {
+            e.preventDefault();
+            applyAdminOrderStatus();
+        });
+        $("#adminSaveFieldsBtn").on("click", function (e) {
+            e.preventDefault();
+            saveAdminOrderFields();
         });
 
         // Add product to existing order

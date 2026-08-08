@@ -73,6 +73,13 @@ namespace RomanaWeb.Controllers
                     var rest = await _RestaurantService.GetById(PromoCode.RestaurantId);
                 }
 
+                // Record creating admin on insert only (never overwrite on edit).
+                if (PromoCode.PromoCodeId == 0)
+                {
+                    PromoCode.CreatedByAdminId = UserManager.Id;
+                    PromoCode.CreatedAt = Key.DateTimeIQ;
+                }
+
                 ResObj res;
                 res = await _PromoCodeService.Post(PromoCode);
                 Notification notifications = new Notification

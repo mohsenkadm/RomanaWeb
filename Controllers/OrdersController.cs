@@ -156,12 +156,13 @@ namespace RomanaWeb.Controllers
         #region Get Info Delivery 
         [AllowAnonymous]
         [HttpGet]
-        public async Task<FileResult> GetExcelAll(string? OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto, int? CountriesId)
+        public async Task<FileResult> GetExcelAll(string? OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto,
+            int? CountriesId, string? Phone = null, int? orderStatus = null)
         {
             try
             {
-                ResObj res = await _OrdersService.GetAll(OrderNo, RestaurantName, datefrom, dateto, 0, CountriesId, 1);
-
+                // Same filters as admin Orders UI (no hardcoded state).
+                ResObj res = await _OrdersService.GetAll(OrderNo, RestaurantName, datefrom, dateto, 0, CountriesId, null, Phone, orderStatus);
 
                 var p = GenerateExcel("report-order-" + Key.DateTimeIQ + ".xlsx", (List<Orders>)res.data);
                 return p;
@@ -172,31 +173,72 @@ namespace RomanaWeb.Controllers
                 return null;
             }
         }
+
+        [NonAction]
+        private static string MapOrderStatusText(int statusCode) => statusCode switch
+        {
+            0 => "انتظار الموافقة",
+            1 => "موافق عليه",
+            2 => "قيد التحضير",
+            3 => "قبل السائق",
+            4 => "السائق في الطريق للاستلام",
+            5 => "تم الاستلام من المطعم",
+            6 => "قيد التوصيل",
+            7 => "تم التوصيل",
+            8 => "تم تأكيد الاستلام",
+            9 => "ملغي",
+            _ => statusCode.ToString()
+        };
+
         [NonAction]
         private FileResult GenerateExcel(string fileName, IEnumerable<Orders> people)
         {
             DataTable dataTable = new DataTable("order");
             dataTable.Columns.AddRange(new DataColumn[]
             {
-                new DataColumn("OrderId"),
-                new DataColumn("OrderNo"),
-                new DataColumn("RestaurantName"),
-                new DataColumn("ResPhone"),
-                new DataColumn("UserName"),
-                new DataColumn("Address"),
-                new DataColumn("Phone"),
-                new DataColumn("FunctionPoint"),
-                new DataColumn("NetAmount"),
-                new DataColumn("CountriesName"),
-                new DataColumn("CityName"),
+                new DataColumn("رقم الطلب"),
+                new DataColumn("تاريخ الطلب"),
+                new DataColumn("القسم"),
+                new DataColumn("اسم المطعم"),
+                new DataColumn("اسم المندوب"),
+                new DataColumn("اسم الزبون"),
+                new DataColumn("العنوان"),
+                new DataColumn("اقرب نقطة دالة"),
+                new DataColumn("رقم الهاتف"),
+                new DataColumn("المحافظة"),
+                new DataColumn("المدينة"),
+                new DataColumn("المجموع"),
+                new DataColumn("الخصم"),
+                new DataColumn("صافي المبلغ"),
+                new DataColumn("ملغي"),
+                new DataColumn("موافقة"),
+                new DataColumn("منتهي"),
+                new DataColumn("الحالة"),
             });
 
             foreach (var p in people)
             {
-                dataTable.Rows.Add(p.OrderId, p.OrderNo, p.RestaurantName,p.ResPhone, p.UserName, p.Address, p.Phone,
-                   p.FunctionPoint,
-                    p.NetAmount, p.CountriesName, p.CityName
-                    );
+                int statusCode = OrdersService.MapOrderStatus(p);
+                dataTable.Rows.Add(
+                    p.OrderNo,
+                    p.OrderDate,
+                    p.CategoriesName,
+                    p.RestaurantName,
+                    p.SaleManName,
+                    p.UserName,
+                    p.Address,
+                    p.FunctionPoint,
+                    p.Phone,
+                    p.CountriesName,
+                    p.CityName,
+                    p.Total,
+                    p.TotalDiscount,
+                    p.NetAmount,
+                    p.IsCancel ? "نعم" : "لا",
+                    p.IsApporve ? "نعم" : "لا",
+                    p.IsDone ? "نعم" : "لا",
+                    MapOrderStatusText(statusCode)
+                );
             }
 
             using (XLWorkbook wb = new XLWorkbook())
@@ -810,6 +852,61 @@ namespace RomanaWeb.Controllers
             {
                 await _logger.WriteAsync(ex, "OrdersController => AddOrderDetail");
                 return Response(false, "حدث خطا اثناء عملية اضافة المنتج");
+            }
+        }
+        #endregion
+
+        public class AdminUpdateOrderRequest
+        {
+            public int OrderId { get; set; }
+            public string? Address { get; set; }
+            public string? Phone { get; set; }
+            public string? FunctionPoint { get; set; }
+            public string? Notes { get; set; }
+            public decimal? CostDelivery { get; set; }
+        }
+
+        #region Admin update order header fields
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> AdminUpdateOrder([FromBody] AdminUpdateOrderRequest req)
+        {
+            try
+            {
+                if (UserManager == null || !string.Equals(UserManager.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+                    return Response(false, "غير مصرح، هذه العملية للأدمن فقط");
+                if (req == null || req.OrderId <= 0)
+                    return Response(false, "رقم الطلب غير صالح");
+
+                ResObj res = await _OrdersService.AdminUpdateOrder(
+                    req.OrderId, req.Address, req.Phone, req.FunctionPoint, req.Notes, req.CostDelivery);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => AdminUpdateOrder");
+                return Response(false, "حدث خطا اثناء تحديث بيانات الطلب");
+            }
+        }
+        #endregion
+
+        #region Admin set order status
+        [Authorize]
+        [HttpPost("Orders/AdminSetStatus/{OrderId}")]
+        public async Task<IActionResult> AdminSetStatus(int OrderId, [FromQuery] int statusCode)
+        {
+            try
+            {
+                if (UserManager == null || !string.Equals(UserManager.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+                    return Response(false, "غير مصرح، هذه العملية للأدمن فقط");
+
+                ResObj res = await _OrdersService.AdminSetStatus(OrderId, statusCode);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersController => AdminSetStatus");
+                return Response(false, "حدث خطا اثناء تحديث حالة الطلب");
             }
         }
         #endregion

@@ -37,6 +37,8 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> AddOrderDetail(OrderDetail detail);
         // Section 4.1: Admin edit = cancel old order, dispatch new one with updated items.
         Task<ResObj> AdminReplaceOrder(int orderId, List<OrderDetail> newDetails);
+        Task<ResObj> AdminUpdateOrder(int orderId, string? address, string? phone, string? functionPoint, string? notes, decimal? costDelivery);
+        Task<ResObj> AdminSetStatus(int orderId, int statusCode);
         Task<ResObj> GetNearbyDriverOrders(int saleManId, double lat, double lng, double radiusKm);
         Task<ResObj> ApproveOrderBySaleMan(int orderId, int saleManId);
     }
