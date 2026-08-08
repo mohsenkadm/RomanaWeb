@@ -18,5 +18,9 @@ namespace RomanaWeb.Helper.Interface
         // Section 6 - working/stopped toggle. When stopped (IsAvailable=false)
         // the dispatcher will not push order notifications to this driver.
         Task<ResObj> SetAvailability(int Id, bool isAvailable);
+
+        // Account activity: IsActive=false keeps the account but blocks login,
+        // app control, order fetch, and dispatch assignment.
+        Task<ResObj> SetActive(int Id, bool isActive);
     }
 }

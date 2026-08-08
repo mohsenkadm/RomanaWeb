@@ -245,10 +245,28 @@ namespace RomanaWeb.Controllers
                 if (!IsAdmin()) return Response(false, "غير مصرح");
                 var zone = await _context.Zone.FirstOrDefaultAsync(z => z.ZoneId == id);
                 if (zone == null) return Response(false, "غير موجود");
-                zone.IsActive = false;
-                _context.Entry(zone).State = EntityState.Modified;
+
+                var matrixPrices = await _context.ZonePrice
+                    .Where(p => p.FromZoneId == id || p.ToZoneId == id)
+                    .ToListAsync();
+                if (matrixPrices.Count > 0)
+                    _context.ZonePrice.RemoveRange(matrixPrices);
+
+                var restaurantLinks = await _context.RestaurantZone
+                    .Where(rz => rz.ZoneId == id)
+                    .ToListAsync();
+                if (restaurantLinks.Count > 0)
+                    _context.RestaurantZone.RemoveRange(restaurantLinks);
+
+                var saleManLinks = await _context.SaleManZone
+                    .Where(sz => sz.ZoneId == id)
+                    .ToListAsync();
+                if (saleManLinks.Count > 0)
+                    _context.SaleManZone.RemoveRange(saleManLinks);
+
+                _context.Zone.Remove(zone);
                 await _context.SaveChangesAsync();
-                return Response(true, "تم التعطيل");
+                return Response(true, "تم حذف المنطقة وأسعارها المرتبطة");
             }
             catch (Exception ex)
             {

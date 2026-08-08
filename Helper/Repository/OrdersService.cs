@@ -630,6 +630,15 @@ namespace RomanaWeb.Helper.Repository
             if (!_distance.IsValidCoord(lat, lng))
                 return Result.Return(false, "موقع السائق غير صالح");
 
+            var driver = await _context.SaleMan.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.SaleManId == saleManId);
+            if (driver == null || driver.IsDelete == true)
+                return Result.Return(false, "حساب المندوب غير موجود");
+            if (driver.IsActive == false)
+                return Result.Return(false, "حسابك غير نشط — لا يمكن جلب الطلبات");
+            if (!driver.IsAvailable)
+                return Result.Return(false, "حالة عملك متوقفة — فعّل العمل لاستلام الطلبات");
+
             try { await _dispatch.UpdateDriverLocation(saleManId, lat, lng); } catch { }
 
             var driverZones = await ZoneCoverageHelper.GetDriverZoneIdsAsync(_context, saleManId);
@@ -734,6 +743,15 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> ApproveOrderBySaleMan(int orderId, int saleManId)
         {
+            var driver = await _context.SaleMan.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.SaleManId == saleManId);
+            if (driver == null || driver.IsDelete == true)
+                return Result.Return(false, "حساب المندوب غير موجود");
+            if (driver.IsActive == false)
+                return Result.Return(false, "حساب المندوب غير نشط — لا يمكن قبول الطلبات");
+            if (!driver.IsAvailable)
+                return Result.Return(false, "حالة عمل المندوب متوقفة — لا يمكن قبول الطلبات");
+
             var order = await GetOrdersById(orderId);
             if (order == null)
                 return Result.Return(false, "الطلب غير موجود");

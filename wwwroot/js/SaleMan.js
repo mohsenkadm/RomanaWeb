@@ -7,7 +7,21 @@ function filltableSaleMan(data) {
         return;
     } 
     $.each(data, function (i, item) {
-        // Section 6: working/stopped badge + toggle button.
+        // نشاط الحساب: تنشيط / الغاء تنشيط (IsActive) — الحساب يبقى لكن التطبيق يُقفل.
+        var active = item.isActive !== false && item.isActive !== 0;
+        var activeBadge = active
+            ? '<span class="badge" style="background:#4CAF50;color:#fff;padding:4px 10px;border-radius:12px;">نشط</span>'
+            : '<span class="badge" style="background:#F44336;color:#fff;padding:4px 10px;border-radius:12px;">ملغى</span>';
+        var activeBtnLabel = active ? 'الغاء تنشيط' : 'تنشيط';
+        var activeBtnClass = active ? 'btn-danger' : 'btn-success';
+        var activityCell =
+            '<td>' + activeBadge +
+            ' <button type="button" class="btn btn-sm ' + activeBtnClass + '" ' +
+                'style="margin-right:6px" ' +
+                'onclick="toggleSaleManActive(' + item.saleManId + ',' + (!active) + ')">' +
+                activeBtnLabel + '</button></td>';
+
+        // حالة العمل: تفعيل / ايقاف (IsAvailable).
         var working = (item.isAvailable === undefined) ? true : !!item.isAvailable;
         var badge = working
             ? '<span class="badge" style="background:#4CAF50;color:#fff;padding:4px 10px;border-radius:12px;">يعمل</span>'
@@ -18,6 +32,7 @@ function filltableSaleMan(data) {
             '<td>' + badge +
             ' <button type="button" class="btn btn-sm ' + btnClass + '" ' +
                 'style="margin-right:6px" ' +
+                (active ? '' : 'disabled title="المندوب غير نشط" ') +
                 'onclick="toggleSaleManAvailability(' + item.saleManId + ',' + (!working) + ')">' +
                 btnLabel + '</button></td>';
 
@@ -26,16 +41,7 @@ function filltableSaleMan(data) {
             : '<td>—</td>';
 
         var rows = "<tr>" + 
-            "<td>" +
-            "<div class='form-check'>" +
-            "<label class='form-check-label'>" +
-            "<input class='form-check-input' type='checkbox' id='IsActive" + item.saleManId + "'>" +
-            "<span class='form-check-sign'>" +
-            "<span class='check'></span>" +
-            "</span>" +
-            "</label>" +
-            "</div>" +
-            "</td>" +
+            activityCell +
             availabilityCell +
             "<td>" + item.password + "</td>" +  
             "<td>" + item.address + "</td>" +   
@@ -45,11 +51,20 @@ function filltableSaleMan(data) {
             + "<td> <button type='button' class='btn btn-danger' onclick='deleteSaleMan(" + item.saleManId + ")'>حذف</button>"
             + " | <button type='button' class='btn btn-primary' onclick='updateSaleMan(" + item.saleManId + ")' data-toggle='modal' data-target='#SaleManModal'>تعديل</button></td></tr>";
         $('#tableSaleMan').append(rows);  
-        $('#IsActive' + item.saleManId).attr('checked', item.isActive); 
     });
 }
 
-// Section 6: flip working/stopped state of a single driver from the dashboard.
+// نشاط المندوب: تنشيط / الغاء تنشيط (الحساب يبقى، التطبيق يُقفل عند الإلغاء).
+function toggleSaleManActive(id, makeActive) {
+    var msg = makeActive
+        ? 'هل تريد تنشيط هذا المندوب؟ سيتمكن من استخدام التطبيق واستلام الطلبات.'
+        : 'هل تريد الغاء تنشيط هذا المندوب؟ سيبقى حسابه لكن لن يتمكن من استخدام التطبيق ولن تُجلب له طلبات.';
+    if (!confirm(msg)) return;
+    call_ajax('POST', 'SaleMan/SetActive?Id=' + id + '&isActive=' + (!!makeActive),
+        null, RefreshSaleMan);
+}
+
+// حالة العمل: تفعيل / ايقاف.
 function toggleSaleManAvailability(id, makeAvailable) {
     var verb = makeAvailable ? 'تفعيل' : 'ايقاف';
     if (!confirm('هل تريد ' + verb + ' حالة العمل لهذا المندوب؟')) return;

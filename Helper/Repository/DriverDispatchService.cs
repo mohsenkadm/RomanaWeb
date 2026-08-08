@@ -189,6 +189,9 @@ namespace RomanaWeb.Helper.Repository
         {
             var driver = await _context.SaleMan.FirstOrDefaultAsync(d => d.SaleManId == saleManId);
             if (driver == null) return Result.Return(false, "السائق غير موجود");
+            if (driver.IsDelete == true) return Result.Return(false, "حساب المندوب محذوف");
+            if (driver.IsActive == false)
+                return Result.Return(false, "حسابك غير نشط — لا يمكنك التحكم في التطبيق");
 
             var now = DateTime.UtcNow;
             var loc = await _context.DriverLocations.FirstOrDefaultAsync(d => d.SaleManId == saleManId);

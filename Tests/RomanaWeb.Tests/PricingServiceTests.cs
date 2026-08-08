@@ -328,20 +328,98 @@ public class PricingServiceTests
             ForceZonePricing = true,
             PickupLng = 2.2, PickupLat = 0.5,
             DropoffLng = 2.7, DropoffLat = 0.5,
-            DistanceKm = 4.73
+            DistanceKm = 4.0
         });
 
         Assert.True(res.success);
         var quote = Assert.IsType<QuoteResponse>(res.data);
         Assert.Equal("zone_eca", quote.PricingSource);
         Assert.Equal(3000m, quote.ZoneFee);
-        Assert.Equal(1.73m, quote.EcaKm);
+        Assert.Equal(1.0m, quote.EcaKm);
         Assert.Equal(250m, quote.EcaFee);
         Assert.Equal(3250m, quote.Total);
     }
 
     [Fact]
-    public async Task Quote_InterZone_EntryDistanceConsistentForSameDropoff()
+    public async Task Quote_SameZone_UsesFullPickupToDropoffRouteForEca()
+    {
+        var ctx = TestDbContext.New();
+        ctx.AppSettings.Add(new AppSettings { IqdRoundingStep = 250 });
+        var zone = new Zone
+        {
+            Name = "CityDistrict",
+            IsActive = true,
+            // Large polygon so both points are inside
+            GeoJson = "{\"type\":\"Polygon\",\"coordinates\":[[[0,0],[10,0],[10,10],[0,10],[0,0]]]}",
+            BaseDeliveryPrice = 1000m,
+            LzaKm = 2.25m,
+            EcaPricePerKm = 250,
+            MaxEcaFee = 500
+        };
+        ctx.Zone.Add(zone);
+        ctx.SaveChanges();
+        ctx.ChangeTracker.Clear();
+
+        // FakeRouting ≈ haversine × 1.3. Pickup (1,1) → Dropoff (1,5) ≈ 4° lat ≈ long distance.
+        // Use DistanceKm override to pin expected arithmetic for this scenario.
+        var svc = new PricingService(ctx, new DistanceService(), new FakeRoutingService());
+        var res = await svc.Quote(new QuoteRequest
+        {
+            ForceZonePricing = true,
+            PickupLng = 1, PickupLat = 1,
+            DropoffLng = 1, DropoffLat = 5,
+            DistanceKm = 6.02
+        });
+
+        Assert.True(res.success);
+        var quote = Assert.IsType<QuoteResponse>(res.data);
+        Assert.Equal("zone_eca", quote.PricingSource);
+        Assert.Equal(1000m, quote.ZoneFee);
+        Assert.Equal(3.77m, quote.EcaKm);
+        Assert.Equal(500m, quote.EcaFee);
+        Assert.True(quote.EcaCapApplied);
+        Assert.Equal(1500m, quote.Total);
+    }
+
+    [Fact]
+    public async Task Quote_SameZone_WithoutManualDistance_DoesNotUseBoundaryShortcut()
+    {
+        var ctx = TestDbContext.New();
+        ctx.AppSettings.Add(new AppSettings { IqdRoundingStep = 250 });
+        var zone = new Zone
+        {
+            Name = "CityDistrict",
+            IsActive = true,
+            GeoJson = "{\"type\":\"Polygon\",\"coordinates\":[[[0,0],[10,0],[10,10],[0,10],[0,0]]]}",
+            BaseDeliveryPrice = 1000m,
+            LzaKm = 2.25m,
+            EcaPricePerKm = 250,
+            MaxEcaFee = 500
+        };
+        ctx.Zone.Add(zone);
+        ctx.SaveChanges();
+        ctx.ChangeTracker.Clear();
+
+        var distance = new DistanceService();
+        var svc = new PricingService(ctx, distance, new FakeRoutingService());
+        var res = await svc.Quote(new QuoteRequest
+        {
+            ForceZonePricing = true,
+            PickupLng = 2, PickupLat = 2,
+            DropoffLng = 8, DropoffLat = 8
+        });
+
+        Assert.True(res.success);
+        var quote = Assert.IsType<QuoteResponse>(res.data);
+        // Full pickup→dropoff (haversine×1.3) is far larger than LZA; boundary shortcut would be ~0.
+        Assert.True(quote.RouteDistanceKm > (double)zone.LzaKm);
+        Assert.True(quote.EcaKm > 0);
+        Assert.Equal("zone_eca", quote.PricingSource);
+        Assert.Equal(1500m, quote.Total); // 1000 + MaxEcaFee 500
+    }
+
+    [Fact]
+    public async Task Quote_InterZone_StillUsesEntryToDropoffNotFullTrip()
     {
         var ctx = TestDbContext.New();
         ctx.AppSettings.Add(new AppSettings { IqdRoundingStep = 250 });
@@ -365,20 +443,12 @@ public class PricingServiceTests
         ctx.SaveChanges();
         var cityId = ctx.Zone.Single(z => z.Name == "City").ZoneId;
         var rahId = ctx.Zone.Single(z => z.Name == "Rahmaniya").ZoneId;
-        ctx.ZonePrice.AddRange(
-            new ZonePrice { FromZoneId = cityId, ToZoneId = rahId, Price = 3000m },
-            new ZonePrice { FromZoneId = rahId, ToZoneId = rahId, Price = 3000m });
+        ctx.ZonePrice.Add(new ZonePrice { FromZoneId = cityId, ToZoneId = rahId, Price = 3000m });
         ctx.SaveChanges();
         ctx.ChangeTracker.Clear();
 
-        var svc = new PricingService(ctx, new DistanceService(), new FakeRoutingService());
-
-        var sameZone = await svc.Quote(new QuoteRequest
-        {
-            ForceZonePricing = true,
-            PickupLng = 2.2, PickupLat = 0.5,
-            DropoffLng = 2.7, DropoffLat = 0.5
-        });
+        var distance = new DistanceService();
+        var svc = new PricingService(ctx, distance, new FakeRoutingService());
         var interZone = await svc.Quote(new QuoteRequest
         {
             ForceZonePricing = true,
@@ -386,13 +456,12 @@ public class PricingServiceTests
             DropoffLng = 2.7, DropoffLat = 0.5
         });
 
-        Assert.True(sameZone.success);
         Assert.True(interZone.success);
-        var sameQuote = Assert.IsType<QuoteResponse>(sameZone.data);
         var interQuote = Assert.IsType<QuoteResponse>(interZone.data);
-        Assert.Equal(sameQuote.RouteDistanceKm, interQuote.RouteDistanceKm, 3);
-        Assert.Equal(sameQuote.EcaKm, interQuote.EcaKm);
-        Assert.Equal(sameQuote.Total, interQuote.Total);
+        double fullTripKm = distance.RoundKm(distance.HaversineKm(0.5, 0.5, 0.5, 2.7) * 1.3);
+        // Entry≈lng 2 → dropoff 2.7 must be shorter than full city→customer trip
+        Assert.True(interQuote.RouteDistanceKm < fullTripKm);
+        Assert.True(interQuote.RouteDistanceKm > 0);
     }
 
     [Fact]

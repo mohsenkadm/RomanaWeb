@@ -14,6 +14,7 @@ namespace RomanaWeb.Models.Entity
         public string Token { get; set; }        
         public string? Address { get; set; }    
         public string? Password { get; set; }
+        // نشاط الحساب: false = الحساب باقٍ لكن ممنوع من تسجيل الدخول/التطبيق/الطلبات.
         public bool? IsActive { get; set; }
         public bool? IsDelete { get; set; }
 

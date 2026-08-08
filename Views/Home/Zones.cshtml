@@ -15,7 +15,9 @@
     .zones-map-card .card-header { background: linear-gradient(135deg, #1a237e 0%, #283593 100%); color: #fff; }
     #simulatorMap, #matrixOverviewMap { height: 460px; width: 100%; }
     .map-legend { padding: 10px 14px; background: #fafafa; border-top: 1px solid #eee; display: flex; flex-wrap: wrap; gap: 8px; max-height: 90px; overflow-y: auto; }
-    .zone-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; background: #fff; border: 1px solid #e0e0e0; border-radius: 20px; }
+    .zone-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 4px 10px; background: #fff; border: 1px solid #e0e0e0; border-radius: 20px; cursor: pointer; user-select: none; transition: border-color .15s, box-shadow .15s; }
+    .zone-legend-item:hover { border-color: #90caf9; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    .zone-legend-item.zone-legend-selected { border-color: #1976d2; background: #e3f2fd; box-shadow: 0 0 0 1px #1976d2; }
     .zone-legend-item i { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
     .zone-legend-inactive { opacity: .5; text-decoration: line-through; }
     .sim-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
@@ -344,6 +346,7 @@
                     <ul>
                         <li>للتأكد أن <strong>سقف التوصيل</strong> يعمل قبل تطبيق Flutter.</li>
                         <li>حدّد 🍽 موقع المطعم و 👤 موقع الزبون على الخريطة → النظام يحسب مسار OSRM + LZA/ECA + السقف.</li>
+                        <li><strong>داخل نفس الزون:</strong> مسافة التسعير = طريق المطعم→الزبون. أول LZA كم ضمن سعر الأساس، وما زاد يُحسب كـ ECA (مع سقف).</li>
                         <li>إذا ظهر «خارج أي زون» → النقطة خارج Polygon — ارجع للتبويب ① ووسّع حدود المنطقة.</li>
                     </ul>
                 </div>

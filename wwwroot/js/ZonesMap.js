@@ -77,15 +77,46 @@ window.ZonesMaps = (function () {
         });
     }
 
-    function renderLegend(containerId, zones) {
+    function renderLegend(containerId, zones, mapKey) {
         var html = '';
         zones.forEach(function (z, i) {
             var active = !!(z.isActive || z.IsActive);
-            html += '<span class="zone-legend-item' + (active ? '' : ' zone-legend-inactive') + '">' +
+            html += '<span class="zone-legend-item' + (active ? '' : ' zone-legend-inactive') +
+                '" data-zone-id="' + zoneId(z) + '" data-map="' + (mapKey || '') + '" title="عرض المنطقة على الخريطة">' +
                 '<i style="background:' + zoneColor(i) + '"></i>' + zoneName(z) + '</span>';
         });
         $('#' + containerId).html(html || '<span class="text-muted">لا توجد مناطق</span>');
     }
+
+    function zoomToZone(map, id) {
+        if (!map || id == null) return;
+        var z = null;
+        for (var i = 0; i < zonesData.length; i++) {
+            if (zoneId(zonesData[i]) == id) { z = zonesData[i]; break; }
+        }
+        if (!z) return;
+        var ring = parseGeoJson(zoneGeo(z));
+        if (!ring) return;
+        var bounds = L.polygon(ring).getBounds();
+        if (!bounds.isValid()) return;
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 15 });
+        map.invalidateSize();
+    }
+
+    function bindLegendClicks() {
+        $(document).off('click.zoneLegend', '.zone-legend-item[data-zone-id]')
+            .on('click.zoneLegend', '.zone-legend-item[data-zone-id]', function (e) {
+                e.preventDefault();
+                var id = $(this).data('zone-id');
+                var mapKey = $(this).data('map');
+                var map = mapKey === 'sim' ? simMap : (mapKey === 'matrix' ? matrixMap : null);
+                $('.zone-legend-item').removeClass('zone-legend-selected');
+                $(this).addClass('zone-legend-selected');
+                zoomToZone(map, id);
+            });
+    }
+
+    bindLegendClicks();
 
     function drawZonesOnMap(map, layerGroup, zones, options) {
         options = options || {};
@@ -134,12 +165,12 @@ window.ZonesMaps = (function () {
         zonesData = zones || [];
         if (matrixMap && matrixLayerGroup) {
             drawZonesOnMap(matrixMap, matrixLayerGroup, zonesData);
-            renderLegend('matrixLegend', zonesData);
+            renderLegend('matrixLegend', zonesData, 'matrix');
             matrixMap.invalidateSize();
         }
         if (simMap && simLayerGroup) {
             drawZonesOnMap(simMap, simLayerGroup, zonesData, { simulatorMode: true, fitBounds: false });
-            renderLegend('simLegend', zonesData);
+            renderLegend('simLegend', zonesData, 'sim');
             simMap.invalidateSize();
         }
     }
@@ -150,7 +181,7 @@ window.ZonesMaps = (function () {
         if (!matrixMap) return;
         matrixLayerGroup = L.layerGroup().addTo(matrixMap);
         drawZonesOnMap(matrixMap, matrixLayerGroup, zonesData);
-        renderLegend('matrixLegend', zonesData);
+        renderLegend('matrixLegend', zonesData, 'matrix');
     }
 
     function initSimulatorMap(onPointChange) {
@@ -166,7 +197,7 @@ window.ZonesMaps = (function () {
             placeSimPoint(simMode, e.latlng.lat, e.latlng.lng);
         });
 
-        renderLegend('simLegend', zonesData);
+        renderLegend('simLegend', zonesData, 'sim');
     }
 
     function findZoneAt(lat, lng) {

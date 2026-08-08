@@ -134,6 +134,10 @@ namespace RomanaWeb.Controllers
                 var driver = await _context.SaleMan.AsNoTracking()
                     .FirstOrDefaultAsync(s => s.SaleManId == req.SaleManId && s.IsDelete != true);
                 if (driver == null) return Response(false, "المندوب غير موجود");
+                if (driver.IsActive == false)
+                    return Response(false, "المندوب غير نشط — لا يمكن تعيينه على طلبات");
+                if (!driver.IsAvailable)
+                    return Response(false, "المندوب متوقف عن العمل حالياً");
 
                 if (await _dispatch.DriverHasActiveOrderAsync(req.SaleManId, orderId))
                     return Response(false, "المندوب لديه طلب نشط");

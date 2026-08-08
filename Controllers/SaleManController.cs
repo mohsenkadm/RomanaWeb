@@ -188,6 +188,8 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (!IsAdmin())
+                    return Response(false, "هذه العملية مخصصة لمدير التطبيق فقط");
                 if (Id <= 0) return Response(false, "معرف غير صالح");
                 ResObj res = await _SaleManService.SetAvailability(Id, isAvailable);
                 return Response(res.success, res.msg, res.data);
@@ -196,6 +198,26 @@ namespace RomanaWeb.Controllers
             {
                 await _logger.WriteAsync(ex, "SaleManController => SetAvailability => Id:" + Id);
                 return Response(false, "حدث خطأ اثناء تغيير الحالة");
+            }
+        }
+
+        // نشاط المندوب: تنشيط / الغاء تنشيط (admin only).
+        // POST /SaleMan/SetActive?Id=12&isActive=false
+        [HttpPost("SaleMan/SetActive")]
+        public async Task<IActionResult> SetActive(int Id, bool isActive)
+        {
+            try
+            {
+                if (!IsAdmin())
+                    return Response(false, "هذه العملية مخصصة لمدير التطبيق فقط");
+                if (Id <= 0) return Response(false, "معرف غير صالح");
+                ResObj res = await _SaleManService.SetActive(Id, isActive);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "SaleManController => SetActive => Id:" + Id);
+                return Response(false, "حدث خطأ اثناء تغيير نشاط المندوب");
             }
         }
 
@@ -208,6 +230,14 @@ namespace RomanaWeb.Controllers
             {
                 int driverId = UserManager?.Id ?? 0;
                 if (driverId <= 0) return Response(false, "غير مصرح");
+
+                var self = await _Context.SaleMan.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.SaleManId == driverId);
+                if (self == null || self.IsDelete == true)
+                    return Response(false, "حساب المندوب غير موجود");
+                if (self.IsActive == false)
+                    return Response(false, "حسابك غير نشط — لا يمكنك التحكم في التطبيق");
+
                 ResObj res = await _SaleManService.SetAvailability(driverId, isAvailable);
                 return Response(res.success, res.msg, res.data);
             }
@@ -226,6 +256,14 @@ namespace RomanaWeb.Controllers
             {
                 int driverId = UserManager?.Id ?? 0;
                 if (driverId <= 0) return Response(false, "غير مصرح");
+
+                var self = await _Context.SaleMan.AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.SaleManId == driverId);
+                if (self == null || self.IsDelete == true)
+                    return Response(false, "حساب المندوب غير موجود");
+                if (self.IsActive == false)
+                    return Response(false, "حسابك غير نشط — لا يمكنك التحكم في التطبيق");
+
                 var ids = await _Context.SaleManZone.AsNoTracking()
                     .Where(sz => sz.SaleManId == driverId)
                     .Select(sz => sz.ZoneId)

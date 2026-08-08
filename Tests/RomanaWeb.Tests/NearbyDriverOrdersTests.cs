@@ -152,4 +152,28 @@ public class NearbyDriverOrdersTests
         var list = Assert.IsType<List<NearbyDriverOrderDto>>(res.data);
         Assert.Empty(list);
     }
+
+    [Fact]
+    public async Task GetNearbyDriverOrders_BlocksInactiveDriver()
+    {
+        var ctx = TestDbContext.New();
+        var zoneId = ZoneTestSeeder.SeedZone(ctx);
+        ctx.SaleMan.Add(new SaleMan
+        {
+            SaleManId = 9,
+            Name = "Inactive",
+            Phone = "08",
+            IsAvailable = true,
+            IsActive = false
+        });
+        ctx.SaleManZone.Add(new SaleManZone { SaleManId = 9, ZoneId = zoneId });
+        ctx.SaveChanges();
+        ctx.ChangeTracker.Clear();
+
+        var svc = NewOrdersService(ctx);
+        var res = await svc.GetNearbyDriverOrders(9, 33.31, 44.36, 50);
+
+        Assert.False(res.success);
+        Assert.Contains("غير نشط", res.msg ?? "");
+    }
 }

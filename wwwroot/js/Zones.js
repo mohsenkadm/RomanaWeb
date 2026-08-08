@@ -43,7 +43,7 @@
             return '<div class="btn-action-group">' +
                 '<button type="button" class="btn btn-sm btn-info btn-map-row" data-id="' + id + '" title="خريطة"><i class="material-icons" style="font-size:16px">map</i></button>' +
                 '<button type="button" class="btn btn-sm btn-primary btn-edit-row" data-id="' + id + '" title="تعديل"><i class="material-icons" style="font-size:16px">edit</i></button>' +
-                '<button type="button" class="btn btn-sm btn-danger btn-delete-row" data-id="' + id + '" title="تعطيل"><i class="material-icons" style="font-size:16px">delete</i></button>' +
+                '<button type="button" class="btn btn-sm btn-danger btn-delete-row" data-id="' + id + '" title="حذف"><i class="material-icons" style="font-size:16px">delete</i></button>' +
                 '</div>';
         }
         return '<div class="btn-action-group">' +
@@ -90,7 +90,7 @@
     }
 
     function loadZones() {
-        call_ajax('GET', 'zones', null, function (rows) {
+        call_ajax('GET', 'zones?_=' + Date.now(), null, function (rows) {
             rows = rows || [];
             zonesCache = rows;
             $('#zonesCount').text(rows.length);
@@ -101,12 +101,27 @@
     }
 
     function loadMatrix() {
-        call_ajax('GET', 'zones/matrix', null, function (rows) {
+        call_ajax('GET', 'zones/matrix?_=' + Date.now(), null, function (rows) {
             rows = rows || [];
             matrixCache = rows;
             $('#matrixCount').text(rows.length);
             renderMatrixTable(rows);
         });
+    }
+
+    function removeZoneFromUi(id) {
+        zonesCache = (zonesCache || []).filter(function (z) {
+            return (z.zoneId || z.ZoneId) != id;
+        });
+        matrixCache = (matrixCache || []).filter(function (m) {
+            return (m.fromZoneId || m.FromZoneId) != id && (m.toZoneId || m.ToZoneId) != id;
+        });
+        $('#zonesCount').text(zonesCache.length);
+        $('#matrixCount').text(matrixCache.length);
+        fillSelects(zonesCache);
+        renderZonesTable(zonesCache);
+        renderMatrixTable(matrixCache);
+        refreshMaps();
     }
 
     function resetZoneForm() {
@@ -185,10 +200,11 @@
                 (q.maxTotalDeliveryFee || q.MaxTotalDeliveryFee ? ' = ' + (q.maxTotalDeliveryFee || q.MaxTotalDeliveryFee) + ' د.ع' : '') + '</div>';
         var html = '<div class="' + cls + ' p-3 pricing-breakdown">' + caps +
             '<dl class="row mb-0">' +
-            '<dt class="col-5">Zone Fee (المصفوفة)</dt><dd class="col-7">' + (q.zoneFee || q.ZoneFee || 0) + ' د.ع</dd>' +
-            '<dt class="col-5">مسافة الطريق</dt><dd class="col-7">' + (q.routeDistanceKm || q.RouteDistanceKm || '-') + ' km (' + (q.routeSource || q.RouteSource || '-') + ')</dd>' +
-            '<dt class="col-5">LZA</dt><dd class="col-7">' + (q.lzaKm || q.LzaKm || '-') + ' km</dd>' +
-            '<dt class="col-5">ECA</dt><dd class="col-7">' + (q.ecaKm || q.EcaKm || 0) + ' km → ' + (q.ecaFee || q.EcaFee || 0) + ' د.ع</dd>' +
+            '<dt class="col-5">Zone Fee (أساس الزون)</dt><dd class="col-7">' + (q.zoneFee || q.ZoneFee || 0) + ' د.ع</dd>' +
+            '<dt class="col-5">مسافة التسعير</dt><dd class="col-7">' + (q.routeDistanceKm || q.RouteDistanceKm || '-') + ' km (' + (q.routeSource || q.RouteSource || '-') + ')</dd>' +
+            '<dt class="col-5">LZA (مجاني)</dt><dd class="col-7">' + (q.lzaKm || q.LzaKm || '-') + ' km</dd>' +
+            '<dt class="col-5">ECA (زائد)</dt><dd class="col-7">' + (q.ecaKm || q.EcaKm || 0) + ' km → ' + (q.ecaFee || q.EcaFee || 0) + ' د.ع' +
+            ((q.ecaPricePerKm || q.EcaPricePerKm) ? ' <span class="text-muted">(' + (q.ecaPricePerKm || q.EcaPricePerKm) + '/كم)</span>' : '') + '</dd>' +
             '<dt class="col-5">From → To</dt><dd class="col-7">' + (q.fromZone || q.FromZone || '-') + ' → ' + (q.toZone || q.ToZone || '-') + '</dd>' +
             '<dt class="col-5">المصدر</dt><dd class="col-7">' + (q.pricingSource || q.PricingSource) + '</dd>' +
             '</dl>' +
@@ -284,9 +300,19 @@
         var id = $(this).data('id');
         var z = zonesCache.find(function (x) { return (x.zoneId || x.ZoneId) == id; });
         if (!z) return;
-        if (!confirm('تعطيل المنطقة «' + (z.name || z.Name) + '»؟')) return;
+        var name = z.name || z.Name;
+        var relatedPrices = (matrixCache || []).filter(function (m) {
+            return (m.fromZoneId || m.FromZoneId) == id || (m.toZoneId || m.ToZoneId) == id;
+        }).length;
+        var msg = 'هل أنت متأكد من حذف المنطقة «' + name + '»؟\nلن تظهر بعد الحذف.';
+        if (relatedPrices > 0) {
+            msg += '\nسيتم أيضاً حذف ' + relatedPrices + ' سعر مرتبط بها في مصفوفة الأسعار.';
+        }
+        if (!confirm(msg)) return;
         call_ajax('DELETE', 'zones/' + id, null, function () {
+            removeZoneFromUi(id);
             loadZones();
+            loadMatrix();
         });
     });
 

@@ -123,6 +123,8 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(false, "المندوب غير موجود");
             if (driver.IsDelete == true)
                 return Result.Return(false, "حساب المندوب محذوف");
+            if (isAvailable && driver.IsActive == false)
+                return Result.Return(false, "لا يمكن تفعيل حالة العمل لمندوب غير نشط — قم بتنشيطه أولاً");
 
             driver.IsAvailable = isAvailable;
             driver.AvailabilityChangedAt = DateTime.UtcNow;
@@ -132,6 +134,31 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true,
                 isAvailable ? "تم تفعيل حالة العمل" : "تم ايقاف حالة العمل",
                 new { driver.SaleManId, driver.IsAvailable, driver.AvailabilityChangedAt });
+        }
+
+        // نشاط المندوب: الحساب يبقى، لكن عند الإلغاء يُقفل التطبيق ولا تُجلب طلبات.
+        public async Task<ResObj> SetActive(int Id, bool isActive)
+        {
+            var driver = await _context.SaleMan.FirstOrDefaultAsync(i => i.SaleManId == Id);
+            if (driver == null)
+                return Result.Return(false, "المندوب غير موجود");
+            if (driver.IsDelete == true)
+                return Result.Return(false, "حساب المندوب محذوف");
+
+            driver.IsActive = isActive;
+            if (!isActive)
+            {
+                // إيقاف حالة العمل تلقائياً حتى لا يُحسب ضمن التوزيع.
+                driver.IsAvailable = false;
+                driver.AvailabilityChangedAt = DateTime.UtcNow;
+            }
+
+            _context.Entry(driver).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Result.Return(true,
+                isActive ? "تم تنشيط المندوب بنجاح" : "تم الغاء تنشيط المندوب — الحساب باقٍ لكن لا يمكنه استخدام التطبيق",
+                new { driver.SaleManId, driver.IsActive, driver.IsAvailable, driver.AvailabilityChangedAt });
         }
               
     }

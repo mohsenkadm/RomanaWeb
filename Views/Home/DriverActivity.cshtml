@@ -3,6 +3,172 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
+<style>
+    .da-actions-col { width: 110px; white-space: nowrap; }
+    .da-btn-details {
+        display: inline-flex; align-items: center; gap: 4px;
+        border: none; border-radius: 8px; padding: 6px 12px;
+        background: #0f766e; color: #fff; font-size: 12px; font-weight: 600;
+        transition: background .15s, transform .15s;
+    }
+    .da-btn-details:hover { background: #0d9488; color: #fff; transform: translateY(-1px); }
+    .da-btn-details .material-icons { font-size: 16px; }
+
+    .da-modal .modal-dialog { max-width: 980px; margin: 1.5rem auto; }
+    .da-modal .modal-content {
+        border: none; border-radius: 18px; overflow: hidden;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, .18);
+        background: #f8fafc;
+    }
+    .da-modal-header {
+        display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+        padding: 22px 24px 18px; background: #fff;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .da-modal-identity { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .da-avatar {
+        width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(145deg, #0f766e, #14b8a6);
+        color: #fff; font-size: 20px; font-weight: 700; letter-spacing: .5px;
+    }
+    .da-modal-identity h5 {
+        margin: 0 0 4px; font-size: 1.15rem; font-weight: 700; color: #0f172a;
+    }
+    .da-modal-meta { margin: 0; color: #64748b; font-size: 13px; }
+    .da-modal-close {
+        border: none; background: #f1f5f9; color: #475569;
+        width: 36px; height: 36px; border-radius: 10px;
+        display: inline-flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+    }
+    .da-modal-close:hover { background: #e2e8f0; color: #0f172a; }
+    .da-modal-close .material-icons { font-size: 20px; }
+
+    .da-stats {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+        padding: 14px 24px; background: #fff; border-bottom: 1px solid #e2e8f0;
+    }
+    .da-stat {
+        background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
+        padding: 12px 14px; text-align: center;
+    }
+    .da-stat-value { display: block; font-size: 1.15rem; font-weight: 700; color: #0f172a; }
+    .da-stat-label { display: block; margin-top: 2px; font-size: 11px; color: #64748b; }
+
+    .da-toolbar {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+        padding: 14px 24px 8px; background: #f8fafc;
+    }
+    .da-search {
+        flex: 1 1 220px; position: relative; min-width: 180px;
+    }
+    .da-search .material-icons {
+        position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+        font-size: 18px; color: #94a3b8; pointer-events: none;
+    }
+    .da-search input {
+        width: 100%; border: 1px solid #e2e8f0; border-radius: 10px;
+        padding: 9px 36px 9px 12px; background: #fff; font-size: 13px;
+        outline: none; transition: border-color .15s, box-shadow .15s;
+    }
+    .da-search input:focus {
+        border-color: #14b8a6; box-shadow: 0 0 0 3px rgba(20, 184, 166, .15);
+    }
+    .da-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+    .da-filter {
+        border: 1px solid #e2e8f0; background: #fff; color: #475569;
+        border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 600;
+        cursor: pointer; transition: all .15s;
+    }
+    .da-filter:hover { border-color: #99f6e4; color: #0f766e; }
+    .da-filter.active {
+        background: #0f766e; border-color: #0f766e; color: #fff;
+    }
+
+    .da-modal-body {
+        padding: 8px 24px 20px; max-height: min(62vh, 560px); overflow-y: auto;
+        background: #f8fafc;
+    }
+    .da-order-list { display: flex; flex-direction: column; gap: 10px; }
+    .da-order-card {
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
+        padding: 14px 16px; transition: border-color .15s, box-shadow .15s;
+    }
+    .da-order-card:hover {
+        border-color: #99f6e4; box-shadow: 0 8px 20px rgba(15, 23, 42, .06);
+    }
+    .da-order-top {
+        display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+        margin-bottom: 12px;
+    }
+    .da-order-no {
+        margin: 0; font-size: 15px; font-weight: 700; color: #0f172a;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .da-order-no span {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 28px; height: 28px; border-radius: 8px;
+        background: #ecfdf5; color: #0f766e; font-size: 13px;
+    }
+    .da-order-date { margin: 4px 0 0; font-size: 12px; color: #64748b; }
+    .da-status {
+        display: inline-flex; align-items: center; gap: 4px;
+        border-radius: 999px; padding: 4px 10px; font-size: 11px; font-weight: 700;
+        white-space: nowrap;
+    }
+    .da-status-delivered { background: #dcfce7; color: #166534; }
+    .da-status-confirmed { background: #ccfbf1; color: #0f766e; }
+    .da-status-cancelled { background: #fee2e2; color: #991b1b; }
+    .da-status-active { background: #ffedd5; color: #9a3412; }
+    .da-status-pending { background: #f1f5f9; color: #475569; }
+
+    .da-order-grid {
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px;
+    }
+    .da-field-label {
+        display: block; font-size: 11px; color: #94a3b8; margin-bottom: 2px; font-weight: 600;
+    }
+    .da-field-value {
+        display: block; font-size: 13px; color: #1e293b; font-weight: 600; line-height: 1.45;
+        word-break: break-word;
+    }
+    .da-field-money { color: #0f766e; font-variant-numeric: tabular-nums; }
+    .da-order-footer {
+        display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; padding-top: 12px;
+        border-top: 1px dashed #e2e8f0; font-size: 12px; color: #64748b;
+    }
+    .da-order-footer strong { color: #334155; }
+
+    .da-empty, .da-loading {
+        text-align: center; padding: 48px 16px; color: #64748b;
+    }
+    .da-empty .material-icons, .da-loading .material-icons {
+        font-size: 42px; color: #cbd5e1; display: block; margin: 0 auto 10px;
+    }
+    .da-loading .material-icons { animation: da-spin 1s linear infinite; }
+    @@keyframes da-spin { to { transform: rotate(360deg); } }
+
+    .da-modal-footer {
+        display: flex; justify-content: space-between; align-items: center; gap: 12px;
+        padding: 14px 24px; background: #fff; border-top: 1px solid #e2e8f0;
+    }
+    .da-modal-footer .btn-close-da {
+        border: none; border-radius: 10px; padding: 9px 18px;
+        background: #0f172a; color: #fff; font-weight: 600; font-size: 13px;
+    }
+    .da-modal-footer .btn-close-da:hover { background: #1e293b; color: #fff; }
+    .da-count-hint { font-size: 12px; color: #64748b; }
+
+    @@media (max-width: 767px) {
+        .da-stats { grid-template-columns: repeat(2, 1fr); }
+        .da-order-grid { grid-template-columns: 1fr; }
+        .da-modal .modal-dialog { margin: .75rem; }
+        .da-modal-body { max-height: 55vh; padding-left: 14px; padding-right: 14px; }
+        .da-modal-header, .da-toolbar, .da-modal-footer, .da-stats { padding-left: 14px; padding-right: 14px; }
+    }
+</style>
+
 <div class="content">
     <div class="container-fluid" style="direction:rtl;">
         <div class="rm-page-summary">
@@ -50,12 +216,61 @@
                             <th>ملغي</th>
                             <th>رسوم توصيل (د.ع)</th>
                             <th>مسافة (كم)</th>
+                            <th class="da-actions-col">تفاصيل</th>
                         </tr>
                     </thead>
                     <tbody id="driverActivityBody">
-                        <tr><td colspan="8" class="text-center text-muted">اختر الفترة واضغط بحث</td></tr>
+                        <tr><td colspan="9" class="text-center text-muted">اختر الفترة واضغط بحث</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade da-modal" id="driverOrdersModal" tabindex="-1" role="dialog" aria-labelledby="driverOrdersModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="da-modal-header">
+                <div class="da-modal-identity">
+                    <div class="da-avatar" id="daAvatar">م</div>
+                    <div>
+                        <h5 id="driverOrdersModalTitle">تفاصيل الطلبات</h5>
+                        <p class="da-modal-meta" id="daDriverMeta">—</p>
+                    </div>
+                </div>
+                <button type="button" class="da-modal-close" data-dismiss="modal" aria-label="إغلاق">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+
+            <div class="da-stats" id="daStats">
+                <div class="da-stat"><span class="da-stat-value" id="daStatAll">0</span><span class="da-stat-label">إجمالي الطلبات</span></div>
+                <div class="da-stat"><span class="da-stat-value" id="daStatDelivered">0</span><span class="da-stat-label">تم التوصيل</span></div>
+                <div class="da-stat"><span class="da-stat-value" id="daStatCancelled">0</span><span class="da-stat-label">ملغي</span></div>
+                <div class="da-stat"><span class="da-stat-value" id="daStatFees">0</span><span class="da-stat-label">رسوم التوصيل</span></div>
+            </div>
+
+            <div class="da-toolbar">
+                <div class="da-search">
+                    <i class="material-icons">search</i>
+                    <input type="text" id="daOrderSearch" placeholder="بحث برقم الطلب، المطعم، العنوان..." autocomplete="off" />
+                </div>
+                <div class="da-filters">
+                    <button type="button" class="da-filter active" data-filter="all">الكل</button>
+                    <button type="button" class="da-filter" data-filter="delivered">موصّل</button>
+                    <button type="button" class="da-filter" data-filter="cancelled">ملغي</button>
+                    <button type="button" class="da-filter" data-filter="active">جارٍ</button>
+                </div>
+            </div>
+
+            <div class="da-modal-body" id="daOrdersBody">
+                <div class="da-loading"><i class="material-icons">autorenew</i>جاري تحميل الطلبات...</div>
+            </div>
+
+            <div class="da-modal-footer">
+                <span class="da-count-hint" id="daVisibleCount"></span>
+                <button type="button" class="btn-close-da" data-dismiss="modal">إغلاق</button>
             </div>
         </div>
     </div>

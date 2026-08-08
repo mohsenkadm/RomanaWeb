@@ -210,16 +210,31 @@ namespace RomanaWeb.Helper.Repository
             }
             else
             {
-                if (!ZoneGeometryHelper.TryParseRing(dropoffZone.GeoJson, out var ring))
-                    return null;
+                bool sameZone = pickupZone.ZoneId == dropoffZone.ZoneId;
+                double fromLat;
+                double fromLng;
+                if (sameZone)
+                {
+                    // داخل نفس الزون: المسافة = طريق المطعم → الزبون كاملاً
+                    fromLat = request.PickupLat;
+                    fromLng = request.PickupLng;
+                }
+                else
+                {
+                    // بين زونين: المسافة داخل زون الزبون = من نقطة الدخول على الحدود → الزبون
+                    if (!ZoneGeometryHelper.TryParseRing(dropoffZone.GeoJson, out var ring))
+                        return null;
 
-                var (entryLng, entryLat) = ZoneGeometryHelper.FindEntryPointOnBoundary(
-                    ring,
-                    request.PickupLng, request.PickupLat,
-                    request.DropoffLng, request.DropoffLat);
+                    var (entryLng, entryLat) = ZoneGeometryHelper.FindEntryPointOnBoundary(
+                        ring,
+                        request.PickupLng, request.PickupLat,
+                        request.DropoffLng, request.DropoffLat);
+                    fromLat = entryLat;
+                    fromLng = entryLng;
+                }
 
                 var route = await _routing.GetRouteDistanceKmAsync(
-                    entryLat, entryLng, request.DropoffLat, request.DropoffLng);
+                    fromLat, fromLng, request.DropoffLat, request.DropoffLng);
                 routeKm = route.DistanceKm;
                 routeSource = route.Source;
             }
