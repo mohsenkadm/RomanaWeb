@@ -1,33 +1,42 @@
 ﻿
 function filltableOrders(data) {
     $('#tableOrders').empty();
+    if (!data || !data.length) {
+        $('#tableOrders').append("<tr><td colspan='18' class='text-center'>لا توجد طلبات</td></tr>");
+        return;
+    }
     $.each(data, function (i, item) {
+        var cancelDisabled = item.isCancel ? " disabled" : "";
         var rows = "<tr>" +
-            "<td class='rm-actions-cell'><button type='button' class='btn btn-info btn-sm' onclick='OrderDetail(" + item.orderId + ")' data-toggle='modal' data-target='#OrdersDetailsModal'>تفاصيل</button></td>" +
+            "<td class='rm-actions-cell' style='white-space:nowrap'>" +
+            "<button type='button' class='btn btn-info btn-sm' onclick='OrderDetail(" + item.orderId + ")' data-toggle='modal' data-target='#OrdersDetailsModal'>تفاصيل</button> " +
+            "<button type='button' class='btn btn-warning btn-sm' onclick='AdminCancelOrder(" + item.orderId + ")'" + cancelDisabled + ">الغاء</button> " +
+            "<button type='button' class='btn btn-primary btn-sm' onclick='openAdminOrderControl(" + item.orderId + ")' data-toggle='modal' data-target='#AdminOrderControlModal'>تعديل</button>" +
+            "</td>" +
             "<td>" +
             "<div class='form-check'>" +
             "<label class='form-check-label'>" +
-            "<input class='form-check-input' type='checkbox' id='IsDone" + item.orderId + "'>" +
+            "<input class='form-check-input' type='checkbox' id='IsDone" + item.orderId + "' disabled>" +
             "<span class='form-check-sign'>" +
             "<span class='check'></span>" +
             "</span>" +
             "</label>" +
             "</div>" +
-            "</td>" + 
+            "</td>" +
             "<td>" +
             "<div class='form-check'>" +
             "<label class='form-check-label'>" +
-            "<input class='form-check-input' type='checkbox' id='IsApporve" + item.orderId + "'>" +
+            "<input class='form-check-input' type='checkbox' id='IsApporve" + item.orderId + "' disabled>" +
             "<span class='form-check-sign'>" +
             "<span class='check'></span>" +
             "</span>" +
             "</label>" +
             "</div>" +
-            "</td>" + 
+            "</td>" +
             "<td>" +
             "<div class='form-check'>" +
             "<label class='form-check-label'>" +
-            "<input class='form-check-input' type='checkbox' id='IsCancel" + item.orderId + "'>" +
+            "<input class='form-check-input' type='checkbox' id='IsCancel" + item.orderId + "' disabled>" +
             "<span class='form-check-sign'>" +
             "<span class='check'></span>" +
             "</span>" +
@@ -36,7 +45,7 @@ function filltableOrders(data) {
             "</td>" +
             "<td>" + item.netAmount + "</td>" +
             "<td>" + item.totalDiscount + "</td>" +
-            "<td>" + item.total + "</td>" + 
+            "<td>" + item.total + "</td>" +
             "<td>" + item.cityName + "</td>" +
             "<td>" + item.countriesName + "</td>" +
             "<td>" + item.phone + "</td>" +
@@ -49,10 +58,99 @@ function filltableOrders(data) {
             "<td>" + item.orderDate + "</td>" +
             "<td><strong>" + (item.orderNo || '') + "</strong></td></tr>";
 
-              $('#tableOrders').append(rows); 
+        $('#tableOrders').append(rows);
         $('#IsDone' + item.orderId).attr('checked', item.isDone);
         $('#IsApporve' + item.orderId).attr('checked', item.isApporve);
         $('#IsCancel' + item.orderId).attr('checked', item.isCancel);
+        // Cache row for edit modal
+        window._ordersCache = window._ordersCache || {};
+        window._ordersCache[item.orderId] = item;
+    });
+}
+
+function AdminCancelOrder(id) {
+    if (!confirm("هل تريد الغاء هذا الطلب؟")) return;
+    call_ajax("DELETE", "Orders/SetIsCancel/" + id, null, RefreshOrders);
+}
+
+function mapAdminStatusCode(item) {
+    if (!item) return 0;
+    if (item.isCancel) return 9;
+    if (item.isDeliveryConfirmed) return 8;
+    if (item.isDelivered === true) return 7;
+    if (item.isOutForDelivery) return 6;
+    if (item.isPickedUpFromRestaurant) return 5;
+    if (item.isDriverEnRouteToPickup) return 4;
+    if (item.isSaleManApprove === true) return 3;
+    if (item.isPreparing) return 2;
+    if (item.isApporve) return 1;
+    return 0;
+}
+
+function openAdminOrderControl(id) {
+    window._adminOrderId = id;
+    var item = (window._ordersCache && window._ordersCache[id]) || {};
+    $("#adminCtrlOrderNo").text(item.orderNo || id);
+    $("#adminCtrlAddress").val(item.address || '');
+    $("#adminCtrlPhone").val(item.phone || '');
+    $("#adminCtrlFunctionPoint").val(item.functionPoint || '');
+    $("#adminCtrlNotes").val(item.notes || '');
+    $("#adminCtrlCostDelivery").val(item.costDelivery != null ? item.costDelivery : '');
+    $("#adminCtrlStatus").val(String(mapAdminStatusCode(item)));
+}
+
+function saveAdminOrderFields() {
+    var id = window._adminOrderId;
+    if (!id) return;
+    var payload = {
+        OrderId: id,
+        Address: $("#adminCtrlAddress").val(),
+        Phone: $("#adminCtrlPhone").val(),
+        FunctionPoint: $("#adminCtrlFunctionPoint").val(),
+        Notes: $("#adminCtrlNotes").val(),
+        CostDelivery: $("#adminCtrlCostDelivery").val() === '' ? null : parseFloat($("#adminCtrlCostDelivery").val())
+    };
+    $.ajax({
+        method: "POST",
+        url: "/Orders/AdminUpdateOrder",
+        contentType: "application/json",
+        data: JSON.stringify(payload),
+        headers: { 'Authorization': 'Bearer ' + getCookie("token2") },
+        success: function (resp) {
+            if (resp.success) {
+                md.showNotification(resp.msg || "تم التحديث");
+                RefreshOrders();
+            } else {
+                md.showNotification(resp.msg || "حدث خطأ");
+            }
+        },
+        error: function () { md.showNotification("حدث خطأ عند الاتصال"); }
+    });
+}
+
+function applyAdminOrderStatus() {
+    var id = window._adminOrderId;
+    if (!id) return;
+    var statusCode = parseInt($("#adminCtrlStatus").val(), 10);
+    if (isNaN(statusCode)) {
+        md.showNotification("اختر الحالة");
+        return;
+    }
+    if (statusCode === 9 && !confirm("تأكيد الغاء الطلب؟")) return;
+    $.ajax({
+        method: "POST",
+        url: "/Orders/AdminSetStatus/" + id + "?statusCode=" + statusCode,
+        headers: { 'Authorization': 'Bearer ' + getCookie("token2") },
+        success: function (resp) {
+            if (resp.success) {
+                md.showNotification(resp.msg || "تم تحديث الحالة");
+                $('#AdminOrderControlModal').modal('hide');
+                RefreshOrders();
+            } else {
+                md.showNotification(resp.msg || "حدث خطأ");
+            }
+        },
+        error: function () { md.showNotification("حدث خطأ عند الاتصال"); }
     });
 } 
 function filltableOrdersForRes(data) {

@@ -1,14 +1,30 @@
 ﻿
 var _PromoCodeId = 0;
+function formatPromoDate(val) {
+    if (!val) return '-';
+    var d = new Date(val);
+    if (isNaN(d.getTime())) return val;
+    var day = ('0' + d.getDate()).slice(-2);
+    var month = ('0' + (d.getMonth() + 1)).slice(-2);
+    var year = d.getFullYear();
+    var h = ('0' + d.getHours()).slice(-2);
+    var m = ('0' + d.getMinutes()).slice(-2);
+    return year + '-' + month + '-' + day + ' ' + h + ':' + m;
+}
+
 function filltablePromoCode(data) {
     $('#tablePromoCode').empty();
+    if (!data || !data.length) {
+        $('#tablePromoCode').append("<tr><td colspan='12' class='text-center'>لا توجد بيانات</td></tr>");
+        return;
+    }
     $.each(data, function (i, item) {
         var statusBadge = item.isActive
             ? "<span class='badge-active'>فعال</span>"
             : "<span class='badge-inactive'>غير فعال</span>";
         var scopeBadge = item.isForAllStores
             ? "<span class='badge-all'>جميع المتاجر</span>"
-            : item.restaurantName;
+            : (item.restaurantName || '-');
         var rows = "<tr style='animation: promoFadeIn " + (0.05 * i) + "s ease-out both'>" +
             "<td>" + (item.restaurantName || '-') + "</td>" +
             "<td>" + item.percentage + "%</td>" +
@@ -19,6 +35,8 @@ function filltablePromoCode(data) {
             "<td>" + (item.usedOrders || 0) + "</td>" +
             "<td>" + scopeBadge + "</td>" +
             "<td>" + statusBadge + "</td>" +
+            "<td>" + (item.createdByAdminName || '-') + "</td>" +
+            "<td>" + formatPromoDate(item.createdAt) + "</td>" +
             "<td><button type='button' class='btn btn-danger btn-sm' onclick='deletePromoCode(" + item.promoCodeId + ")'>حذف</button>" +
             " <button type='button' class='btn btn-primary btn-sm' onclick='updatePromoCode(" + item.promoCodeId + ")' data-toggle='modal' data-target='#PromoCodeModal'>تعديل</button></td></tr>";
         $('#tablePromoCode').append(rows);
