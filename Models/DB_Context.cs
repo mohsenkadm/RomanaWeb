@@ -54,6 +54,7 @@ namespace RomanaWeb.Model
             modelBuilder.ApplyConfiguration(new AppSplashMap());
             modelBuilder.ApplyConfiguration(new SupportPhoneMap());
             modelBuilder.ApplyConfiguration(new DriverLocationMap());
+            modelBuilder.ApplyConfiguration(new ProblemReportMap());
         }
                                       
         public DbSet<Users> Users { get; set; }         
@@ -92,5 +93,6 @@ namespace RomanaWeb.Model
         public DbSet<AppSplash> AppSplash { get; set; }
         public DbSet<SupportPhone> SupportPhone { get; set; }
         public DbSet<DriverLocation> DriverLocations { get; set; }
+        public DbSet<ProblemReport> ProblemReports { get; set; }
     }
 }

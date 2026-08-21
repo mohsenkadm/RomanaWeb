@@ -86,6 +86,14 @@ namespace RomanaWeb.Helper.Repository
             else
                 return Result.Return(false);
         }
+        private static string ResolveDiscountType(PromoCode promo)
+        {
+            if (!string.IsNullOrWhiteSpace(promo.DiscountType))
+                return promo.DiscountType.Trim();
+            if (promo.DiscountAmount > 0) return "Fixed";
+            return "Percentage";
+        }
+
         public async Task<ResObj> Post(PromoCode PromoCode)
         {
              if (PromoCode.PromoCodeId == 0)
@@ -100,6 +108,7 @@ namespace RomanaWeb.Helper.Repository
                 if (!PromoCode.IsForAllStores && PromoCode.RestaurantId == 0)
                     return Result.Return(false, "يجب اختيار المطعم لهذا النوع من البرومو كود");
 
+                PromoCode.DiscountType = ResolveDiscountType(PromoCode);
                 PromoCode.IsActive = true;
                 PromoCode.UsedOrders = 0;
                 PromoCode.FirstUsedAt = null;
@@ -109,7 +118,7 @@ namespace RomanaWeb.Helper.Repository
             }
             else
             {
-                var item = await _Context.PromoCodes.AsSplitQuery().AsNoTracking().FirstOrDefaultAsync(i => i.PromoCodeId == PromoCode.PromoCodeId);
+                var item = await _Context.PromoCodes.FirstOrDefaultAsync(i => i.PromoCodeId == PromoCode.PromoCodeId);
                 if (item != null)
                 {
                     if (!PromoCode.IsForAllStores && PromoCode.RestaurantId == 0)
@@ -121,12 +130,13 @@ namespace RomanaWeb.Helper.Repository
                     item.MaxOrders = PromoCode.MaxOrders;
                     item.IsForAllStores = PromoCode.IsForAllStores;
                     item.DiscountAmount = PromoCode.DiscountAmount;
-                    item.DiscountType = PromoCode.DiscountType;
+                    item.DiscountType = string.IsNullOrWhiteSpace(PromoCode.DiscountType)
+                        ? ResolveDiscountType(PromoCode)
+                        : PromoCode.DiscountType.Trim();
                     item.MaxDiscountAmount = PromoCode.MaxDiscountAmount;
                     item.MaxUsagePerUser = PromoCode.MaxUsagePerUser;
                     item.IsActive = PromoCode.IsActive;
                     // Preserve CreatedByAdminId / CreatedAt on update
-                    _Context.Entry(item).State = EntityState.Modified;
                 }
             }
             await _Context.SaveChangesAsync();
@@ -215,9 +225,9 @@ namespace RomanaWeb.Helper.Repository
             if (string.Equals(promo.DiscountType, "Percentage", StringComparison.OrdinalIgnoreCase))
                 discountValue = orderTotal * promo.Percentage / 100m;
             else if (string.Equals(promo.DiscountType, "Fixed", StringComparison.OrdinalIgnoreCase))
-                discountValue = promo.DiscountAmount;
+                discountValue = (decimal)promo.DiscountAmount;
             else if (promo.DiscountAmount > 0)
-                discountValue = promo.DiscountAmount;
+                discountValue = (decimal)promo.DiscountAmount;
             else
                 discountValue = orderTotal * promo.Percentage / 100m;
 
@@ -321,12 +331,12 @@ namespace RomanaWeb.Helper.Repository
 
             var report = promos.Select(p =>
             {
-                decimal perUse = string.Equals(p.DiscountType, "Fixed", StringComparison.OrdinalIgnoreCase) || p.DiscountAmount > 0
+                decimal perUse = (decimal)(string.Equals(p.DiscountType, "Fixed", StringComparison.OrdinalIgnoreCase) || p.DiscountAmount > 0
                     ? p.DiscountAmount
-                    : 0; // percentage liability needs order totals; reported separately by order pipeline
+                    : 0); // percentage liability needs order totals; reported separately by order pipeline
                 if (p.MaxDiscountAmount > 0 && perUse > p.MaxDiscountAmount) perUse = p.MaxDiscountAmount;
 
-                decimal estimatedTotal = perUse * p.UsedOrders;
+                decimal estimatedTotal = (decimal)(perUse * p.UsedOrders);
                 bool fundedByStore = !p.IsForAllStores;
 
                 return new

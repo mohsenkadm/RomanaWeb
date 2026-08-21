@@ -490,3 +490,59 @@ LogDT = 7/3/2026 1:39:53 AM
 
 ********************************************** 
 
+LogDT = 8/8/2026 10:49:12 AM 
+ LogMsg = PromoCodeController => GetAll 
+ LogDesc = Msg=PromoCodeController => GetAll;Ex.Msg=Invalid column name 'CreatedByAdminId'.
+Invalid column name 'CreatedAt'.
+Invalid column name 'CreatedByAdminId'.
+Invalid column name 'CreatedAt'.; 
+
+********************************************** 
+
+LogDT = 8/8/2026 10:49:12 AM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'CreatedByAdminId'.; 
+
+********************************************** 
+
+LogDT = 8/8/2026 10:49:13 AM 
+ LogMsg = PromoCodeController => GetAll 
+ LogDesc = Msg=PromoCodeController => GetAll;Ex.Msg=Invalid column name 'CreatedByAdminId'.
+Invalid column name 'CreatedAt'.
+Invalid column name 'CreatedByAdminId'.
+Invalid column name 'CreatedAt'.; 
+
+********************************************** 
+
+LogDT = 8/8/2026 10:49:13 AM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'CreatedByAdminId'.; 
+
+********************************************** 
+
+LogDT = 8/8/2026 10:49:36 AM 
+ LogMsg = PromoCodeController => Post => name: 
+ LogDesc = Msg=PromoCodeController => Post => name:;Ex.Msg=Invalid column name 'CreatedAt'.
+Invalid column name 'CreatedByAdminId'.; 
+
+********************************************** 
+
+LogDT = 8/8/2026 10:49:36 AM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'CreatedAt'.; 
+
+********************************************** 
+
+LogDT = 8/8/2026 10:49:51 AM 
+ LogMsg = PromoCodeController => Post => name: 
+ LogDesc = Msg=PromoCodeController => Post => name:;Ex.Msg=Invalid column name 'CreatedAt'.
+Invalid column name 'CreatedByAdminId'.; 
+
+********************************************** 
+
+LogDT = 8/8/2026 10:49:51 AM 
+ LogMsg = LoggerRepository=>;WriteAsync 
+ LogDesc = Msg=LoggerRepository=>;WriteAsyncEx.Msg=Incorrect syntax near 'CreatedAt'.; 
+
+********************************************** 
+

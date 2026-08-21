@@ -168,6 +168,10 @@ namespace RomanaWeb.Controllers
         {
             return View();
         }
+        public IActionResult ProblemReports()
+        {
+            return View();
+        }
         public IActionResult SupportPhone()
         {
             return View();

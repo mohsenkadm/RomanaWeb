@@ -18,7 +18,8 @@ namespace RomanaWeb.Models.EntityMap
             builder.Property(x => x.IsActive).HasDefaultValue(true);
             builder.Property(x => x.IsForAllStores).HasDefaultValue(false);
             builder.Property(x => x.DiscountAmount).HasColumnType("decimal(18,2)").HasDefaultValue(0);
-            builder.Property(x => x.DiscountType).HasMaxLength(20);
+            // Column is nullable in SQL (legacy rows); must not be required in EF or GetAll throws SqlNullValueException.
+            builder.Property(x => x.DiscountType).HasMaxLength(20).IsRequired(false);
             builder.Property(x => x.MaxDiscountAmount).HasColumnType("decimal(18,2)").HasDefaultValue(0);
             builder.Property(x => x.FirstUsedAt);
             builder.Property(x => x.MaxUsagePerUser).HasDefaultValue(1);

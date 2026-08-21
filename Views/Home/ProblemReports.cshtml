@@ -1,0 +1,177 @@
+@{
+    ViewData["Title"] = "إبلاغات المشاكل";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .pr-page { direction: rtl; }
+    .pr-stat-card {
+        background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        padding: 16px 18px;
+        min-width: 120px;
+        text-align: center;
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .pr-stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.25); }
+    .pr-stat-card .pr-stat-value { display: block; font-size: 1.6rem; font-weight: 700; line-height: 1.2; }
+    .pr-stat-card .pr-stat-label { display: block; font-size: .8rem; opacity: .75; margin-top: 4px; }
+    .pr-stat-pending .pr-stat-value { color: #ffb74d; }
+    .pr-stat-progress .pr-stat-value { color: #64b5f6; }
+    .pr-stat-resolved .pr-stat-value { color: #81c784; }
+    .pr-stat-unresolved .pr-stat-value { color: #e57373; }
+    .pr-stat-total .pr-stat-value { color: #ce93d8; }
+    .pr-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #fff;
+    }
+    .pr-badge-0 { background: #fb8c00; }
+    .pr-badge-1 { background: #1e88e5; }
+    .pr-badge-2 { background: #43a047; }
+    .pr-badge-3 { background: #e53935; }
+    .pr-msg {
+        max-width: 320px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 13px;
+        line-height: 1.45;
+    }
+    .pr-status-select {
+        min-width: 140px;
+        font-size: 13px;
+        padding: 4px 8px;
+        border-radius: 8px;
+    }
+    #prTableBody tr { animation: prFadeIn .35s ease both; }
+    @@keyframes prFadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: none; }
+    }
+</style>
+
+<div class="content pr-page">
+    <div class="container-fluid">
+        <div class="rm-page-summary">
+            <div class="rm-summary-icon" style="background:linear-gradient(135deg,#ef5350,#fb8c00);">
+                <i class="material-icons">report_problem</i>
+            </div>
+            <div class="rm-summary-body">
+                <h4>إبلاغات المشاكل</h4>
+                <p>بلاغات يقدّمها المندوبون مرتبطة بالطلبات. راجع النص، غيّر الحالة، وتابع أحدث البلاغات أولاً.</p>
+            </div>
+            <div class="rm-summary-stats" id="prStatsWrap" style="display:flex;gap:10px;flex-wrap:wrap;">
+                <div class="pr-stat-card pr-stat-total"><span class="pr-stat-value" id="prTotal">-</span><span class="pr-stat-label">الإجمالي</span></div>
+                <div class="pr-stat-card pr-stat-pending"><span class="pr-stat-value" id="prPending">-</span><span class="pr-stat-label">قيد الانتظار</span></div>
+                <div class="pr-stat-card pr-stat-progress"><span class="pr-stat-value" id="prInProgress">-</span><span class="pr-stat-label">قيد المعالجة</span></div>
+                <div class="pr-stat-card pr-stat-resolved"><span class="pr-stat-value" id="prResolved">-</span><span class="pr-stat-label">حُلت</span></div>
+                <div class="pr-stat-card pr-stat-unresolved"><span class="pr-stat-value" id="prUnresolved">-</span><span class="pr-stat-label">لم تُحل</span></div>
+            </div>
+        </div>
+
+        <div class="rm-filter-bar mb-3">
+            <div class="row">
+                <div class="col-lg-2 col-md-4 col-sm-6">
+                    <label class="mb-2">الحالة</label>
+                    <select id="prFilterStatus" class="form-control alignright">
+                        <option value="">الكل</option>
+                        <option value="0">قيد الانتظار</option>
+                        <option value="1">قيد المعالجة</option>
+                        <option value="2">حُلت</option>
+                        <option value="3">لم يتم حلها</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6">
+                    <label class="mb-2">رقم الطلب</label>
+                    <input type="text" id="prFilterOrderNo" class="form-control alignright" placeholder="رقم الطلب" autocomplete="off" />
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6">
+                    <label class="mb-2">اسم المندوب</label>
+                    <input type="text" id="prFilterDriver" class="form-control alignright" placeholder="اسم المندوب" autocomplete="off" />
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6">
+                    <label class="mb-2">من تاريخ</label>
+                    <input type="date" id="prFilterFrom" class="form-control alignright" />
+                </div>
+                <div class="col-lg-2 col-md-4 col-sm-6">
+                    <label class="mb-2">إلى تاريخ</label>
+                    <input type="date" id="prFilterTo" class="form-control alignright" />
+                </div>
+                <div class="col-lg-1 col-md-2 col-sm-6">
+                    <label class="mb-2">&nbsp;</label>
+                    <button type="button" id="prSearchBtn" class="btn btn-info btn-block">بحث</button>
+                </div>
+                <div class="col-lg-1 col-md-2 col-sm-6">
+                    <label class="mb-2">&nbsp;</label>
+                    <button type="button" id="prRefreshBtn" class="btn btn-secondary btn-block" title="تحديث"><i class="material-icons">refresh</i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header card-header-primary" style="text-align:right">
+                <h4 class="card-title"><i class="material-icons">list_alt</i> جدول البلاغات</h4>
+                <p class="card-category">أحدث البلاغات تظهر في أعلى القائمة</p>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>اسم المندوب</th>
+                            <th>رقم الطلب</th>
+                            <th>تاريخ البلاغ</th>
+                            <th>تاريخ الطلب</th>
+                            <th>نص البلاغ</th>
+                            <th>الحالة</th>
+                            <th>تغيير الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prTableBody">
+                        <tr><td colspan="8" class="text-center text-muted">جاري التحميل...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Status modal -->
+<div class="modal fade" id="prStatusModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content dark-edition">
+            <div class="modal-header">
+                <h5 class="modal-title">تغيير حالة البلاغ</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" style="direction:rtl;text-align:right;">
+                <input type="hidden" id="prModalId" />
+                <div class="form-group">
+                    <label>الحالة الجديدة</label>
+                    <select id="prModalStatus" class="form-control alignright">
+                        <option value="0">قيد الانتظار</option>
+                        <option value="1">قيد المعالجة</option>
+                        <option value="2">حُلت</option>
+                        <option value="3">لم يتم حلها</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ملاحظة الإدارة (اختياري)</label>
+                    <textarea id="prModalNote" class="form-control alignright" rows="3" placeholder="ملاحظة داخلية..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">إغلاق</button>
+                <button type="button" class="btn btn-success" id="prModalSave">حفظ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/ProblemReports.js" asp-append-version="true"></script>

@@ -2,11 +2,12 @@
 function filltableOrders(data) {
     $('#tableOrders').empty();
     if (!data || !data.length) {
-        $('#tableOrders').append("<tr><td colspan='18' class='text-center'>لا توجد طلبات</td></tr>");
+        $('#tableOrders').append("<tr><td colspan='19' class='text-center'>لا توجد طلبات</td></tr>");
         return;
     }
     $.each(data, function (i, item) {
         var cancelDisabled = item.isCancel ? " disabled" : "";
+        var deliveryFee = (item.costDelivery != null && item.costDelivery !== '') ? item.costDelivery : '-';
         var rows = "<tr>" +
             "<td class='rm-actions-cell' style='white-space:nowrap'>" +
             "<button type='button' class='btn btn-info btn-sm' onclick='OrderDetail(" + item.orderId + ")' data-toggle='modal' data-target='#OrdersDetailsModal'>تفاصيل</button> " +
@@ -46,6 +47,7 @@ function filltableOrders(data) {
             "<td>" + item.netAmount + "</td>" +
             "<td>" + item.totalDiscount + "</td>" +
             "<td>" + item.total + "</td>" +
+            "<td>" + deliveryFee + "</td>" +
             "<td>" + item.cityName + "</td>" +
             "<td>" + item.countriesName + "</td>" +
             "<td>" + item.phone + "</td>" +

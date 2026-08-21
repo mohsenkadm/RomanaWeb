@@ -6,10 +6,10 @@ namespace RomanaWeb.Models.Entity
     public class PromoCode
     {
         public int PromoCodeId { get; set; }
-        public string PromoName { get; set; }
+        public string? PromoName { get; set; }
         public int Percentage { get; set; }
         public int RestaurantId { get; set; }
-        public string RestaurantName { get; set; }
+        public string? RestaurantName { get; set; }
         public int MaxOrders { get; set; }
         public int UsedOrders { get; set; }
         public bool IsActive { get; set; } = true;
@@ -18,8 +18,8 @@ namespace RomanaWeb.Models.Entity
 
         // --- New fields (Section 3) ---
 
-        /// <summary>"Percentage" or "Fixed". Optional; if null we infer from Percentage/DiscountAmount.</summary>
-        public string DiscountType { get; set; }
+        /// <summary>"Percentage" or "Fixed". Nullable in DB for legacy rows; infer when null.</summary>
+        public string? DiscountType { get; set; }
 
         /// <summary>Admin-defined ceiling. 0 = no cap.</summary>
         public decimal MaxDiscountAmount { get; set; }
@@ -38,7 +38,7 @@ namespace RomanaWeb.Models.Entity
 
         /// <summary>Resolved admin display name (joined, not a table column).</summary>
         [NotMapped]
-        public string CreatedByAdminName { get; set; }
+        public string? CreatedByAdminName { get; set; }
 
         // --- Aliases mapped to existing columns (kept NotMapped so EF ignores them) ---
 

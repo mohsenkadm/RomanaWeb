@@ -22,14 +22,13 @@ BEGIN TRY
     IF COL_LENGTH('dbo.PromoCode', 'FirstUsedAt') IS NULL
         ALTER TABLE dbo.PromoCode ADD FirstUsedAt datetime NULL;
 
-    -- Best-effort backfill of DiscountType for existing rows.
+    -- Best-effort backfill of DiscountType for existing rows (never leave NULL).
     UPDATE dbo.PromoCode
        SET DiscountType = CASE
-                              WHEN DiscountAmount > 0 THEN 'Fixed'
-                              WHEN Percentage     > 0 THEN 'Percentage'
-                              ELSE NULL
+                              WHEN ISNULL(DiscountAmount, 0) > 0 THEN N'Fixed'
+                              ELSE N'Percentage'
                           END
-     WHERE DiscountType IS NULL;
+     WHERE DiscountType IS NULL OR LTRIM(RTRIM(DiscountType)) = N'';
 
     -------------------------------------------------------------------------------
     -- Section 5.1: Stars - link to order + user

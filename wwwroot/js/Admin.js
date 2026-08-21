@@ -72,6 +72,7 @@ var _navIcons = {
     'DriverActivity': 'assignment',
     'EmergencyOrders': 'warning',
     'CoverageRequests': 'location_searching',
+    'ProblemReports': 'report_problem',
     'Questions': 'help_center',
     'SupportPhone': 'support_agent',
     'QuickProducts': 'playlist_add',

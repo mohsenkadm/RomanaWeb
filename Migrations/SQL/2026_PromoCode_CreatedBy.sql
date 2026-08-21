@@ -53,6 +53,30 @@ BEGIN TRY
         ALTER TABLE dbo.PromoCode ADD CreatedAt datetime NULL
             CONSTRAINT DF_PromoCode_CreatedAt DEFAULT(GETDATE());
 
+    -------------------------------------------------------------------------------
+    -- Backfill nullable DiscountType so EF materialization never hits SqlNullValueException
+    -------------------------------------------------------------------------------
+    IF COL_LENGTH('dbo.PromoCode', 'DiscountType') IS NOT NULL
+    BEGIN
+        UPDATE dbo.PromoCode
+           SET DiscountType = CASE
+                                  WHEN ISNULL(DiscountAmount, 0) > 0 THEN N'Fixed'
+                                  ELSE N'Percentage'
+                              END
+         WHERE DiscountType IS NULL OR LTRIM(RTRIM(DiscountType)) = N'';
+    END
+
+    -------------------------------------------------------------------------------
+    -- Harden legacy nullable numeric/bit columns if they exist as NULL-able
+    -------------------------------------------------------------------------------
+    UPDATE dbo.PromoCode SET MaxOrders = 0 WHERE MaxOrders IS NULL;
+    UPDATE dbo.PromoCode SET UsedOrders = 0 WHERE UsedOrders IS NULL;
+    UPDATE dbo.PromoCode SET IsActive = 1 WHERE IsActive IS NULL;
+    UPDATE dbo.PromoCode SET IsForAllStores = 0 WHERE IsForAllStores IS NULL;
+    UPDATE dbo.PromoCode SET DiscountAmount = 0 WHERE DiscountAmount IS NULL;
+    UPDATE dbo.PromoCode SET MaxDiscountAmount = 0 WHERE MaxDiscountAmount IS NULL;
+    UPDATE dbo.PromoCode SET MaxUsagePerUser = 1 WHERE MaxUsagePerUser IS NULL;
+
     COMMIT TRANSACTION;
 END TRY
 BEGIN CATCH
