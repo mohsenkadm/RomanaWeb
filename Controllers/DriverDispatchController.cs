@@ -39,6 +39,10 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (!IsAdminRole()
+                    && !(UserManager != null && string.Equals(UserManager.Role, "res", StringComparison.OrdinalIgnoreCase)))
+                    return Response(false, "غير مصرح");
+
                 var res = await _dispatch.DispatchOrder(orderId, radius_km);
                 return Response(res.success, res.msg);
             }
@@ -58,7 +62,13 @@ namespace RomanaWeb.Controllers
                 if (req == null || string.IsNullOrWhiteSpace(req.Reason))
                     return Response(false, "يرجى تقديم سبب الالغاء");
 
-                var res = await _dispatch.CancelByDriver(orderId, req.SaleManId, req.Reason);
+                int saleManId = req.SaleManId;
+                if (UserManager != null && string.Equals(UserManager.Role, "sal", StringComparison.OrdinalIgnoreCase))
+                    saleManId = UserManager.Id;
+                else if (!IsAdminRole())
+                    return Response(false, "غير مصرح");
+
+                var res = await _dispatch.CancelByDriver(orderId, saleManId, req.Reason);
                 return Response(res.success, res.msg);
             }
             catch (Exception ex)
@@ -74,8 +84,16 @@ namespace RomanaWeb.Controllers
         {
             try
             {
-                if (req == null || req.SaleManId <= 0) return Response(false, "بيانات غير صحيحة");
-                var res = await _dispatch.UpdateDriverLocation(req.SaleManId, req.Lat, req.Lng, req.OrderId);
+                if (req == null) return Response(false, "بيانات غير صحيحة");
+
+                int saleManId = req.SaleManId;
+                if (UserManager != null && string.Equals(UserManager.Role, "sal", StringComparison.OrdinalIgnoreCase))
+                    saleManId = UserManager.Id;
+                else if (!IsAdminRole())
+                    return Response(false, "غير مصرح");
+
+                if (saleManId <= 0) return Response(false, "بيانات غير صحيحة");
+                var res = await _dispatch.UpdateDriverLocation(saleManId, req.Lat, req.Lng, req.OrderId);
                 return Response(res.success, res.msg);
             }
             catch (Exception ex)

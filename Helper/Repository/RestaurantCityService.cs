@@ -78,11 +78,30 @@ namespace RomanaWeb.Helper.Repository
         }                
         public async Task<ResObj> PostFromAppAll(int resId,decimal CostDelivery)
         {
-            await _Repository.RunScriptAsync("INSERT INTO [dbo].[RestaurantCity]" +
-                "           ([CityId],[RestaurantId],[CostDelivery]) " +
-                "(select CityId,"+resId+","+ CostDelivery + " from City where CityId not in (select CityId from RestaurantCity where RestaurantId="+resId+"))");
-            
-                return Result.Return(true, "تم الحفظ");  
+            var existingCityIds = await _Context.RestaurantCity.AsNoTracking()
+                .Where(rc => rc.RestaurantId == resId)
+                .Select(rc => rc.CityId)
+                .ToListAsync();
+
+            var citiesToAdd = await _Context.City.AsNoTracking()
+                .Where(c => !existingCityIds.Contains(c.CityId))
+                .Select(c => c.CityId)
+                .ToListAsync();
+
+            foreach (var cityId in citiesToAdd)
+            {
+                await _Context.RestaurantCity.AddAsync(new RestaurantCity
+                {
+                    CityId = cityId,
+                    RestaurantId = resId,
+                    CostDelivery = CostDelivery
+                });
+            }
+
+            if (citiesToAdd.Count > 0)
+                await _Context.SaveChangesAsync();
+
+            return Result.Return(true, "تم الحفظ");  
         }
 
         public async Task<ResObj> GetDeliveryFee(int restaurantId, int cityId)

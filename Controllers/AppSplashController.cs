@@ -38,11 +38,14 @@ namespace RomanaWeb.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet("AppSplash/GetAdmin")]
         public async Task<IActionResult> GetAdmin()
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 var res = await _splash.GetAdmin();
                 return Response(res.success, res.data);
             }
@@ -53,11 +56,14 @@ namespace RomanaWeb.Controllers
             }
         }
 
+        [Authorize]
         [HttpPost("AppSplash/Save")]
         public async Task<IActionResult> Save([FromForm] string? Details, [FromForm] bool IsVisible, IFormFile? Image)
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 var current = await _splash.GetAdmin();
                 var existing = current.data as AppSplash;
 

@@ -171,11 +171,14 @@ namespace RomanaWeb.Controllers
 
         #region Get Info Restaurant 
          
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll(string? Name)
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 ResObj res = await _RestaurantService.GetAll(Name);
 
                 return Response(res.success, res.data);
@@ -187,18 +190,21 @@ namespace RomanaWeb.Controllers
             }
         }
 
+        [Authorize]
         [HttpGet]
-        public async Task<FileResult> GetExcelAll(string? Name)
+        public async Task<IActionResult> GetExcelAll(string? Name)
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 ResObj res = await _RestaurantService.GetAll(Name);
                 return GenerateExcel("report-restaurant-" + Key.DateTimeIQ + ".xlsx", (List<Restaurant>)res.data);
             }
             catch (Exception ex)
             {
                 await _logger.WriteAsync(ex, "RestaurantController => GetExcelAll");
-                return null;
+                return Response(false, "حدث خطأ اثناء تصدير البيانات");
             }
         }
 
@@ -219,7 +225,6 @@ namespace RomanaWeb.Controllers
                 new DataColumn("نشط"),
                 new DataColumn("مفضلة"),
                 new DataColumn("اسم المستخدم"),
-                new DataColumn("كلمة المرور"),
                 new DataColumn("Long"),
                 new DataColumn("Lat"),
                 new DataColumn("اقل سعر"),
@@ -241,7 +246,6 @@ namespace RomanaWeb.Controllers
                     r.IsActive == true ? "نعم" : "لا",
                     r.IsTop == true ? "نعم" : "لا",
                     r.UserName,
-                    r.Password,
                     r.Long,
                     r.Lat,
                     r.MinimumPrice,
@@ -266,11 +270,18 @@ namespace RomanaWeb.Controllers
 
 
         #region Set Restaurant SetIsColsed
+        [Authorize]
         [HttpPost("Restaurant/SetIsColsed/{Id}/{Closed}")]
         public async Task<IActionResult> SetIsColsed(int Id,bool Closed)
         {
             try
             {
+                bool isOwner = UserManager != null
+                    && string.Equals(UserManager.Role, "res", StringComparison.OrdinalIgnoreCase)
+                    && UserManager.Id == Id;
+                if (!IsAdminRole() && !isOwner)
+                    return Response(false, "غير مصرح");
+
                 ResObj res = await _RestaurantService.SetIsColsed(Id,Closed);
                 if (res.success == false)
                 {
@@ -287,13 +298,14 @@ namespace RomanaWeb.Controllers
         #endregion
 
         #region Set Restaurant SetIsStars (Section 1.3 - admin only)
+        [Authorize]
         [HttpPost("Restaurant/SetIsStars/{Id}/{Stars}")]
         public async Task<IActionResult> SetIsStars(int Id, bool Stars)
         {
             try
             {
-                if (UserManager == null || !string.Equals(UserManager.Role, "Admin", StringComparison.OrdinalIgnoreCase))
-                    return Response(false, "غير مصرح، تفعيل التقييم متاح للأدمن فقط");
+                if (!IsAdminRole())
+                    return ForbidAdminOnly();
 
                 ResObj res = await _RestaurantService.SetIsStars(Id, Stars);
                 if (res.success == false)
@@ -311,10 +323,13 @@ namespace RomanaWeb.Controllers
         #endregion
 
         #region GetResNotApproveAll     
+        [Authorize]
         public async Task<IActionResult> GetResNotApproveAll()
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 var item = await _RestaurantService.GetResNotApproveAll();
                 return Response(true, item.data);
             }
@@ -326,10 +341,13 @@ namespace RomanaWeb.Controllers
         }
         #endregion    
         #region Set Restaurant SetIsStars         
+        [Authorize]
         public async Task<IActionResult> SetIsApproved(int Id)
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 ResObj res = await _RestaurantService.SetIsApproved(Id);
                 if (res.success == false)
                 {
@@ -346,11 +364,13 @@ namespace RomanaWeb.Controllers
         #endregion     
 
         #region insert or update Info Restaurant   admin
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> PostAdmin(RestaurantModel RestaurantModel)
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
                
                 Restaurant Restaurant = _mapper.Map<Restaurant>(RestaurantModel);
                 if (Restaurant.RestaurantId == 0)
@@ -483,11 +503,14 @@ namespace RomanaWeb.Controllers
         #endregion
 
         #region delete Info Restaurant 
+        [Authorize]
         [HttpDelete]
         public async Task<IActionResult> Delete(int Id)
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 ResObj res = await _RestaurantService.Delete(Id);
 
                 return Response(res.success, res.msg);
@@ -520,11 +543,18 @@ namespace RomanaWeb.Controllers
 
         #region UpdateLocationInfo
         // GET api/<RestaurantController>/
+        [Authorize]
         [HttpPost("Restaurant/UpdateLocationInfo/{Id},{Long},{Lat}")]
         public async Task<IActionResult> UpdateLocationInfo(int Id, double Long, double Lat)
         {
             try
             {
+                bool isOwner = UserManager != null
+                    && string.Equals(UserManager.Role, "res", StringComparison.OrdinalIgnoreCase)
+                    && UserManager.Id == Id;
+                if (!IsAdminRole() && !isOwner)
+                    return Response(false, "غير مصرح");
+
                 var item = await _RestaurantService.UpdateLocationInfo(Id, Long, Lat);
                 return Response(true, item.data);
             }
@@ -537,11 +567,18 @@ namespace RomanaWeb.Controllers
         #endregion
 
         #region Set Restaurant SetInsta
+        [Authorize]
         [HttpPost("Restaurant/SetInsta/{Id}/{Url}")]
         public async Task<IActionResult> SetInsta(int Id, string Url)
         {
             try
             {
+                bool isOwner = UserManager != null
+                    && string.Equals(UserManager.Role, "res", StringComparison.OrdinalIgnoreCase)
+                    && UserManager.Id == Id;
+                if (!IsAdminRole() && !isOwner)
+                    return Response(false, "غير مصرح");
+
                 ResObj res = await _RestaurantService.SetInsta(Id, Url);
                 if (res.success == false)
                 {

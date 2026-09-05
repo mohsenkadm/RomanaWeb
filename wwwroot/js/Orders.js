@@ -1,6 +1,27 @@
 ﻿
-function filltableOrders(data) {
+var _ordersPage = 1;
+var _ordersPageSize = 25;
+var _ordersTotalPages = 1;
+var _ordersLoading = false;
+
+function filltableOrders(payload) {
     $('#tableOrders').empty();
+
+    var data = [];
+    if (payload && Array.isArray(payload.items)) {
+        data = payload.items;
+        _ordersPage = payload.page || 1;
+        _ordersPageSize = payload.pageSize || _ordersPageSize;
+        _ordersTotalPages = payload.totalPages || 1;
+        if (payload.totalCount != null) {
+            $('#ordSummaryTotal').text(Number(payload.totalCount).toLocaleString());
+            $('#ordersTotalCount').text(payload.totalCount);
+        }
+        renderOrdersPagination();
+    } else if (Array.isArray(payload)) {
+        data = payload;
+    }
+
     if (!data || !data.length) {
         $('#tableOrders').append("<tr><td colspan='19' class='text-center'>لا توجد طلبات</td></tr>");
         return;
@@ -48,15 +69,15 @@ function filltableOrders(data) {
             "<td>" + item.totalDiscount + "</td>" +
             "<td>" + item.total + "</td>" +
             "<td>" + deliveryFee + "</td>" +
-            "<td>" + item.cityName + "</td>" +
-            "<td>" + item.countriesName + "</td>" +
-            "<td>" + item.phone + "</td>" +
-            "<td>" + item.functionPoint + "</td>" +
-            "<td>" + item.address + "</td>" +
-            "<td>" + item.userName + "</td>" +
-            "<td>" + item.saleManName + "</td>" +
-            "<td>" + item.restaurantName + "</td>" +
-            "<td>" + item.categoriesName + "</td>" +
+            "<td>" + (item.cityName || '') + "</td>" +
+            "<td>" + (item.countriesName || '') + "</td>" +
+            "<td>" + (item.phone || '') + "</td>" +
+            "<td>" + (item.functionPoint || '') + "</td>" +
+            "<td>" + (item.address || '') + "</td>" +
+            "<td>" + (item.userName || '') + "</td>" +
+            "<td>" + (item.saleManName || '') + "</td>" +
+            "<td>" + (item.restaurantName || '') + "</td>" +
+            "<td>" + (item.categoriesName || '') + "</td>" +
             "<td>" + item.orderDate + "</td>" +
             "<td><strong>" + (item.orderNo || '') + "</strong></td></tr>";
 
@@ -64,10 +85,85 @@ function filltableOrders(data) {
         $('#IsDone' + item.orderId).attr('checked', item.isDone);
         $('#IsApporve' + item.orderId).attr('checked', item.isApporve);
         $('#IsCancel' + item.orderId).attr('checked', item.isCancel);
-        // Cache row for edit modal
         window._ordersCache = window._ordersCache || {};
         window._ordersCache[item.orderId] = item;
     });
+}
+
+function renderOrdersPagination() {
+    var $ul = $('#ordersPagination');
+    if (!$ul.length) return;
+    $ul.empty();
+
+    var page = _ordersPage;
+    var total = _ordersTotalPages;
+    $('#ordersPageInfo').text(page + ' / ' + total);
+
+    function addItem(label, targetPage, disabled, active) {
+        var cls = 'page-item';
+        if (disabled) cls += ' disabled';
+        if (active) cls += ' active';
+        var $li = $('<li>').addClass(cls);
+        var $a = $('<a>').addClass('page-link').attr('href', '#').text(label);
+        if (!disabled && !active) {
+            $a.on('click', function (e) {
+                e.preventDefault();
+                loadOrdersPage(targetPage);
+            });
+        } else {
+            $a.on('click', function (e) { e.preventDefault(); });
+        }
+        $li.append($a);
+        $ul.append($li);
+    }
+
+    addItem('«', page - 1, page <= 1, false);
+
+    var windowSize = 5;
+    var start = Math.max(1, page - Math.floor(windowSize / 2));
+    var end = Math.min(total, start + windowSize - 1);
+    start = Math.max(1, end - windowSize + 1);
+
+    if (start > 1) {
+        addItem('1', 1, false, false);
+        if (start > 2) addItem('…', page, true, false);
+    }
+    for (var p = start; p <= end; p++) {
+        addItem(String(p), p, false, p === page);
+    }
+    if (end < total) {
+        if (end < total - 1) addItem('…', page, true, false);
+        addItem(String(total), total, false, false);
+    }
+    addItem('»', page + 1, page >= total, false);
+}
+
+function loadOrdersPage(page) {
+    if (_ordersLoading) return;
+    if (page < 1) page = 1;
+    _ordersPage = page;
+    _ordersLoading = true;
+
+    var pageSize = parseInt($('#ordersPageSize').val(), 10) || _ordersPageSize;
+    _ordersPageSize = pageSize;
+
+    var status = $("#FilterOrderStatus").val();
+    var obj = {
+        OrderNo: $("#OrderNo").val(),
+        RestaurantName: $("#RestaurantName").val(),
+        datefrom: $("#datefrom").val(),
+        dateto: $("#dateto").val(),
+        CountriesId: $("#CountriesId").val(),
+        Phone: $("#FilterPhone").val() || '',
+        orderStatus: status === '' ? null : parseInt(status, 10),
+        page: _ordersPage,
+        pageSize: _ordersPageSize
+    };
+    call_ajax("GET", "Orders/GetAll", obj, function (data) {
+        _ordersLoading = false;
+        filltableOrders(data);
+    });
+    setTimeout(function () { _ordersLoading = false; }, 8000);
 }
 
 function AdminCancelOrder(id) {
@@ -310,16 +406,7 @@ function RefreshOrderDetail() {
     OrderDetail(_id);
 }
 function RefreshOrders() {
-    var status = $("#FilterOrderStatus").val();
-    var obj = {
-        OrderNo: $("#OrderNo").val(), RestaurantName: $("#RestaurantName").val(),
-        datefrom: $("#datefrom").val(),
-        dateto: $("#dateto").val(),
-        CountriesId: $("#CountriesId").val(),
-        Phone: $("#FilterPhone").val() || '',
-        orderStatus: status === '' ? null : parseInt(status, 10)
-    }
-    call_ajax("GET", "Orders/GetAll", obj, filltableOrders);
+    loadOrdersPage(1);
 }
 function RefreshOrdersForRes() {
     _orderid = 0; $("#SaleManId").val(0).change();

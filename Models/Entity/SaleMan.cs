@@ -30,6 +30,18 @@ namespace RomanaWeb.Models.Entity
         public bool IsAvailable { get; set; } = true;
         public DateTime? AvailabilityChangedAt { get; set; }
 
+        /// <summary>
+        /// When false (default): driver may hold only 1 active order — no new dispatch/accept while busy.
+        /// When true: driver may accept additional nearby orders up to <see cref="MaxConcurrentOrders"/>.
+        /// </summary>
+        public bool AllowMultiOrders { get; set; } = false;
+
+        /// <summary>
+        /// Max concurrent active deliveries when <see cref="AllowMultiOrders"/> is true.
+        /// Ignored (effective limit = 1) when multi-order is off. Minimum 1.
+        /// </summary>
+        public int MaxConcurrentOrders { get; set; } = 1;
+
         // Section 6: driver location heartbeat - used by proximity-based dispatch.
         public string? Lat { get; set; }
         public string? Long { get; set; }

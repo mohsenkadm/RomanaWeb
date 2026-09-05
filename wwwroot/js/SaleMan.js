@@ -36,6 +36,12 @@ function filltableSaleMan(data) {
                 'onclick="toggleSaleManAvailability(' + item.saleManId + ',' + (!working) + ')">' +
                 btnLabel + '</button></td>';
 
+        var multi = !!item.allowMultiOrders;
+        var maxN = item.maxConcurrentOrders > 0 ? item.maxConcurrentOrders : 1;
+        var multiCell = multi
+            ? '<td><span class="badge" style="background:#2196F3;color:#fff;padding:4px 10px;border-radius:12px;">متعدد (' + maxN + ')</span></td>'
+            : '<td><span class="badge" style="background:#607D8B;color:#fff;padding:4px 10px;border-radius:12px;">طلب واحد</span></td>';
+
         var zoneCell = typeof ZonePicker !== 'undefined'
             ? '<td class="zone-tags-cell">' + ZonePicker.saleManZoneLabels(item.saleManId) + '</td>'
             : '<td>—</td>';
@@ -43,10 +49,11 @@ function filltableSaleMan(data) {
         var rows = "<tr>" + 
             activityCell +
             availabilityCell +
-            "<td>" + item.password + "</td>" +  
-            "<td>" + item.address + "</td>" +   
-            "<td>" + item.phone + "</td>" +
-            "<td>" + item.name + "</td>" +
+            multiCell +
+            "<td>—</td>" +  
+            "<td>" + (item.address || '') + "</td>" +   
+            "<td>" + (item.phone || '') + "</td>" +
+            "<td>" + (item.name || '') + "</td>" +
             zoneCell
             + "<td> <button type='button' class='btn btn-danger' onclick='deleteSaleMan(" + item.saleManId + ")'>حذف</button>"
             + " | <button type='button' class='btn btn-primary' onclick='updateSaleMan(" + item.saleManId + ")' data-toggle='modal' data-target='#SaleManModal'>تعديل</button></td></tr>";
@@ -100,6 +107,9 @@ function openAddSaleMan() {
     $("#Address").val('');
     $("#Password").val('');
     $("#IsActive").prop("checked", true);
+    $("#AllowMultiOrders").prop("checked", false);
+    $("#MaxConcurrentOrders").val(2);
+    $("#MaxConcurrentOrdersWrap").hide();
     if (typeof ZonePicker !== 'undefined') {
         ZonePicker.render('saleManZonePicker', []);
     }
@@ -119,8 +129,13 @@ function setdataSaleMan(data) {
     $("#Name").val(data.name);
     $("#Phone").val(data.phone);
     $("#Address").val(data.address || '');
-    $("#Password").val(data.password);
+    $("#Password").val('');
+    $("#Password").attr('placeholder', 'اترك فارغاً للإبقاء على كلمة المرور');
     $("#IsActive").prop("checked", !!data.isActive);
+    var multi = !!data.allowMultiOrders;
+    $("#AllowMultiOrders").prop("checked", multi);
+    $("#MaxConcurrentOrders").val(multi ? Math.max(2, data.maxConcurrentOrders || 2) : 2);
+    $("#MaxConcurrentOrdersWrap").toggle(multi);
 }
 
 function aftersaveSaleMan() {
@@ -129,6 +144,9 @@ function aftersaveSaleMan() {
     $("#Address").val('');
     $("#Password").val('');
     $("#IsActive").prop("checked", true);
+    $("#AllowMultiOrders").prop("checked", false);
+    $("#MaxConcurrentOrders").val(2);
+    $("#MaxConcurrentOrdersWrap").hide();
     if (typeof ZonePicker !== 'undefined') {
         ZonePicker.render('saleManZonePicker', []);
     }

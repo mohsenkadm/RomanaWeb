@@ -139,8 +139,14 @@ namespace RomanaWeb.Controllers
                 if (!driver.IsAvailable)
                     return Response(false, "المندوب متوقف عن العمل حالياً");
 
-                if (await _dispatch.DriverHasActiveOrderAsync(req.SaleManId, orderId))
-                    return Response(false, "المندوب لديه طلب نشط");
+                if (!await _dispatch.DriverCanAcceptMoreOrdersAsync(req.SaleManId, orderId))
+                {
+                    var max = DriverDispatchService.EffectiveMaxConcurrentOrders(driver);
+                    return Response(false,
+                        max <= 1
+                            ? "المندوب لديه طلب نشط"
+                            : $"المندوب وصل للحد الأقصى ({max}) من الطلبات المتزامنة");
+                }
 
                 if (!await _dispatch.DriverServesOrderZoneAsync(req.SaleManId, order))
                     return Response(false, "المندوب لا يعمل في زون موقع الزبون");

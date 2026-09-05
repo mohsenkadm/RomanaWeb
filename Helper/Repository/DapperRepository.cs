@@ -86,6 +86,21 @@ namespace RomanaWeb.Helper.Repository
             }
         }
 
+        public void RunScript(string Query, object pars)
+        {
+            try
+            {
+                if (Connection == null && Connection.State == ConnectionState.Closed)
+                    Connection.Open();
+
+                Connection.Query(Query, pars, commandType: CommandType.Text);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         /// <summary>
         /// This Func use to execute Insert, Update and Delete command
         /// </summary>
@@ -100,6 +115,21 @@ namespace RomanaWeb.Helper.Repository
                 await Connection.QueryAsync(Query, commandType: CommandType.Text);
             }
             catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        public async Task RunScriptAsync(string Query, object pars)
+        {
+            try
+            {
+                if (Connection == null && Connection.State == ConnectionState.Closed)
+                    await Connection.OpenAsync();
+
+                await Connection.QueryAsync(Query, pars, commandType: CommandType.Text);
+            }
+            catch (Exception)
             {
                 throw;
             }

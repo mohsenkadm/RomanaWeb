@@ -22,6 +22,9 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> GetByRestaurantId(int RestaurantId, int? SubCategoriesId,string? prodname)
         {
+            if (SubCategoriesId == CatalogConstants.MostOrderedSubCategoryId)
+                return await GetMostOrderedProductsForRestaurant(RestaurantId, CatalogConstants.MostOrderedProductsTake);
+
             if (string.IsNullOrWhiteSpace(prodname) || prodname == "-" || prodname == "_")
                 prodname = null;
 
@@ -33,6 +36,34 @@ namespace RomanaWeb.Helper.Repository
             }
             else
                 return Result.Return(false);   
+        }
+
+        private async Task<ResObj> GetMostOrderedProductsForRestaurant(int restaurantId, int take)
+        {
+            var top = await (
+                from d in _context.OrderDetail.AsNoTracking()
+                join o in _context.Orders.AsNoTracking() on d.OrderId equals o.OrderId
+                where o.RestaurantId == restaurantId && !o.IsCancel
+                group d by d.ProductsId into g
+                orderby g.Sum(x => x.Count) descending
+                select new { ProductsId = g.Key, TotalOrdered = g.Sum(x => x.Count) }
+            ).Take(take).ToListAsync();
+
+            if (top.Count == 0)
+                return Result.Return(true, new List<Products>());
+
+            var ids = top.Select(t => t.ProductsId).ToList();
+            var products = await _context.Products.AsNoTracking()
+                .Where(p => ids.Contains(p.ProductsId) && p.RestaurantId == restaurantId)
+                .ToListAsync();
+
+            var ordered = top
+                .Select(t => products.FirstOrDefault(p => p.ProductsId == t.ProductsId))
+                .Where(p => p != null)
+                .Cast<Products>()
+                .ToList();
+
+            return Result.Return(true, ordered);
         }
 
         public async Task<ResObj> Post(Products Products)
@@ -240,7 +271,7 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true, isAvailable ? "المنتج متوفر" : "المنتج غير متوفر", res);
         }
 
-        public async Task<ResObj> GetTopSellingByRestaurant(int restaurantId, int take = 20)
+        public async Task<ResObj> GetTopSellingByRestaurant(int restaurantId, int take = 4)
         {
             var top = await (
                 from d in _context.OrderDetail
@@ -256,9 +287,20 @@ namespace RomanaWeb.Helper.Repository
                 .Where(p => ids.Contains(p.ProductsId))
                 .ToListAsync();
 
+            // Same as GetProductsByRestaurantId / GetProductsAll: first Images.ImagePath
+            var imageRows = await _context.Images.AsNoTracking()
+                .Where(i => ids.Contains(i.ProductsId))
+                .OrderBy(i => i.ImageId)
+                .Select(i => new { i.ProductsId, i.ImagePath })
+                .ToListAsync();
+            var imageByProduct = imageRows
+                .GroupBy(i => i.ProductsId)
+                .ToDictionary(g => g.Key, g => g.First().ImagePath);
+
             var result = top.Select(t =>
             {
                 var p = products.FirstOrDefault(x => x.ProductsId == t.ProductsId);
+                imageByProduct.TryGetValue(t.ProductsId, out var imagePath);
                 return new
                 {
                     t.ProductsId,
@@ -267,7 +309,7 @@ namespace RomanaWeb.Helper.Repository
                     ProductsPrice = p?.ProductsPrice,
                     PreparationTimeMinutes = p?.PreparationTimeMinutes ?? 15,
                     IsAvailable = p?.IsAvailable ?? true,
-                    ProductsImageFirst = p?.ProductsImageFirst
+                    ProductsImageFirst = imagePath
                 };
             }).ToList();
 
@@ -275,13 +317,23 @@ namespace RomanaWeb.Helper.Repository
         }
         public async Task<ResObj> DeleteImage(int id)
         {
-            await _prodService.RunScriptAsync("delete from Images where ImageId=" + id);
+            var img = await _context.Images.FirstOrDefaultAsync(i => i.ImageId == id);
+            if (img != null)
+            {
+                _context.Images.Remove(img);
+                await _context.SaveChangesAsync();
+            }
             return Result.Return(true, "تم حذف بنجاح");
         }
 
         public async Task<ResObj> DeleteImageForProd(int id)
         {
-            await _prodService.RunScriptAsync("delete from Images where ProductsId=" + id);
+            var imgs = await _context.Images.Where(i => i.ProductsId == id).ToListAsync();
+            if (imgs.Count > 0)
+            {
+                _context.Images.RemoveRange(imgs);
+                await _context.SaveChangesAsync();
+            }
             return Result.Return(true, "تم حذف بنجاح");
         }
 

@@ -21,8 +21,18 @@ namespace RomanaWeb.Controllers
             _logger = logger;
         }
 
-        private bool IsAdmin() =>
-            UserManager != null && string.Equals(UserManager.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+        private bool IsAdmin()
+        {
+            try
+            {
+                return UserManager != null
+                    && string.Equals(UserManager.Role, "Admin", StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         [HttpGet]
         public async Task<IActionResult> Report(DateTime? dateFrom, DateTime? dateTo, string? name)
@@ -36,7 +46,7 @@ namespace RomanaWeb.Controllers
             catch (Exception ex)
             {
                 await _logger.WriteAsync(ex, "DriverActivityController => Report");
-                return Response(false, "خطأ");
+                return Response(false, "حدث خطأ اثناء جلب تقرير المندوبين");
             }
         }
 
@@ -48,12 +58,60 @@ namespace RomanaWeb.Controllers
                 if (!IsAdmin()) return Response(false, "غير مصرح");
 
                 var driver = await _context.SaleMan.AsNoTracking()
-                    .FirstOrDefaultAsync(s => s.SaleManId == saleManId && s.IsDelete != true);
-                if (driver == null) return Response(false, "المندوب غير موجود");
+                    .FirstOrDefaultAsync(s => s.SaleManId == saleManId
+                        && (s.IsDelete == null || s.IsDelete == false));
+                if (driver == null) return Response(false, "المندوب غير موجود أو محذوف");
 
                 var rangeFrom = (dateFrom ?? DateTime.Today.AddDays(-30)).Date;
                 var rangeTo = (dateTo ?? DateTime.Today).Date.AddDays(1).AddTicks(-1);
 
+                // Minimal projection first (avoids missing-column / null-bool crashes on older DBs).
+                List<DriverOrderDetailRow> details;
+                try
+                {
+                    details = await LoadDriverOrderDetailsAsync(saleManId, rangeFrom, rangeTo, includeExtras: true);
+                }
+                catch (Exception exPrimary)
+                {
+                    await _logger.WriteAsync(exPrimary, "DriverActivityController => DriverOrders primary");
+                    details = await LoadDriverOrderDetailsAsync(saleManId, rangeFrom, rangeTo, includeExtras: false);
+                }
+
+                return Response(true, new
+                {
+                    driver = new
+                    {
+                        saleManId = driver.SaleManId,
+                        name = driver.Name,
+                        phone = driver.Phone,
+                        isAvailable = driver.IsAvailable
+                    },
+                    dateFrom = rangeFrom,
+                    dateTo = rangeTo.Date,
+                    summary = new
+                    {
+                        totalOrders = details.Count,
+                        delivered = details.Count(d => d.StatusGroup == "delivered"),
+                        cancelled = details.Count(d => d.StatusGroup == "cancelled"),
+                        active = details.Count(d => d.StatusGroup == "active"),
+                        totalDeliveryFees = details.Sum(d => d.DeliveryFee),
+                        totalRouteKm = details.Sum(d => d.RouteDistanceKm ?? 0m)
+                    },
+                    orders = details
+                });
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "DriverActivityController => DriverOrders");
+                return Response(false, "حدث خطأ اثناء جلب بيانات المندوب");
+            }
+        }
+
+        private async Task<List<DriverOrderDetailRow>> LoadDriverOrderDetailsAsync(
+            int saleManId, DateTime rangeFrom, DateTime rangeTo, bool includeExtras)
+        {
+            if (includeExtras)
+            {
                 var orders = await (
                     from o in _context.Orders.AsNoTracking()
                     where o.SaleManId == saleManId && o.OrderDate >= rangeFrom && o.OrderDate <= rangeTo
@@ -67,7 +125,6 @@ namespace RomanaWeb.Controllers
                         o.OrderId,
                         o.OrderNo,
                         o.OrderDate,
-                        o.RestaurantId,
                         RestaurantName = r != null ? r.Name : null,
                         RestaurantAddress = r != null ? r.Address : null,
                         CustomerName = u != null ? u.Name : null,
@@ -94,7 +151,7 @@ namespace RomanaWeb.Controllers
                     }
                 ).ToListAsync();
 
-                var details = orders.Select(o =>
+                return orders.Select(o =>
                 {
                     var status = ResolveStatus(o.IsCancel, o.IsDeliveryConfirmed, o.IsDelivered,
                         o.IsOutForDelivery, o.IsPickedUpFromRestaurant, o.IsDriverEnRouteToPickup,
@@ -127,35 +184,70 @@ namespace RomanaWeb.Controllers
                         Notes = o.Notes
                     };
                 }).ToList();
+            }
 
-                return Response(true, new
+            // Fallback: core columns only (works even if pricing/status columns are missing).
+            var basic = await (
+                from o in _context.Orders.AsNoTracking()
+                where o.SaleManId == saleManId && o.OrderDate >= rangeFrom && o.OrderDate <= rangeTo
+                join r in _context.Restaurant.AsNoTracking() on o.RestaurantId equals r.RestaurantId into rj
+                from r in rj.DefaultIfEmpty()
+                join u in _context.Users.AsNoTracking() on o.UserId equals u.UserId into uj
+                from u in uj.DefaultIfEmpty()
+                orderby o.OrderDate descending
+                select new
                 {
-                    driver = new
-                    {
-                        saleManId = driver.SaleManId,
-                        name = driver.Name,
-                        phone = driver.Phone,
-                        isAvailable = driver.IsAvailable
-                    },
-                    dateFrom = rangeFrom,
-                    dateTo = rangeTo.Date,
-                    summary = new
-                    {
-                        totalOrders = details.Count,
-                        delivered = details.Count(d => d.StatusGroup == "delivered"),
-                        cancelled = details.Count(d => d.StatusGroup == "cancelled"),
-                        active = details.Count(d => d.StatusGroup == "active"),
-                        totalDeliveryFees = details.Sum(d => d.DeliveryFee),
-                        totalRouteKm = details.Sum(d => d.RouteDistanceKm ?? 0m)
-                    },
-                    orders = details
-                });
-            }
-            catch (Exception ex)
+                    o.OrderId,
+                    o.OrderNo,
+                    o.OrderDate,
+                    RestaurantName = r != null ? r.Name : null,
+                    RestaurantAddress = r != null ? r.Address : null,
+                    CustomerName = u != null ? u.Name : null,
+                    CustomerPhone = u != null ? u.Phone : null,
+                    DeliveryAddress = u != null ? u.Address : null,
+                    o.NetAmount,
+                    o.Total,
+                    o.CostDelivery,
+                    o.IsCancel,
+                    o.IsDelivered,
+                    o.IsDeliveryConfirmed,
+                    o.Notes,
+                    o.Lat,
+                    o.Long
+                }
+            ).ToListAsync();
+
+            return basic.Select(o =>
             {
-                await _logger.WriteAsync(ex, "DriverActivityController => DriverOrders");
-                return Response(false, "خطأ");
-            }
+                var status = ResolveStatus(o.IsCancel, o.IsDeliveryConfirmed, o.IsDelivered,
+                    false, false, false, null, false, false);
+                var deliveryAddress = !string.IsNullOrWhiteSpace(o.DeliveryAddress)
+                    ? o.DeliveryAddress
+                    : (!string.IsNullOrWhiteSpace(o.Lat) && !string.IsNullOrWhiteSpace(o.Long)
+                        ? $"إحداثيات: {o.Lat}, {o.Long}"
+                        : "—");
+
+                return new DriverOrderDetailRow
+                {
+                    OrderId = o.OrderId,
+                    OrderNo = o.OrderNo,
+                    OrderDate = o.OrderDate,
+                    RestaurantName = o.RestaurantName ?? "—",
+                    RestaurantAddress = o.RestaurantAddress,
+                    CustomerName = o.CustomerName ?? "—",
+                    CustomerPhone = o.CustomerPhone,
+                    DeliveryAddress = deliveryAddress,
+                    OrderAmount = (decimal)(o.NetAmount > 0 ? o.NetAmount : o.Total),
+                    DeliveryFee = o.CostDelivery ?? 0m,
+                    RouteDistanceKm = null,
+                    FromZone = null,
+                    ToZone = null,
+                    StatusCode = status.Code,
+                    StatusText = status.Text,
+                    StatusGroup = status.Group,
+                    Notes = o.Notes
+                };
+            }).ToList();
         }
 
         [HttpGet("excel")]
@@ -211,9 +303,9 @@ namespace RomanaWeb.Controllers
             var to = (dateTo ?? DateTime.Today).Date.AddDays(1).AddTicks(-1);
 
             var driversQuery = _context.SaleMan.AsNoTracking()
-                .Where(s => s.IsDelete != true);
+                .Where(s => s.IsDelete == null || s.IsDelete == false);
             if (!string.IsNullOrWhiteSpace(name))
-                driversQuery = driversQuery.Where(s => s.Name.Contains(name.Trim()));
+                driversQuery = driversQuery.Where(s => s.Name != null && s.Name.Contains(name.Trim()));
 
             var drivers = await driversQuery.OrderBy(s => s.Name).ToListAsync();
 

@@ -152,9 +152,11 @@
 | **الجمهور** | 👤 زبون |
 | **Method** | `POST` |
 | **الرابط الكامل** | `{BASE_URL}Users/Login/VerifyOtp/{Phone},{Code}` |
-| **مثال** | `POST https://api.rumana.iq/Users/Login/VerifyOtp/07701234567,4829` |
+| **مثال** | `POST https://api.rumana.iq/Users/Login/VerifyOtp/07701234567,482915` |
 | **Auth** | 🌐 |
-| **Path Params** | `Phone` (11 رقم), `Code` (4 أرقام) |
+| **Path Params** | `Phone` (11 رقم), `Code` (**6 أرقام**) |
+
+**سياسة OTP (الباكند):** الكود **6 أرقام**، صلاحية **5 دقائق** للكود الواحد، حد إرسال **3 / 15 دقيقة** مع فاصل **60 ثانية**، وبطلان بعد **5** محاولات تحقق فاشلة أو بعد النجاح.
 
 **Response نجاح — `data`:**
 
@@ -251,6 +253,31 @@
 
 ---
 
+### 4.1 أصناف المطعم (تصنيفات فرعية) 👤
+
+| البند | التفاصيل |
+|-------|----------|
+| **الجمهور** | 👤 زبون |
+| **Method** | `GET` |
+| **الرابط** | `{BASE_URL}RestaurantSubCategories/GetByResId/{restaurantId}` |
+| **مثال** | `GET .../RestaurantSubCategories/GetByResId/5` |
+| **Auth** | 🌐 |
+
+**أول عنصر في `data` دائماً (افتراضي — ليس في DB):**
+
+```json
+{
+  "restaurantSubCategoriesId": 0,
+  "subCategoriesId": -1,
+  "subCategoriesName": "الاكثر طلبا",
+  "restaurantId": 5
+}
+```
+
+**مهمة UI 👤:** اعرض «الاكثر طلبا» كأول تبويب/قسم؛ المنتجات عبر `GetByRestaurantId` مع `SubCategoriesId=-1` (انظر 4.2).
+
+---
+
 ### 4.2 قائمة منتجات المطعم (موجود — مع الحقول الجديدة)
 
 | البند | التفاصيل |
@@ -261,12 +288,18 @@
 | **مثال** | `GET .../Products/GetByRestaurantId/5,0,بيتزا` |
 | **Auth** | 🌐 |
 | **ملاحظة** | فلتر `isAvailable == false` في التطبيق — لا تسمح بالإضافة للسلة |
+| **تصنيف الأكثر طلباً** | `SubCategoriesId=-1` → 10 منتجات الأكثر طلباً بنفس شكل `Products` الكامل (مثال: `GET .../Products/GetByRestaurantId/5,-1`) |
+| **بحث بالاسم** | `SubCategoriesId=0` مع `prodname` (لا يستخدم `-1`) |
 
 **مهمة UI 👤:** اعرض `preparationTimeMinutes` في بطاقة المنتج.
 
 ---
 
-### 4.3 الأكثر طلباً لكل مطعم ⭐ جديد
+### 4.3 الأكثر طلباً لكل مطعم
+
+**الطريقة المفضلة للتطبيق:** استخدم التصنيف الافتراضي `subCategoriesId=-1` (4.1 + 4.2) — نفس parsing لقائمة المنتجات العادية.
+
+**مسار بديل (شكل استجابة مختصر):**
 
 | البند | التفاصيل |
 |-------|----------|
@@ -347,6 +380,8 @@
 
 **حقل جديد في Promo:** `maxUsagePerUser` (افتراضي 1، 0 = غير محدود للشخص).
 
+**سقف قيمة الخصم:** `maxDiscountAmount` (افتراضي 0 = بدون سقف). يُطبَّق على خصم النسبة قبل `Orders/Post` — مثال: طلب 25,000 د.ع، خصم 50%، سقف 5,000 → `discountValue=5000`.
+
 ---
 
 ### 5.2 تطبيق الخصم على الطلب
@@ -367,6 +402,7 @@
   "discountValue": 5000,
   "netAmount": 45000,
   "originalTotal": 50000,
+  "maxDiscountAmount": 5000,
   "fundedByStore": false
 }
 ```
@@ -694,7 +730,9 @@
 - [ ] `POST Users/Login/SendOtp/{phone}`
 - [ ] `POST Users/Login/VerifyOtp/{phone},{code}` + حفظ token
 - [ ] `GET AppSplash/GetForApp` عند البدء
-- [ ] `GET Products/GetTopSellingByRestaurant/{id}`
+- [ ] `GET RestaurantSubCategories/GetByResId/{id}` — أول عنصر `subCategoriesId=-1` «الاكثر طلبا»
+- [ ] `GET Products/GetByRestaurantId/{restId},-1` — الأكثر طلباً (10 منتجات، نفس شكل Products)
+- [ ] `GET Products/GetTopSellingByRestaurant/{id}` (اختياري — شكل مختصر)
 - [ ] فلترة `isAvailable` + عرض `preparationTimeMinutes`
 - [ ] `GET PromoCode/ValidatePromoCode` + `ApplyPromoCode` مع `userId`
 - [ ] `POST Orders` إنشاء طلب

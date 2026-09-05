@@ -107,12 +107,19 @@ namespace RomanaWeb.Controllers
         {
             try
             {
-                if (UserManager?.Role == "res")
+                if (IsAdminRole())
+                {
+                    // admin ok
+                }
+                else if (UserManager != null && string.Equals(UserManager.Role, "res", StringComparison.OrdinalIgnoreCase))
                 {
                     var prod = await _ProductsService.GetProductsById(Id);
                     if (prod?.RestaurantId != UserManager.Id)
                         return Response(false, "غير مصرح بتعديل منتج مطعم آخر");
                 }
+                else
+                    return Response(false, "غير مصرح");
+
                 ResObj res = await _ProductsService.SetIsAvailable(Id, isAvailable);
                 return Response(res.success, res.msg, res.data);
             }
@@ -127,7 +134,7 @@ namespace RomanaWeb.Controllers
         #region Top selling products per restaurant
         [AllowAnonymous]
         [HttpGet("Products/GetTopSellingByRestaurant/{restaurantId}")]
-        public async Task<IActionResult> GetTopSellingByRestaurant(int restaurantId, int take = 20)
+        public async Task<IActionResult> GetTopSellingByRestaurant(int restaurantId, int take = 4)
         {
             try
             {
@@ -148,6 +155,19 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (IsAdminRole())
+                {
+                    // admin ok
+                }
+                else if (UserManager != null && string.Equals(UserManager.Role, "res", StringComparison.OrdinalIgnoreCase))
+                {
+                    var prod = await _ProductsService.GetProductsById(Id);
+                    if (prod?.RestaurantId != UserManager.Id)
+                        return Response(false, "غير مصرح بتعديل منتج مطعم آخر");
+                }
+                else
+                    return Response(false, "غير مصرح");
+
                 ResObj res = await _ProductsService.SetIsFree(Id, Free);
                 if (res.success == false)
                 {

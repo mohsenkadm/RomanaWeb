@@ -229,23 +229,28 @@
         var dKm = $('#simDistanceKm').val();
         if (dKm) body.distanceKm = parseFloat(dKm);
 
-        call_ajax_json('POST', 'zones/route', {
-            fromLat: pts.pickup.lat,
-            fromLng: pts.pickup.lng,
-            toLat: pts.dropoff.lat,
-            toLng: pts.dropoff.lng
-        }, function (route) {
-            if (window.ZonesMaps && route) {
-                ZonesMaps.drawRoute(route.path, route.distanceKm, route.source);
-                $('#simRouteInfo').html(
-                    '<strong>مسافة الطريق:</strong> ' + (route.distanceKm || '-') + ' km' +
-                    ' | <strong>المصدر:</strong> ' + (route.source || '-')
-                ).show();
-            }
+        // Map display only: street-following path (does NOT change pricing).
+        if (window.ZonesMaps && typeof ZonesMaps.drawRoadRoute === 'function') {
+            $('#simRouteInfo').html('<strong>جاري رسم مسار الشوارع...</strong>').show();
+            ZonesMaps.drawRoadRoute(
+                pts.pickup.lat, pts.pickup.lng,
+                pts.dropoff.lat, pts.dropoff.lng,
+                function (route) {
+                    if (!route) return;
+                    var label = route.source === 'osrm'
+                        ? 'مسار حسب الشوارع (OSRM)'
+                        : 'تعذر مسار الشوارع — خط تقريبي للعرض فقط';
+                    $('#simRouteInfo').html(
+                        '<strong>مسافة الطريق (عرض الخريطة):</strong> ' + (route.distanceKm != null ? route.distanceKm : '-') + ' km' +
+                        ' | <strong>' + label + '</strong>'
+                    ).show();
+                }
+            );
+        }
 
-            call_ajax_json('POST', 'zones/simulate', body, function (q) {
-                renderSimResult(q, parseFloat($('#simExpected').val()));
-            });
+        // Pricing unchanged — same simulate endpoint / server logic.
+        call_ajax_json('POST', 'zones/simulate', body, function (q) {
+            renderSimResult(q, parseFloat($('#simExpected').val()));
         });
     }
 

@@ -21,6 +21,8 @@ namespace RomanaWeb.Model.EntityMap
             builder.Property(x => x.Password);
             builder.Property(x => x.IsAvailable).HasDefaultValue(true);
             builder.Property(x => x.AvailabilityChangedAt);
+            builder.Property(x => x.AllowMultiOrders).HasDefaultValue(false);
+            builder.Property(x => x.MaxConcurrentOrders).HasDefaultValue(1);
             builder.Property(x => x.Lat);
             builder.Property(x => x.Long);
             builder.Property(x => x.LocationUpdatedAt);

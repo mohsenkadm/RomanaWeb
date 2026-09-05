@@ -45,10 +45,17 @@ namespace RomanaWeb.Helper.Repository
         public async Task<ResObj> GetByResId(int Id)
         {
             var item = await _Repository.GetEntityListAsync("dbo.GetRestaurantSubCategoriesByResId", new { Id });
-            if (item != null)
-                return Result.Return(true, item);
-            else
-                return Result.Return(false);
+            var list = item ?? new List<RestaurantSubCategories>();
+
+            list.Insert(0, new RestaurantSubCategories
+            {
+                RestaurantSubCategoriesId = 0,
+                SubCategoriesId = CatalogConstants.MostOrderedSubCategoryId,
+                RestaurantId = Id,
+                SubCategoriesName = CatalogConstants.MostOrderedSubCategoryName
+            });
+
+            return Result.Return(true, list);
         }
 
         public async Task<ResObj> PostWithAddName(RestaurantSubCategories RestaurantSubCategories)

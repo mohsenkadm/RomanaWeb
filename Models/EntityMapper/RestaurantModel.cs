@@ -19,6 +19,7 @@
         public bool? IsStars { get; set; }
         public bool? IsActive { get; set; }
         public bool? IsTop { get; set; }
+        public int SortOrder { get; set; } = 0;
         public decimal MinimumPrice { get; set; }
         public decimal CostDelivery { get; set; }
         public string Areaname { get; set; }

@@ -28,6 +28,8 @@ namespace RomanaWeb.Models.Entity
         public bool? IsActive { get; set; }
         public bool? IsTop { get; set; }
         public bool? IsDelete { get; set; }
+        /// <summary>Admin display order (lower first). 0 = no explicit order (shown last).</summary>
+        public int SortOrder { get; set; } = 0;
         public bool? IsApproved { get; set; }
         // Section 1.1: minimum order amount removed from store profile.
         // Column kept for backward compatibility; do not surface in new APIs.

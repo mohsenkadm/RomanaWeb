@@ -132,7 +132,7 @@ namespace RomanaWeb.Controllers
         #region Get Info order 
         [HttpGet()]
         public async Task<IActionResult> GetAll(string? OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto,int? CountriesId,int? state,
-            string? Phone = null, int? orderStatus = null)
+            string? Phone = null, int? orderStatus = null, int? page = null, int pageSize = 25)
         {
             try
             {
@@ -141,7 +141,7 @@ namespace RomanaWeb.Controllers
                 {
                     RestaurantId = UserManager.Id;
                 }
-                ResObj res = await _OrdersService.GetAll(OrderNo, RestaurantName, datefrom, dateto,RestaurantId, CountriesId, state, Phone, orderStatus);
+                ResObj res = await _OrdersService.GetAll(OrderNo, RestaurantName, datefrom, dateto,RestaurantId, CountriesId, state, Phone, orderStatus, page, pageSize);
 
                 return Response(res.success, res.data);
             }
@@ -154,13 +154,15 @@ namespace RomanaWeb.Controllers
         #endregion
 
         #region Get Info Delivery 
-        [AllowAnonymous]
+        [Authorize]
         [HttpGet]
-        public async Task<FileResult> GetExcelAll(string? OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto,
+        public async Task<IActionResult> GetExcelAll(string? OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto,
             int? CountriesId, string? Phone = null, int? orderStatus = null)
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 // Same filters as admin Orders UI (no hardcoded state).
                 ResObj res = await _OrdersService.GetAll(OrderNo, RestaurantName, datefrom, dateto, 0, CountriesId, null, Phone, orderStatus);
 
@@ -170,7 +172,7 @@ namespace RomanaWeb.Controllers
             catch (Exception ex)
             {
                 await _logger.WriteAsync(ex, "OrdersController => GetExcelAll");
-                return null;
+                return Response(false, "حدث خطأ اثناء تصدير البيانات");
             }
         }
 

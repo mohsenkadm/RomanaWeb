@@ -33,6 +33,7 @@ namespace RomanaWeb.Helper.Repository
 
             UserManager userManager = new UserManager() { Id = login.AdminId, Name = login.AdminName , Role="admin"};
             login.Token = JsonWebToken.GenerateToken(userManager);
+            login.Password = null;
 
             return Result.Return(true, login);
         }
@@ -51,11 +52,7 @@ namespace RomanaWeb.Helper.Repository
             else
                 admin =await _context.Admin.AsSplitQuery().AsNoTracking().Where(i => i.AdminName.Contains(name)).ToListAsync();
             foreach (Admin Admin in admin)
-            {
-                if (Admin.Password != null)
-                    if (Admin.Password.Length > 0)
-                        Admin.Password = Encyptmethod.DecryptStringFromBytes_Aes(Admin.Password);
-            }
+                Admin.Password = null;
             return Result.Return(true, admin);
         }
 
@@ -73,8 +70,9 @@ namespace RomanaWeb.Helper.Repository
             if (Admin1 is null)
                 return Result.Return(false, "حدث خطأ اثناء عملية جلب البيانات");          
             Admin1.AdminName = Admin.AdminName;
-            Admin1.AdminNo = Admin.AdminNo; 
-            Admin1.Password = Encyptmethod.EncryptStringToBytes_Aes(Admin.Password);  
+            Admin1.AdminNo = Admin.AdminNo;
+            if (!string.IsNullOrWhiteSpace(Admin.Password))
+                Admin1.Password = Encyptmethod.EncryptStringToBytes_Aes(Admin.Password);
 
             _context.Entry(Admin1).State = EntityState.Modified;
             await _context.SaveChangesAsync();
@@ -95,11 +93,8 @@ namespace RomanaWeb.Helper.Repository
         public async Task<ResObj> GetById(int Id)
         {
             Admin Admin = await GetAdminById(Id);
-            if (Admin.Password.Length > 0)
-            {
-                Admin.Password = Encyptmethod.DecryptStringFromBytes_Aes(Admin.Password);
-                Admin.Password = Admin.Password.Replace("\0", "");
-            }
+            if (Admin != null)
+                Admin.Password = null;
             return Result.Return(true, Admin);
         }
 
@@ -115,7 +110,13 @@ namespace RomanaWeb.Helper.Repository
         }
         public async Task<ResObj> changestate(Permission permission)
         {
-            await _permissionService.RunScriptAsync("UPDATE [dbo].[Permission]  SET  [State] ='" + permission.State + "' WHERE PermissionId=" + permission.PermissionId);
+            var row = await _context.Permission
+                .FirstOrDefaultAsync(p => p.PermissionId == permission.PermissionId);
+            if (row == null)
+                return Result.Return(false, "الصلاحية غير موجودة");
+
+            row.State = permission.State;
+            await _context.SaveChangesAsync();
             return Result.Return(true, "تم الحفظ");
         }         
         public async Task<ResObj> GetPermissionByUserId(int UserId)

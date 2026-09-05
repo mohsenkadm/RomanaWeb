@@ -48,7 +48,8 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(false, "حسابك   محذوف يرجى التواصل مع مدير التطببيق");
 
             UserManager userManager = new UserManager() { Id = login.RestaurantId, Name = login.Name,Role="res" };
-            login.Token = JsonWebToken.GenerateToken(userManager);   
+            login.Token = JsonWebToken.GenerateToken(userManager);
+            login.Password = null;
             return Result.Return(true, login);
         }
         public async Task<ResObj> GetAllForApp(string? Name, int CategoriesId,double Long, double Lat,int? CityId)
@@ -72,15 +73,20 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true, Restaurant);
         }
         public async Task<ResObj> GetAll(string? Name)
-        {                                                     
-            List<Restaurant> Restaurant = await _repository.GetEntityListAsync("dbo.GetRestaurantAll", new { Name });
-            foreach (Restaurant item in Restaurant)
-            {
-                if (item.Password != null)
-                    if (item.Password.Length > 0)
-                        item.Password = Encyptmethod.DecryptStringFromBytes_Aes(item.Password);
-            }
-            return Result.Return(true, Restaurant);
+        {
+            var query = _context.Restaurant.AsNoTracking().Where(r => r.IsDelete != true);
+            if (!string.IsNullOrWhiteSpace(Name))
+                query = query.Where(r => r.Name != null && r.Name.Contains(Name.Trim()));
+
+            var list = await query
+                .OrderBy(r => r.SortOrder == 0 ? int.MaxValue : r.SortOrder)
+                .ThenBy(r => r.Name)
+                .ToListAsync();
+
+            foreach (var item in list)
+                item.Password = null;
+
+            return Result.Return(true, list);
         }                       
 
         public async Task<ResObj> Post(Restaurant Restaurant, bool autoApprove = false)
@@ -150,11 +156,13 @@ namespace RomanaWeb.Helper.Repository
             Restaurant1.Areaname = Restaurant.Areaname;
             Restaurant1.CategoriesId = Restaurant.CategoriesId;
             Restaurant1.Insta = Restaurant.Insta;
-            Restaurant1.Password = Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password!);
+            if (!string.IsNullOrWhiteSpace(Restaurant.Password))
+                Restaurant1.Password = Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password);
             _context.Entry(Restaurant1).State = EntityState.Modified;
             await _context.SaveChangesAsync();
               UserManager userManager = new UserManager() { Id = Restaurant1.RestaurantId, Name = Restaurant.Name };
             Restaurant.Token = JsonWebToken.GenerateToken(userManager);
+            Restaurant1.Password = null;
             return Result.Return(true, "تم الحفظ بنجاح", Restaurant1);
         }
 
@@ -187,9 +195,12 @@ namespace RomanaWeb.Helper.Repository
             Restaurant1.Areaname = Restaurant.Areaname;
             Restaurant1.CategoriesId = Restaurant.CategoriesId;
             Restaurant1.Insta = Restaurant.Insta;
-            Restaurant1.Password = Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password!);
+            Restaurant1.SortOrder = Restaurant.SortOrder;
+            if (!string.IsNullOrWhiteSpace(Restaurant.Password))
+                Restaurant1.Password = Encyptmethod.EncryptStringToBytes_Aes(Restaurant.Password);
             _context.Entry(Restaurant1).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+            Restaurant1.Password = null;
             return Result.Return(true, "تم الحفظ بنجاح", Restaurant1);
         }
 
@@ -232,7 +243,8 @@ namespace RomanaWeb.Helper.Repository
                 })
                 .Where(x => x != null)
                 .Where(x => !radiusKm.HasValue || x!.DistanceKm <= radiusKm.Value)
-                .OrderBy(x => x!.DistanceKm)
+                .OrderBy(x => x!.Store.SortOrder == 0 ? int.MaxValue : x.Store.SortOrder)
+                .ThenBy(x => x!.DistanceKm)
                 .Select(x => new
                 {
                     x!.Store.RestaurantId,
@@ -248,6 +260,7 @@ namespace RomanaWeb.Helper.Repository
                     x.Store.IsClosed,
                     x.Store.IsStars,
                     x.Store.IsTop,
+                    sortOrder = x.Store.SortOrder,
                     distance_km = x.DistanceKm
                 })
                 .ToList();
@@ -282,7 +295,6 @@ namespace RomanaWeb.Helper.Repository
         {
             Restaurant Restaurant1 = await GetRestaurantById(Id);
             Restaurant1.IsDelete = true;
-            Restaurant1.Password = Encyptmethod.EncryptStringToBytes_Aes(Restaurant1.Password);
             _context.Entry(Restaurant1).State = EntityState.Modified;
                await _context.SaveChangesAsync();
 
@@ -292,55 +304,56 @@ namespace RomanaWeb.Helper.Repository
         public async Task<Restaurant> GetRestaurantById(int Id)
         {
             var res = await _repository.GetEntityAsync("dbo.GetRestaurantById", new {Id}) ;
-            try { res.Password = Encyptmethod.DecryptStringFromBytes_Aes(res.Password); } catch (Exception) { }
             return res;
         }
 
         public async Task<ResObj> GetById(int Id)
         {
             Restaurant Restaurant = await GetRestaurantById(Id);
+            if (Restaurant != null)
+                Restaurant.Password = null;
              return Result.Return(true, Restaurant);
         }
        
         public async Task<ResObj> SetIsColsed(int id,bool closed)
         {
-            var res = await GetRestaurantById(id);         
+            var res = await _context.Restaurant.FirstOrDefaultAsync(r => r.RestaurantId == id);
+            if (res == null)
+                return Result.Return(false, "المطعم غير موجود");
             res.IsClosed = closed;
-            res.Password = Encyptmethod.EncryptStringToBytes_Aes(res.Password);
-
-            _context.Entry(res).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+            res.Password = null;
             return Result.Return(true, "تم", res);
         }
                    
         public async Task<ResObj> SetIsStars(int id,bool stars)
         {
-            var res = await GetRestaurantById(id);         
+            var res = await _context.Restaurant.FirstOrDefaultAsync(r => r.RestaurantId == id);
+            if (res == null)
+                return Result.Return(false, "المطعم غير موجود");
             res.IsStars = stars;
-            res.Password = Encyptmethod.EncryptStringToBytes_Aes(res.Password);
-
-            _context.Entry(res).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+            res.Password = null;
             return Result.Return(true, "تم", res);
         }        
         public async Task<ResObj> SetIsApproved(int id)
         {
-            var res = await GetRestaurantById(id);         
+            var res = await _context.Restaurant.FirstOrDefaultAsync(r => r.RestaurantId == id);
+            if (res == null)
+                return Result.Return(false, "المطعم غير موجود");
             res.IsApproved = true;
-            res.Password = Encyptmethod.EncryptStringToBytes_Aes(res.Password);
-
-            _context.Entry(res).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+            res.Password = null;
             return Result.Return(true, "تم", res);
         }       
         public async Task<ResObj> SetInsta(int Id, string Url)
         {
-            var res = await GetRestaurantById(Id);         
+            var res = await _context.Restaurant.FirstOrDefaultAsync(r => r.RestaurantId == Id);
+            if (res == null)
+                return Result.Return(false, "المطعم غير موجود");
             res.Insta = Url;
-            res.Password = Encyptmethod.EncryptStringToBytes_Aes(res.Password);
-
-            _context.Entry(res).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+            res.Password = null;
             return Result.Return(true, "تم", res);
         }
                           
@@ -396,6 +409,7 @@ namespace RomanaWeb.Helper.Repository
 
             UserManager userManager = new UserManager() { Id = res.RestaurantId, Name = res.UserName!, Role = "res" };
             res.Token = JsonWebToken.GenerateToken(userManager);
+            res.Password = null;
 
             return Result.Return(true, res);
         }

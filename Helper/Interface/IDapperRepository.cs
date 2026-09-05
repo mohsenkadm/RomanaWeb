@@ -8,7 +8,9 @@ namespace RomanaWeb.Helper.Interface
         Task<List<TEntity>> GetEntityListScriptAsync(string Query, string pars);
         Task<TEntity> GetEntityScriptAsync(string Query, string pars);
         void RunScript(string Query);
+        void RunScript(string Query, object pars);
         Task RunScriptAsync(string Query);
+        Task RunScriptAsync(string Query, object pars);
         void RunSp(string spName, object pars);
         Task RunSpAsync(string spName, object pars);
         TEntity GetEntity(string spName, object pars);

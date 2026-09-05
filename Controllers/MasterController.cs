@@ -34,7 +34,17 @@ namespace RomanaWeb.Controllers
                 // if no claim is found return null means the user is not logged in
                 return null;
             }
-        }  
+        }
+
+        [NonAction]
+        protected bool IsAdminRole() =>
+            UserManager != null &&
+            string.Equals(UserManager.Role, "admin", StringComparison.OrdinalIgnoreCase);
+
+        [NonAction]
+        protected IActionResult ForbidAdminOnly() =>
+            Response(false, "غير مصرح، هذه العملية للأدمن فقط");
+
         [NonAction]
         public new IActionResult Response(bool success)
         {

@@ -68,15 +68,20 @@ namespace RomanaWeb.Controllers
         }
         #endregion
                                          
-        #region GetCountForSale Info SaleMan              
+        #region GetCountForSale Info SaleMan
+        /// <summary>Driver/mobile stats. Prefer query-string dates to avoid path binding issues.</summary>
+        [HttpGet("GetCountForSale")]
+        [HttpGet("GetCountForSale/{Id}")]
         [HttpGet("GetCountForSale/{Id},{datefrom},{dateto}")]
-        public async Task<IActionResult>  GetCountForSale(int Id, DateTime datefrom, DateTime dateto)
+        public async Task<IActionResult> GetCountForSale(int Id, DateTime? datefrom = null, DateTime? dateto = null)
         {
             try
             {
-                ResObj res = await _SaleManService.GetCountForSale(Id, datefrom,dateto);
+                var from = datefrom ?? DateTime.Today.AddDays(-30);
+                var to = dateto ?? DateTime.Today;
+                ResObj res = await _SaleManService.GetCountForSale(Id, from, to);
 
-                return Response(res.success, res.data);
+                return Response(res.success, res.msg, res.data);
             }
             catch (Exception ex)
             {
@@ -93,6 +98,9 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (!IsAdmin())
+                    return Response(false, "هذه العملية مخصصة لمدير التطبيق فقط");
+
                 ResObj res = await _SaleManService.GetAll(Name);
 
                 return Response(res.success, res.data);
@@ -167,6 +175,12 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                bool isSelf = UserManager != null
+                    && string.Equals(UserManager.Role, "sal", StringComparison.OrdinalIgnoreCase)
+                    && UserManager.Id == Id;
+                if (!IsAdmin() && !isSelf)
+                    return Response(false, "غير مصرح");
+
                 ResObj res = await _SaleManService.GetById(Id);
 
                 return Response(res.success, res.data);

@@ -1,7 +1,6 @@
 ﻿using RomanaWeb.Models.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using RomanaWeb.Classes;
 using RomanaWeb.Helper.Interface;
 
@@ -31,8 +30,9 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
 
-                ResObj res=  await _AdminServices.changestate(permission);
+                ResObj res = await _AdminServices.changestate(permission);
                 
                 return Response(res.success, res.data);
             }
@@ -49,6 +49,8 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 ResObj res = await _AdminServices.GetPermissionByUserId(UserId);
                  
 
@@ -68,6 +70,8 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 ResObj res = await _AdminServices.GetPermissionForLayout(UserManager.Id);
 
                 return Response(res.success, res.data);
@@ -105,6 +109,8 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 ResObj res = await _AdminServices.GetAll(Name);
 
                 return Response(res.success, res.data);
@@ -123,6 +129,8 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 ResObj res;
                 if (Admin.AdminId == 0)
                     res = await _AdminServices.Post(Admin);
@@ -146,6 +154,8 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 ResObj res = await _AdminServices.Delete(Id);
 
                 return Response(res.success, res.msg);
@@ -164,6 +174,8 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
                 ResObj res = await _AdminServices.GetById(Id);
 
                 return Response(res.success, res.data);

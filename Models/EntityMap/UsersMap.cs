@@ -22,7 +22,10 @@ namespace RomanaWeb.Model.EntityMap
             builder.Property(x => x.IsActive);           
             builder.Property(x => x.IsConfirm);           
             builder.Property(x => x.IsDelete);           
-            builder.Property(x => x.Code);           
+            builder.Property(x => x.Code);
+            builder.Property(x => x.CodeExpiresAt);
+            builder.Property(x => x.LastOtpSentAt);
+            builder.Property(x => x.OtpVerifyFailCount).HasDefaultValue(0);
             builder.Property(x => x.Password);           
             builder.Property(x => x.IsBlock);           
             builder.Property(x => x.NumberSendOtp);           

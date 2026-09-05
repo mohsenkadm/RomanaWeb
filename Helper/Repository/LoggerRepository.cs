@@ -30,8 +30,9 @@ namespace RomanaWeb.Helper.Repository
 
             try
             {
-                _dapper.RunScript($"INSERT INTO dbo.Logger ([DateError],[Message] ,[Error]) " +
-                    $"values ('{Key.DateTimeIQ}', N'{message}', N'{error}');");
+                _dapper.RunScript(
+                    "INSERT INTO dbo.Logger ([DateError],[Message] ,[Error]) values (@DateError, @Message, @Error);",
+                    new { DateError = Key.DateTimeIQ, Message = message, Error = error });
             }
             catch (Exception ex)
             {
@@ -72,8 +73,9 @@ namespace RomanaWeb.Helper.Repository
 
             try
             {
-                await _dapper.RunScriptAsync($"INSERT INTO dbo.Logger ([DateError],[Message] ,[Error]) " +
-                    $" values ('{Key.DateTimeIQ}', N'{message}', N'{error}');");
+                await _dapper.RunScriptAsync(
+                    "INSERT INTO dbo.Logger ([DateError],[Message] ,[Error]) values (@DateError, @Message, @Error);",
+                    new { DateError = Key.DateTimeIQ, Message = message, Error = error });
             }
             catch (Exception ex)
             {

@@ -15,7 +15,7 @@ function formatPromoDate(val) {
 function filltablePromoCode(data) {
     $('#tablePromoCode').empty();
     if (!data || !data.length) {
-        $('#tablePromoCode').append("<tr><td colspan='12' class='text-center'>لا توجد بيانات</td></tr>");
+        $('#tablePromoCode').append("<tr><td colspan='13' class='text-center'>لا توجد بيانات</td></tr>");
         return;
     }
     $.each(data, function (i, item) {
@@ -29,6 +29,7 @@ function filltablePromoCode(data) {
             "<td>" + (item.restaurantName || '-') + "</td>" +
             "<td>" + item.percentage + "%</td>" +
             "<td>" + (item.discountAmount || 0) + " د.ع</td>" +
+            "<td>" + (item.maxDiscountAmount > 0 ? item.maxDiscountAmount + ' د.ع' : 'بدون سقف') + "</td>" +
             "<td>" + item.promoName + "</td>" +
             "<td>" + (item.maxOrders > 0 ? item.maxOrders : 'غير محدود') + "</td>" +
             "<td>" + (item.maxUsagePerUser > 0 ? item.maxUsagePerUser : 'غير محدود') + "</td>" +
@@ -64,6 +65,7 @@ function setdataPromoCode(data) {
     $("#PromoName").val(data.promoName);
     $("#Percentage").val(data.percentage);
     $("#DiscountAmount").val(data.discountAmount || 0);
+    $("#MaxDiscountAmount").val(data.maxDiscountAmount || 0);
     $("#MaxOrders").val(data.maxOrders || 0);
     $("#MaxUsagePerUser").val(data.maxUsagePerUser ?? 1);
     $("#RestaurantIdPromo").val(data.restaurantId);
@@ -75,6 +77,7 @@ function aftersavePromoCode() {
     $("#Percentage").val('');
     $("#PromoName").val('');
     $("#DiscountAmount").val('');
+    $("#MaxDiscountAmount").val('0');
     $("#MaxOrders").val('');
     $("#MaxUsagePerUser").val('1');
     $("#RestaurantIdPromo").val(0);

@@ -27,6 +27,7 @@ namespace RomanaWeb.Models.EntityMap
             builder.Property(x => x.IsStars) ; 
             builder.Property(x => x.IsActive) ; 
             builder.Property(x => x.IsTop) ; 
+            builder.Property(x => x.SortOrder).HasDefaultValue(0);
             builder.Property(x => x.MinimumPrice) ; 
             builder.Property(x => x.Areaname) ; 
             builder.Property(x => x.CostDelivery) ; 

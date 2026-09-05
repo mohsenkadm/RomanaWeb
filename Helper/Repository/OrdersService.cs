@@ -95,7 +95,7 @@ namespace RomanaWeb.Helper.Repository
 
         // get all orders only master
         public async Task<ResObj> GetAll(string OrderNo, string? RestaurantName, DateTime datefrom, DateTime dateto, int? RestaurantId,int? CountriesId,int? state,
-            string? phone = null, int? orderStatus = null)
+            string? phone = null, int? orderStatus = null, int? page = null, int pageSize = 25)
         {
             List<Orders> data = await _OrdersRepository.GetEntityListAsync("dbo.GetOrderAll",
                 new { OrderNo, RestaurantName, datefrom, dateto,RestaurantId , CountriesId , state });
@@ -106,7 +106,31 @@ namespace RomanaWeb.Helper.Repository
             if (orderStatus.HasValue)
                 data = data.Where(o => MapOrderStatus(o) == orderStatus.Value).ToList();
 
-            return Result.Return(true, data);
+            // Backward compatible: no page → full list (charts / excel / mobile).
+            if (!page.HasValue)
+                return Result.Return(true, data);
+
+            if (page.Value < 1) page = 1;
+            if (pageSize < 1) pageSize = 25;
+            if (pageSize > 100) pageSize = 100;
+
+            int totalCount = data.Count;
+            int totalPages = totalCount == 0 ? 1 : (int)Math.Ceiling(totalCount / (double)pageSize);
+            int currentPage = page.Value > totalPages ? totalPages : page.Value;
+
+            var items = data
+                .Skip((currentPage - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return Result.Return(true, new
+            {
+                items,
+                totalCount,
+                page = currentPage,
+                pageSize,
+                totalPages
+            });
         }
 
         /// <summary>0=pending,1=approved,3=driverAccepted,4=driverEnRoute,5=pickedUp,6=outForDelivery,7=delivered,8=confirmed,9=cancelled</summary>
@@ -788,6 +812,15 @@ namespace RomanaWeb.Helper.Repository
             if (!driver.IsAvailable)
                 return Result.Return(false, "حالة عملك متوقفة — فعّل العمل لاستلام الطلبات");
 
+            if (!await _dispatch.DriverCanAcceptMoreOrdersAsync(saleManId))
+            {
+                var max = DriverDispatchService.EffectiveMaxConcurrentOrders(driver);
+                return Result.Return(false,
+                    max <= 1
+                        ? "لديك طلب نشط — أكمله قبل استلام طلبات جديدة"
+                        : $"وصلت للحد الأقصى ({max}) من الطلبات المتزامنة — أكمل بعضها أولاً");
+            }
+
             try { await _dispatch.UpdateDriverLocation(saleManId, lat, lng); } catch { }
 
             var driverZones = await ZoneCoverageHelper.GetDriverZoneIdsAsync(_context, saleManId);
@@ -912,8 +945,14 @@ namespace RomanaWeb.Helper.Repository
             if (order.IsSaleManApprove == true)
                 return Result.Return(false, "تم قبول الطلب من قبل مندوب آخر");
 
-            if (await _dispatch.DriverHasActiveOrderAsync(saleManId, orderId))
-                return Result.Return(false, "لديك طلب نشط، أكمله قبل قبول طلب جديد");
+            if (!await _dispatch.DriverCanAcceptMoreOrdersAsync(saleManId, orderId))
+            {
+                var max = DriverDispatchService.EffectiveMaxConcurrentOrders(driver);
+                return Result.Return(false,
+                    max <= 1
+                        ? "لديك طلب نشط، أكمله قبل قبول طلب جديد"
+                        : $"وصلت للحد الأقصى ({max}) من الطلبات المتزامنة");
+            }
 
             if (!await _dispatch.DriverServesOrderZoneAsync(saleManId, order))
                 return Result.Return(false, "هذا الطلب خارج زونات عملك");

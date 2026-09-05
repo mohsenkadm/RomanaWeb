@@ -4,6 +4,7 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
+
 <div class="content">
     <div class="content dark-edition">
         <div class="container-fluid">
@@ -13,7 +14,7 @@
                 <div class="rm-summary-icon bg-orange"><i class="material-icons">people</i></div>
                 <div class="rm-summary-body">
                     <h4>ادارة الزبائن</h4>
-                    <p>عرض وادارة جميع الزبائن المسجلين في التطبيق. يمكنك اضافة زبائن جدد، تعديل بياناتهم، تفعيل او تعطيل حساباتهم، ومراجعة معلومات التواصل والعناوين.</p>
+                    <p>عرض وادارة الزبائن المسجلين. البحث بالاسم أو رقم الهاتف، مع تصفح الصفحات لسرعة التحميل.</p>
                 </div>
                 <div class="rm-summary-stats">
                     <div class="rm-stat"><span class="rm-stat-value" id="userSummaryTotal">-</span><span class="rm-stat-label">اجمالي</span></div>
@@ -23,31 +24,36 @@
 
             <!-- Filter Bar -->
             <div class="rm-filter-bar">
-                <div class="row">
-                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
-                        <div class="text-center wow fadeInDown">
-                            <label class="mb-2"> </label>
-                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" data-toggle="modal" data-target="#UsersModal">اضافة  جديد <i class='material-icons'>add</i> </button>
-                        </div>
+                <div class="row align-items-end">
+                    <div class="col-lg-2 col-md-3 col-sm-6">
+                        <label class="mb-2"> </label>
+                        <button type="button" class="btn btn-success btnwidth" style="width:100%;" data-toggle="modal" data-target="#UsersModal" onclick="_UserId=0;">اضافة جديد <i class='material-icons'>add</i></button>
                     </div>
-                    <div class="col-lg-4 col-md-4 col-sm-12 ">
-                        <label class="mb-2">بحث عن الاسم</label>
-                        <input type="text" class="form-control alignright" placeholder="اكتب الاسم" autocomplete="off" name="Namese" id="Namese">
+                    <div class="col-lg-4 col-md-5 col-sm-12">
+                        <label class="mb-2">بحث (الاسم أو الهاتف)</label>
+                        <input type="text" class="form-control alignright" placeholder="اكتب الاسم أو رقم الهاتف" autocomplete="off" name="Namese" id="Namese">
                     </div>
-                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
-                        <div class="text-center wow fadeInDown" style="text-align:left;">
-                            <label class="mb-2"> </label>
-                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث <i class='material-icons'>search</i>  </button>
-                        </div>
+                    <div class="col-lg-2 col-md-2 col-sm-6">
+                        <label class="mb-2">عدد الصف</label>
+                        <select class="form-control" id="usersPageSize">
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
                     </div>
-                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
-                        <div class="text-center wow fadeInDown">
-                            <label class="mb-2"> </label>
-                            <button type="button" id="excel-btn" class="btn btn-success btnwidth" style="text-align:center; width:100%;">اكسل <i class='material-icons'>file_download</i></button>
-                        </div>
+                    <div class="col-lg-2 col-md-2 col-sm-6">
+                        <label class="mb-2"> </label>
+                        <button type="button" id="search-btn" class="btn btn-info btnwidth" style="width:100%;">بحث <i class='material-icons'>search</i></button>
                     </div>
-                    <div class="col-lg-2 col-md-2 col-sm-12" style="padding-top:24px;">
+                    <div class="col-lg-2 col-md-2 col-sm-6">
+                        <label class="mb-2"> </label>
+                        <button type="button" id="excel-btn" class="btn btn-success btnwidth" style="width:100%;">اكسل <i class='material-icons'>file_download</i></button>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12 text-left">
                         <span class="rm-total-badge"><i class="material-icons">people</i> <span id="userTotalCount">0</span> زبون</span>
+                        <span class="text-muted mr-3" style="margin-right:12px;">صفحة <span id="usersPageInfo">1 / 1</span></span>
                     </div>
                 </div>
             </div>
@@ -61,18 +67,14 @@
                         <div class="card-body">
                             <div class="table-responsive" style="text-align: right;">
                                 <table class="table table-hover">
-                                    <thead class=" ">
-                                        <tr> 
-                                            <th scope="col">كود تاكيد</th>
+                                    <thead>
+                                        <tr>
                                             <th scope="col">اقرب نقطة دالة</th>
-                                            <th scope="col">lat</th>
-                                            <th scope="col">long</th> 
-                                            <th scope="col">كلمة المرور</th>
-                                            <th scope="col">نشط </th>
-                                            <th scope="col">تاكيد </th>
+                                            <th scope="col">نشط</th>
+                                            <th scope="col">تاكيد</th>
                                             <th scope="col">العنوان</th>
                                             <th scope="col">رقم الهاتف</th>
-                                            <th scope="col">اسم الزبون</th> 
+                                            <th scope="col">اسم الزبون</th>
                                             <th scope="col"></th>
                                         </tr>
                                     </thead>
@@ -80,6 +82,9 @@
                                     </tbody>
                                 </table>
                             </div>
+                            <nav aria-label="تصفح الزبائن" class="mt-3">
+                                <ul class="pagination justify-content-center flex-wrap" id="usersPagination"></ul>
+                            </nav>
                         </div>
                     </div>
                 </div>
@@ -93,7 +98,7 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content dark-edition">
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">اضافة جديد</h5>
+                <h5 class="modal-title" id="exampleModalLabel">اضافة / تعديل زبون</h5>
                 <button type="button" id="close1" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -118,7 +123,7 @@
                     </div>
                     <div class="row col-md-6 alignright">
                         <label class="text-primary">كلمة المرور</label>
-                        <input type="text" placeholder="اكتب  كلمة المرور " class="form-control alignright" autocomplete="off" name="Password" id="Password" />
+                        <input type="text" placeholder="اتركها فارغة عند التعديل إن لم تتغير" class="form-control alignright" autocomplete="off" name="Password" id="Password" />
                     </div>
 
                     <div class="form-group col-md-6  alignright">
@@ -144,39 +149,35 @@
 </div>
 <div id="mydiv">
     <script>
-        $("#close").on("click", (e) => {
+        $("#close").on("click", function (e) {
+            e.preventDefault();
+        });
+        $("#close1").on("click", function (e) {
+            e.preventDefault();
+        });
+        $("#search-btn").on("click", function (e) {
             e.preventDefault();
             RefreshUsers();
         });
-        $("#close1").on("click", (e) => {
-            e.preventDefault(); RefreshUsers();
+        $("#Namese").on("keydown", function (e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                RefreshUsers();
+            }
         });
-        $("#search-btn").on("click", (e) => {
-            e.preventDefault();
+        $("#usersPageSize").on("change", function () {
             RefreshUsers();
         });
-        $("#excel-btn").on("click", (e) => {
+        $("#excel-btn").on("click", function (e) {
             e.preventDefault();
-            window.open("/Users/GetExcelAll?Name=" + encodeURIComponent($("#Namese").val() || ""));
+            downloadUsersExcel();
         });
         $(document).ready(function () {
-            var obj = { Name: $("#Namese").val() }
-            call_ajax("GET", "Users/GetAll", null, function(data) {
-                filltableUsers(data);
-                if (data) {
-                    $('#userSummaryTotal').text(data.length);
-                    $('#userTotalCount').text(data.length);
-                    var active = data.filter(u => u.isActive).length;
-                    $('#userSummaryActive').text(active);
-                }
-            });
+            loadUsersPage(1);
         });
-        $("#save").on("click", (e) => {
+        $("#save").on("click", function (e) {
             e.preventDefault();
-            var IsActive = false;
-            if ($('#IsActive').is(":checked")) {
-                IsActive = true;
-            }
+            var IsActive = $('#IsActive').is(":checked");
             var object = {
                 UserId: _UserId,
                 Name: $("#Name").val(),
@@ -187,31 +188,24 @@
                 IsActive: IsActive,
             };
 
-            if (object.Name === "" || object.Name.trim() === "") {
+            if (!object.Name || !object.Name.trim()) {
                 md.showNotification("رجاءا ادخل الاسم ");
                 return;
             }
-            if (object.Phone === "" || object.Phone.trim() === "") {
+            if (!object.Phone || !object.Phone.trim()) {
                 md.showNotification("رجاءا ادخل رقم الهاتف ");
                 return;
             }
-            if (object.Address === "" || object.Address.trim() === "") {
+            if (!object.Address || !object.Address.trim()) {
                 md.showNotification("رجاءا ادخل العنوان ");
                 return;
             }
-            if (object.UserName === "" || object.UserName.trim() === "") {
-                md.showNotification("رجاءا ادخل اسم المستخدم ");
-                return;
-            }
-            if (object.Password === "" || object.Password.trim() === "") {
+            if (_UserId === 0 && (!object.Password || !object.Password.trim())) {
                 md.showNotification("رجاءا ادخل كلمة المرور ");
                 return;
             }
 
             call_ajax("POST", "Users/PostAdmin", object, aftersaveUsers);
         });
-
     </script>
 </div>
-
-

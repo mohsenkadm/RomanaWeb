@@ -107,6 +107,8 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (UserManager == null || !string.Equals(UserManager.Role, "Admin", StringComparison.OrdinalIgnoreCase))
+                    return Response(false, "غير مصرح، هذه العملية للأدمن فقط");
 
                 if (PromoCode.RestaurantId == 0) return Response(false, "يجب اختيار المطعم");
 

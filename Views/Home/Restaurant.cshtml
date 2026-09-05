@@ -57,6 +57,7 @@
                                         <tr>
                                             <th scope="col" class="rm-actions-cell">إجراءات</th>
                                             <th scope="col" class="rm-actions-cell">المنتجات</th>
+                                            <th scope="col">الترتيب</th>
                                             <th scope="col">المتجر</th>
                                             <th scope="col">القسم</th>
                                             <th scope="col">العنوان</th>
@@ -115,7 +116,7 @@
                     </div>
                     <div class="row col-md-6 alignright">
                         <label class="text-primary">كلمة المرور</label>
-                        <input type="text" placeholder="اكتب  كلمة المرور " class="form-control alignright" autocomplete="off" name="Password" id="Password" />
+                        <input type="text" placeholder="اتركها فارغة عند التعديل إن لم تتغير" class="form-control alignright" autocomplete="off" name="Password" id="Password" />
                     </div>
                     
                     <div class="row col-md-6 alignright">
@@ -126,6 +127,10 @@
                     <div class="row col-md-6 alignright">
                         <label class="text-primary">Long</label>
                         <input type="text" placeholder="Long" class="form-control alignright" autocomplete="off" name="Long" id="Long" />
+                    </div>
+                    <div class="row col-md-6 alignright">
+                        <label class="text-primary">رقم الترتيب</label>
+                        <input type="number" placeholder="0 = بدون ترتيب محدد" class="form-control alignright" autocomplete="off" name="SortOrder" id="SortOrder" value="0" />
                     </div>
                     <div class="row col-md-6 alignright">
                         <label class="text-primary">اقل سعر</label>
@@ -278,7 +283,7 @@
                 md.showNotification("رجاءا ادخل العنوان  ");
                 return;
             }
-            if ($("#Password").val() === "" || $("#Password").val().trim() === "") {
+            if (_RestaurantId === 0 && ($("#Password").val() === "" || $("#Password").val().trim() === "")) {
                 md.showNotification("رجاءا ادخل كلمة المرور ");
                 return;
             }
@@ -333,6 +338,7 @@
             data.append('Password', $("#Password").val());
             data.append('UserName', $("#UserName").val());
             data.append('MinimumPrice', $("#MinimumPrice").val());
+            data.append('SortOrder', $("#SortOrder").val() || 0);
             data.append('Areaname', $("#Areaname").val());
             data.append('CostDelivery', $("#CostDelivery").val());
             data.append('CategoriesId', $("#CategoriesId").val());

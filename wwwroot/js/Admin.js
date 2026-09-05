@@ -1,5 +1,15 @@
-﻿
-var _AdminId = 0;
+﻿var _AdminId = 0;
+
+function escHtml(v) {
+    if (v === null || v === undefined) return '';
+    return String(v)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function filltableAdmin(data) {
     $('#tableAdmin').empty();
     if (data.length === 0) {  
@@ -8,9 +18,9 @@ function filltableAdmin(data) {
     } 
     $.each(data, function (i, item) {
         var rows = "<tr>" +  
-            "<td>" + item.password + "</td>" +   
-            "<td>" + item.adminNo + "</td>" +   
-            "<td>" + item.adminName + "</td>"
+            "<td>—</td>" +   
+            "<td>" + escHtml(item.adminNo) + "</td>" +   
+            "<td>" + escHtml(item.adminName) + "</td>"
             + "<td> <button type='button' rel='tooltip' title='' class='btn btn-danger'  onclick='deleteAdmin(" + item.adminId + ")'  ><i class='material-icons'>delete</i> </button>" +
             "  |  <button type='button'  rel='tooltip' title='' class='btn btn-primary' onclick='updateAdmin(" + item.adminId + ")'  data-toggle='modal' data-target='#AdminModal'><i class='material-icons'>edit</i> </button>"+
         "  |  <button type='button'  rel='tooltip' title='' class='btn btn-success' onclick='GetPermissionUser(" + item.adminId + ")'  data-toggle='modal' data-target='#PermissionModal'>صلاحية </button></td></tr>";
@@ -168,8 +178,8 @@ function updateAdmin(id) {
 function setdataAdmin(data) {  
     $("#AdminName").val(data.adminName);   
     $("#AdminNo").val(data.adminNo);   
-    $("#Password").val(data.password);  
-    
+    $("#Password").val('');  
+    $("#Password").attr('placeholder', 'اترك فارغاً للإبقاء على كلمة المرور');
 }
 function aftersaveAdmin() {
     $('#tableAdmin').empty();

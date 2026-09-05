@@ -57,6 +57,7 @@ function filltableRestaurant(data) {
             "<button type='button' class='btn btn-primary btn-sm' onclick='updateRestaurant(" + item.restaurantId + ")' data-toggle='modal' data-target='#RestaurantModal'>تعديل</button> " +
             "<button type='button' class='btn btn-danger btn-sm' onclick='deleteRestaurant(" + item.restaurantId + ")'>حذف</button></div></td>" +
             "<td class='rm-actions-cell'><button type='button' class='btn btn-info btn-sm' onclick='openRestaurantProducts(" + item.restaurantId + ",\"" + safeName + "\")' data-toggle='modal' data-target='#ResProductsModal'>المنتجات</button></td>" +
+            "<td>" + (item.sortOrder || 0) + "</td>" +
             "<td><strong>" + (item.name || '') + "</strong></td>" +
             "<td>" + (item.categoriesName || '') + "</td>" +
             "<td class='rm-wrap-cell'>" + (item.address || '') + "</td>" +
@@ -141,8 +142,10 @@ function setdataRestaurant(data) {
     $("#Address").val(data.address);
     $("#Phone").val(data.phone);
     $("#MinimumPrice").val(data.minimumPrice);
+    $("#SortOrder").val(data.sortOrder || 0);
     $("#Areaname").val(data.areaname);
-    $("#Password").val(data.password);
+    $("#Password").val('');
+    $("#Password").attr('placeholder', 'اترك فارغاً للإبقاء على كلمة المرور');
     $("#Lat").val(data.lat);
     $("#Long").val(data.long);
     $("#Whatsapp").val(data.whatsapp);
@@ -164,6 +167,7 @@ function resetRestaurantFormFields() {
     $("#Background").val('');
     $("#Phone").val('');
     $("#MinimumPrice").val('');
+    $("#SortOrder").val('0');
     $("#CostDelivery").val('');
     $("#Areaname").val('');
     $("#Lat").val('');
@@ -224,6 +228,7 @@ function loadResSubCategories(restaurantId) {
         var sel = $('#resProdSubCat');
         sel.find('option:not(:first)').remove();
         (data || []).forEach(function (s) {
+            if (s.subCategoriesId === -1) return;
             sel.append('<option value="' + s.subCategoriesId + '">' + (s.subCategoriesName || '') + '</option>');
         });
     });

@@ -40,12 +40,41 @@ namespace RomanaWeb.Helper.Repository
         {
             try
             {
-                if (person.NumberSendOtp > 3)
+                if (person.IsBlock == true)
+                    return Result.Return(false, "حسابك محظور، يرجى التواصل مع الادارة");
+
+                if (person.IsActive == false)
+                    return Result.Return(false, "حسابك غير فعال");
+
+                if (string.IsNullOrWhiteSpace(person.Phone) || person.Phone.Length != 11)
+                    return Result.Return(false, "يجب كتابة رقم الهاتف 11 رقما");
+
+                if (!OtpSettings.IsValidCodeFormat(OTPCode))
+                    return Result.Return(false, "كود التحقق غير صالح");
+
+                DateTime now = Key.DateTimeIQ;
+
+                // Reset send counter when the rate-limit window has passed
+                if (person.LastOtpSentAt.HasValue &&
+                    (now - person.LastOtpSentAt.Value).TotalMinutes >= OtpSettings.WindowMinutes)
                 {
-                    person.IsBlock = true;
-                    _context.Entry(person).State = EntityState.Modified;
-                    await _context.SaveChangesAsync();
-                    return Result.Return(false, "تم عمل بلوك لحسابك لارسالك لاكثر من 3 مرات يمكنك التواصل مع الادارة ");
+                    person.NumberSendOtp = 0;
+                }
+
+                if ((person.NumberSendOtp ?? 0) >= OtpSettings.MaxSendsPerWindow)
+                {
+                    return Result.Return(false,
+                        $"تم تجاوز الحد المسموح ({OtpSettings.MaxSendsPerWindow} رسائل خلال {OtpSettings.WindowMinutes} دقيقة). حاول لاحقاً");
+                }
+
+                if (person.LastOtpSentAt.HasValue)
+                {
+                    double secondsSinceLast = (now - person.LastOtpSentAt.Value).TotalSeconds;
+                    if (secondsSinceLast < OtpSettings.MinSecondsBetweenSends)
+                    {
+                        int wait = (int)Math.Ceiling(OtpSettings.MinSecondsBetweenSends - secondsSinceLast);
+                        return Result.Return(false, $"انتظر {wait} ثانية قبل اعادة ارسال الكود");
+                    }
                 }
 
                 var requestData = new
@@ -69,7 +98,10 @@ namespace RomanaWeb.Helper.Repository
                     return Result.Return(false, "لم يتم ارسال كود التحقق الخاص بك حاول مرة اخرى");
 
                 person.Code = OTPCode;
+                person.CodeExpiresAt = now.AddMinutes(OtpSettings.ExpiryMinutes);
+                person.LastOtpSentAt = now;
                 person.NumberSendOtp = (person.NumberSendOtp ?? 0) + 1;
+                person.OtpVerifyFailCount = 0;
                 _context.Entry(person).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
                 return Result.Return(true, "تم ارسال كود التحقق عبر الواتساب");

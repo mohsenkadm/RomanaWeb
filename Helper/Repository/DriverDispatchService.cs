@@ -55,16 +55,24 @@ namespace RomanaWeb.Helper.Repository
 
             var settings = await _context.AppSettings.AsNoTracking().FirstOrDefaultAsync()
                            ?? new AppSettings();
-            bool allowBusy = settings.AllowBusyDriverDispatch;
-
-            var busyDriverIds = allowBusy
-                ? new List<int>()
-                : await GetBusyDriverIdsAsync();
+            // Legacy global override: when true, skip capacity filter (all available drivers get notified).
+            // Otherwise exclude drivers who already reached their per-driver concurrent limit.
+            Dictionary<int, int>? activeByDriver = null;
+            if (!settings.AllowBusyDriverDispatch)
+                activeByDriver = await GetActiveOrderCountsByDriverAsync();
 
             var drivers = await _context.SaleMan.AsNoTracking()
                 .Where(d => d.IsActive != false && d.IsDelete != true && d.IsAvailable)
-                .Where(d => !busyDriverIds.Contains(d.SaleManId))
                 .ToListAsync();
+
+            if (activeByDriver != null)
+            {
+                drivers = drivers.Where(d =>
+                {
+                    activeByDriver.TryGetValue(d.SaleManId, out int active);
+                    return active < EffectiveMaxConcurrentOrders(d);
+                }).ToList();
+            }
 
             if (drivers.Count == 0)
                 return Result.Return(false, "لا يوجد سائقين متاحين — يرجى التخصيص من لوحة التحكم");
@@ -276,7 +284,18 @@ namespace RomanaWeb.Helper.Repository
             if (loc == null || loc.ActiveOrderId == null)
                 return;
 
-            loc.ActiveOrderId = null;
+            // Keep tracking another still-active order when multi-order is enabled.
+            var nextActive = await _context.Orders.AsNoTracking()
+                .Where(o => o.SaleManId == saleManId
+                    && o.IsSaleManApprove == true
+                    && !o.IsDone
+                    && !o.IsCancel
+                    && o.OrderId != loc.ActiveOrderId)
+                .OrderByDescending(o => o.OrderId)
+                .Select(o => (int?)o.OrderId)
+                .FirstOrDefaultAsync();
+
+            loc.ActiveOrderId = nextActive;
             _context.Entry(loc).State = EntityState.Modified;
             await _context.SaveChangesAsync();
         }
@@ -292,6 +311,21 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<bool> DriverHasActiveOrderAsync(int saleManId, int? excludeOrderId = null)
         {
+            return await GetDriverActiveOrderCountAsync(saleManId, excludeOrderId) > 0;
+        }
+
+        public async Task<bool> DriverCanAcceptMoreOrdersAsync(int saleManId, int? excludeOrderId = null)
+        {
+            var driver = await _context.SaleMan.AsNoTracking()
+                .FirstOrDefaultAsync(d => d.SaleManId == saleManId);
+            if (driver == null) return false;
+
+            int active = await GetDriverActiveOrderCountAsync(saleManId, excludeOrderId);
+            return active < EffectiveMaxConcurrentOrders(driver);
+        }
+
+        public async Task<int> GetDriverActiveOrderCountAsync(int saleManId, int? excludeOrderId = null)
+        {
             var query = _context.Orders.AsNoTracking()
                 .Where(o => o.SaleManId == saleManId
                     && o.IsSaleManApprove == true
@@ -301,19 +335,29 @@ namespace RomanaWeb.Helper.Repository
             if (excludeOrderId is > 0)
                 query = query.Where(o => o.OrderId != excludeOrderId);
 
-            return await query.AnyAsync();
+            return await query.CountAsync();
         }
 
-        private async Task<List<int>> GetBusyDriverIdsAsync()
+        /// <summary>Effective concurrent slot limit for a driver.</summary>
+        public static int EffectiveMaxConcurrentOrders(SaleMan driver)
         {
-            return await _context.Orders.AsNoTracking()
+            if (driver == null || !driver.AllowMultiOrders)
+                return 1;
+            return Math.Max(2, driver.MaxConcurrentOrders);
+        }
+
+        private async Task<Dictionary<int, int>> GetActiveOrderCountsByDriverAsync()
+        {
+            var rows = await _context.Orders.AsNoTracking()
                 .Where(o => o.SaleManId != null && o.SaleManId > 0
                     && o.IsSaleManApprove == true
                     && !o.IsDone
                     && !o.IsCancel)
-                .Select(o => o.SaleManId!.Value)
-                .Distinct()
+                .GroupBy(o => o.SaleManId!.Value)
+                .Select(g => new { SaleManId = g.Key, Count = g.Count() })
                 .ToListAsync();
+
+            return rows.ToDictionary(x => x.SaleManId, x => x.Count);
         }
 
         private async Task TryBroadcastDriverLocationAsync(int orderId, int saleManId, double lat, double lng, DateTime at)

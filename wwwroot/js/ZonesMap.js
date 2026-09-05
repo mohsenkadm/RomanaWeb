@@ -279,25 +279,86 @@ window.ZonesMaps = (function () {
 
         var latlngs = path.map(function (p) {
             return [p.lat != null ? p.lat : p.Lat, p.lng != null ? p.lng : p.Lng];
+        }).filter(function (p) {
+            return p[0] != null && p[1] != null && !isNaN(p[0]) && !isNaN(p[1]);
         });
+        if (latlngs.length < 2) return;
+
+        var isFallback = source === 'haversine_fallback' || latlngs.length === 2;
         var line = L.polyline(latlngs, {
-            color: '#1565C0',
-            weight: 5,
-            opacity: 0.85,
-            dashArray: source === 'haversine_fallback' ? '8,8' : null
+            color: isFallback ? '#EF6C00' : '#1565C0',
+            weight: isFallback ? 4 : 5,
+            opacity: 0.9,
+            dashArray: isFallback ? '8,8' : null,
+            lineJoin: 'round',
+            lineCap: 'round'
         }).addTo(simRouteLayer);
 
         var mid = latlngs[Math.floor(latlngs.length / 2)];
         L.marker(mid, {
             icon: L.divIcon({
                 className: 'zone-route-label',
-                html: '<div class="route-km-badge">' + (distanceKm || '-') + ' km<br><small>' + (source || '') + '</small></div>',
-                iconSize: [80, 40],
-                iconAnchor: [40, 20]
+                html: '<div class="route-km-badge">' + (distanceKm != null ? distanceKm : '-') + ' km<br><small>' +
+                    (isFallback ? 'خط تقريبي' : (source || 'osrm')) + '</small></div>',
+                iconSize: [90, 40],
+                iconAnchor: [45, 20]
             })
         }).addTo(simRouteLayer);
 
         simMap.fitBounds(line.getBounds().pad(0.2));
+    }
+
+    /**
+     * Map-only: fetch street-following geometry from OSRM in the browser.
+     * Does not affect pricing calculations on the server.
+     */
+    function fetchOsrmRoadPath(fromLat, fromLng, toLat, toLng) {
+        var url = 'https://router.project-osrm.org/route/v1/driving/' +
+            encodeURIComponent(fromLng) + ',' + encodeURIComponent(fromLat) + ';' +
+            encodeURIComponent(toLng) + ',' + encodeURIComponent(toLat) +
+            '?overview=full&geometries=geojson';
+
+        return fetch(url, { method: 'GET' })
+            .then(function (res) {
+                if (!res.ok) throw new Error('osrm http ' + res.status);
+                return res.json();
+            })
+            .then(function (data) {
+                if (!data || data.code !== 'Ok' || !data.routes || !data.routes[0])
+                    throw new Error('osrm empty');
+                var route = data.routes[0];
+                var coords = route.geometry && route.geometry.coordinates;
+                if (!coords || coords.length < 2) throw new Error('osrm no geometry');
+                var path = coords.map(function (c) {
+                    return { lat: c[1], lng: c[0] };
+                });
+                return {
+                    path: path,
+                    distanceKm: Math.round((route.distance / 1000) * 100) / 100,
+                    source: 'osrm'
+                };
+            });
+    }
+
+    function drawRoadRoute(fromLat, fromLng, toLat, toLng, onDone) {
+        fetchOsrmRoadPath(fromLat, fromLng, toLat, toLng)
+            .then(function (route) {
+                drawRoute(route.path, route.distanceKm, route.source);
+                if (typeof onDone === 'function') onDone(route);
+            })
+            .catch(function () {
+                // Last resort visual only — straight line; pricing is unaffected.
+                var fallback = {
+                    path: [
+                        { lat: fromLat, lng: fromLng },
+                        { lat: toLat, lng: toLng }
+                    ],
+                    distanceKm: null,
+                    source: 'haversine_fallback'
+                };
+                drawRoute(fallback.path, fallback.distanceKm, fallback.source);
+                if (typeof onDone === 'function') onDone(fallback);
+            });
     }
 
     function clearRoute() {
@@ -377,6 +438,7 @@ window.ZonesMaps = (function () {
         setSimMode: setSimMode,
         syncSimMarkers: syncSimMarkers,
         drawRoute: drawRoute,
+        drawRoadRoute: drawRoadRoute,
         clearRoute: clearRoute,
         showPreview: showPreview,
         parseGeoJson: parseGeoJson

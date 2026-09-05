@@ -51,6 +51,7 @@
                                         <tr> 
                                             <th scope="col">نشاط المندوب</th>
                                             <th scope="col">حالة العمل</th>
+                                            <th scope="col">طلبات متعددة</th>
                                             <th scope="col">كلمة المرور</th> 
                                             <th scope="col">العنوان</th>
                                             <th scope="col">رقم الهاتف</th>
@@ -111,6 +112,23 @@
                         </div>
                         <small class="d-block text-muted">عند الإلغاء يبقى الحساب لكن لا يمكنه استخدام التطبيق ولا تُجلب له طلبات</small>
                     </div>
+                    <div class="form-group col-md-6 alignright">
+                        <label class="text-primary">استلام أكثر من طلب في نفس الوقت</label>
+                        <div class='form-check col-md-6 alignright'>
+                            <label class='form-check-label'>
+                                <input class='form-check-input' type='checkbox' id='AllowMultiOrders'>
+                                <span class='form-check-sign'>
+                                    <span class='check'></span>
+                                </span>
+                            </label>
+                        </div>
+                        <small class="d-block text-muted">عند التفعيل: يُرسل له إشعار طلبات قريبة ويستطيع الموافقة حتى لو لديه طلبات جاري توصيلها، ضمن العدد المسموح أدناه. عند الإيقاف: طلب واحد فقط كما السابق.</small>
+                    </div>
+                    <div class="row col-md-6 alignright" id="MaxConcurrentOrdersWrap">
+                        <label class="text-primary">عدد الطلبات المسموح باستلامها معاً</label>
+                        <input type="number" min="2" max="20" value="2" class="form-control alignright" autocomplete="off" name="MaxConcurrentOrders" id="MaxConcurrentOrders" />
+                        <small class="d-block text-muted">يُطبَّق فقط عند تفعيل الاستلام المتعدد (حد أدنى 2)</small>
+                    </div>
                     <div class="form-group col-md-12 alignright">
                         <label class="text-primary">زونات العمل</label>
                         <small class="d-block text-muted mb-2">يستلم المندوب طلبات الزبائن داخل هذه الزونات فقط (PDF §2.3.1)</small>
@@ -141,6 +159,15 @@
             RefreshSaleMan();
         });
         $(document).ready(function () {
+            function syncMultiOrderUi() {
+                var on = $('#AllowMultiOrders').is(':checked');
+                $('#MaxConcurrentOrdersWrap').toggle(on);
+                if (on && (parseInt($('#MaxConcurrentOrders').val(), 10) || 0) < 2)
+                    $('#MaxConcurrentOrders').val(2);
+            }
+            $('#AllowMultiOrders').on('change', syncMultiOrderUi);
+            syncMultiOrderUi();
+
             if (typeof ZonePicker !== 'undefined') {
                 ZonePicker.loadSummary(function () {
                     call_ajax("GET", "SaleMan/GetAll", null, filltableSaleMan);
@@ -152,6 +179,10 @@
         $("#save").on("click", (e) => {
             e.preventDefault();
             var IsActive = $('#IsActive').is(":checked");
+            var allowMulti = $('#AllowMultiOrders').is(":checked");
+            var maxConcurrent = parseInt($("#MaxConcurrentOrders").val(), 10) || 1;
+            if (allowMulti && maxConcurrent < 2) maxConcurrent = 2;
+            if (!allowMulti) maxConcurrent = 1;
             var object = {
                 SaleManId: _SaleManId,
                 Name: $("#Name").val(),
@@ -159,6 +190,8 @@
                 Address: $("#Address").val(),
                 Password: $("#Password").val(),
                 IsActive: IsActive,
+                AllowMultiOrders: allowMulti,
+                MaxConcurrentOrders: maxConcurrent
             };
 
             if (object.Name === "" || object.Name.trim() === "") {
@@ -169,7 +202,7 @@
                 md.showNotification("رجاءا ادخل رقم الهاتف");
                 return;
             }
-            if (object.Password === "" || object.Password.trim() === "") {
+            if (_SaleManId === 0 && (object.Password === "" || object.Password.trim() === "")) {
                 md.showNotification("رجاءا ادخل كلمة المرور");
                 return;
             }

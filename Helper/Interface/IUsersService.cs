@@ -14,9 +14,11 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> Login(string UserName, string password);
         Task<ResObj> LoginSendOtp(string phone);
         Task<ResObj> LoginVerifyOtp(string phone, string code);
-        Task<ResObj> GetAll(string? Name);
+        Task<ResObj> GetAll(string? Name, int page = 1, int pageSize = 25);
+        Task<ResObj> GetForExport(string? Name);
         Task<ResObj> Post(Users Users);
         Task<ResObj> Update(Users Users);
+        Task<ResObj> UpdateAdmin(Users Users);
         Task<ResObj> Delete(int Id);
         Task<Users> GetUsersById(int Id);
         Task<ResObj> GetById(int Id);     

@@ -79,8 +79,9 @@
                                             <th scope="col">اسم المطعم</th>
                                             <th scope="col">نسبة %</th>
                                             <th scope="col">مبلغ الخصم</th>
+                                            <th scope="col">سقف الخصم (د.ع)</th>
                                             <th scope="col">اسم البرومو</th>
-                                            <th scope="col">الحد الاقصى</th>
+                                            <th scope="col">الحد الاقصى للاستخدام</th>
                                             <th scope="col">حد الاستخدام للشخص</th>
                                             <th scope="col">المستخدم</th>
                                             <th scope="col">النطاق</th>
@@ -120,6 +121,10 @@
                     <div class="form-group col-md-6 alignright">
                         <label class="text-primary">نسبة الخصم %</label>
                         <input type="number" id="Percentage" autocomplete="off" class="form-control alignright" placeholder="اكتب النسبة" />
+                    </div>
+                    <div class="form-group col-md-6 alignright">
+                        <label class="text-primary">الحد الأعلى لقيمة الخصم (د.ع)</label>
+                        <input type="number" id="MaxDiscountAmount" autocomplete="off" class="form-control alignright" placeholder="0 = بدون سقف" value="0" />
                     </div>
                     <div class="form-group col-md-6 alignright">
                         <label class="text-primary">مبلغ الخصم (دينار)</label>
@@ -191,6 +196,7 @@
             data.append('Percentage', $("#Percentage").val() || 0);
             data.append('PromoName', $("#PromoName").val());
             data.append('DiscountAmount', $("#DiscountAmount").val() || 0);
+            data.append('MaxDiscountAmount', $("#MaxDiscountAmount").val() || 0);
             data.append('MaxOrders', $("#MaxOrders").val() || 0);
             data.append('MaxUsagePerUser', $("#MaxUsagePerUser").val() || 1);
             data.append('RestaurantId', $("#RestaurantIdPromo").val() || 0);
