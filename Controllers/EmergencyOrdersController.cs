@@ -151,6 +151,9 @@ namespace RomanaWeb.Controllers
                 if (!await _dispatch.DriverServesOrderZoneAsync(req.SaleManId, order))
                     return Response(false, "المندوب لا يعمل في زون موقع الزبون");
 
+                if (!await _dispatch.DriverServesOrderRestaurantAsync(req.SaleManId, order))
+                    return Response(false, "المندوب غير مخصص لمطعم هذا الطلب");
+
                 order.SaleManId = req.SaleManId;
                 order.IsSaleManApprove = true;
                 order.IsSaleManCancel = false;

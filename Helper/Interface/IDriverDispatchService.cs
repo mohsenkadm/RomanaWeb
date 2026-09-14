@@ -22,5 +22,7 @@ namespace RomanaWeb.Helper.Interface
         Task<bool> DriverCanAcceptMoreOrdersAsync(int saleManId, int? excludeOrderId = null);
         Task<int> GetDriverActiveOrderCountAsync(int saleManId, int? excludeOrderId = null);
         Task<bool> DriverServesOrderZoneAsync(int saleManId, Orders order);
+        /// <summary>True if the driver is linked to the order's restaurant via RestaurantSaleMan.</summary>
+        Task<bool> DriverServesOrderRestaurantAsync(int saleManId, Orders order);
     }
 }

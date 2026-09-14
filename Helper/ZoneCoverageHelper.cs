@@ -44,6 +44,23 @@ namespace RomanaWeb.Helper
             return ids.ToHashSet();
         }
 
+        /// <summary>True if the driver is assigned to the order's restaurant (RestaurantSaleMan).</summary>
+        public static bool ServesRestaurant(IReadOnlyCollection<int>? assignedRestaurantIds, int restaurantId)
+        {
+            if (restaurantId <= 0) return false;
+            if (assignedRestaurantIds == null || assignedRestaurantIds.Count == 0) return false;
+            return assignedRestaurantIds.Contains(restaurantId);
+        }
+
+        public static async Task<HashSet<int>> GetDriverRestaurantIdsAsync(DB_Context context, int saleManId)
+        {
+            var ids = await context.RestaurantSaleMan.AsNoTracking()
+                .Where(rs => rs.SaleManId == saleManId)
+                .Select(rs => rs.RestaurantId)
+                .ToListAsync();
+            return ids.ToHashSet();
+        }
+
         public static async Task<HashSet<int>> GetRestaurantZoneIdsAsync(DB_Context context, int restaurantId)
         {
             var ids = await context.RestaurantZone.AsNoTracking()

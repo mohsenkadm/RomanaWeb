@@ -14,10 +14,10 @@ var ZonePicker = (function () {
 
     function formatZoneLabels(ids) {
         ids = ids || [];
-        if (!ids.length) return '<span class="text-muted">—</span>';
+        if (!ids.length) return '<span class="sm-tag-empty">لا توجد زونات</span>';
         return ids.map(function (id) {
             return '<span class="zone-tag">' + zoneName(id) + '</span>';
-        }).join(' ');
+        }).join('');
     }
 
     function ensureZones(cb) {
@@ -63,10 +63,10 @@ var ZonePicker = (function () {
             zones.forEach(function (z) {
                 var id = z.zoneId || z.ZoneId;
                 var name = z.name || z.Name;
-                var checked = selectedIds.indexOf(id) >= 0 ? ' checked' : '';
-                html += '<label class="zone-picker-item">' +
+                var checked = selectedIds.indexOf(id) >= 0 || selectedIds.indexOf(Number(id)) >= 0 ? ' checked' : '';
+                html += '<label class="zone-picker-item saleman-check-row">' +
                     '<input type="checkbox" class="zone-pick-cb" value="' + id + '"' + checked + '>' +
-                    '<span>' + name + '</span></label>';
+                    '<span class="saleman-check-name">' + name + '</span></label>';
             });
             $box.html(html);
         });

@@ -827,6 +827,10 @@ namespace RomanaWeb.Helper.Repository
             if (driverZones.Count == 0)
                 return Result.Return(false, "لم يتم تحديد زونات العمل للمندوب — راجع الإدارة");
 
+            var driverRestaurants = await ZoneCoverageHelper.GetDriverRestaurantIdsAsync(_context, saleManId);
+            if (driverRestaurants.Count == 0)
+                return Result.Return(false, "لم يتم تحديد مطاعم العمل للمندوب — راجع الإدارة");
+
             var pendingOrders = await _context.Orders
                 .Where(o => o.IsApporve && !o.IsDone && !o.IsCancel && (o.SaleManId == null || o.SaleManId == 0))
                 .ToListAsync();
@@ -835,6 +839,9 @@ namespace RomanaWeb.Helper.Repository
 
             foreach (var order in pendingOrders)
             {
+                if (!ZoneCoverageHelper.ServesRestaurant(driverRestaurants, order.RestaurantId))
+                    continue;
+
                 var restaurant = await _context.Restaurant.AsNoTracking()
                     .FirstOrDefaultAsync(r => r.RestaurantId == order.RestaurantId);
                 if (restaurant == null) continue;
@@ -956,6 +963,9 @@ namespace RomanaWeb.Helper.Repository
 
             if (!await _dispatch.DriverServesOrderZoneAsync(saleManId, order))
                 return Result.Return(false, "هذا الطلب خارج زونات عملك");
+
+            if (!await _dispatch.DriverServesOrderRestaurantAsync(saleManId, order))
+                return Result.Return(false, "هذا الطلب من مطعم غير مخصص لك");
 
             order.SaleManId = saleManId;
             order.IsSaleManApprove = true;

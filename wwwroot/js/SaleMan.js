@@ -1,67 +1,91 @@
 ﻿var _SaleManId = 0;
 
+function escapeHtmlSaleMan(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 function filltableSaleMan(data) {
-    $('#tableSaleMan').empty();
-    if (data.length === 0) {  
+    var $wrap = $('#saleManCards');
+    $wrap.empty();
+    if (!data || data.length === 0) {
+        $wrap.html('<div class="saleman-empty">لا توجد مندوبين</div>');
         md.showNotification('لا توجد معلومات');
         return;
-    } 
+    }
+
     $.each(data, function (i, item) {
-        // نشاط الحساب: تنشيط / الغاء تنشيط (IsActive) — الحساب يبقى لكن التطبيق يُقفل.
+        var id = item.saleManId;
         var active = item.isActive !== false && item.isActive !== 0;
-        var activeBadge = active
-            ? '<span class="badge" style="background:#4CAF50;color:#fff;padding:4px 10px;border-radius:12px;">نشط</span>'
-            : '<span class="badge" style="background:#F44336;color:#fff;padding:4px 10px;border-radius:12px;">ملغى</span>';
-        var activeBtnLabel = active ? 'الغاء تنشيط' : 'تنشيط';
-        var activeBtnClass = active ? 'btn-danger' : 'btn-success';
-        var activityCell =
-            '<td>' + activeBadge +
-            ' <button type="button" class="btn btn-sm ' + activeBtnClass + '" ' +
-                'style="margin-right:6px" ' +
-                'onclick="toggleSaleManActive(' + item.saleManId + ',' + (!active) + ')">' +
-                activeBtnLabel + '</button></td>';
-
-        // حالة العمل: تفعيل / ايقاف (IsAvailable).
         var working = (item.isAvailable === undefined) ? true : !!item.isAvailable;
-        var badge = working
-            ? '<span class="badge" style="background:#4CAF50;color:#fff;padding:4px 10px;border-radius:12px;">يعمل</span>'
-            : '<span class="badge" style="background:#9E9E9E;color:#fff;padding:4px 10px;border-radius:12px;">متوقف</span>';
-        var btnLabel = working ? 'ايقاف' : 'تفعيل';
-        var btnClass = working ? 'btn-warning' : 'btn-success';
-        var availabilityCell =
-            '<td>' + badge +
-            ' <button type="button" class="btn btn-sm ' + btnClass + '" ' +
-                'style="margin-right:6px" ' +
-                (active ? '' : 'disabled title="المندوب غير نشط" ') +
-                'onclick="toggleSaleManAvailability(' + item.saleManId + ',' + (!working) + ')">' +
-                btnLabel + '</button></td>';
-
         var multi = !!item.allowMultiOrders;
         var maxN = item.maxConcurrentOrders > 0 ? item.maxConcurrentOrders : 1;
-        var multiCell = multi
-            ? '<td><span class="badge" style="background:#2196F3;color:#fff;padding:4px 10px;border-radius:12px;">متعدد (' + maxN + ')</span></td>'
-            : '<td><span class="badge" style="background:#607D8B;color:#fff;padding:4px 10px;border-radius:12px;">طلب واحد</span></td>';
 
-        var zoneCell = typeof ZonePicker !== 'undefined'
-            ? '<td class="zone-tags-cell">' + ZonePicker.saleManZoneLabels(item.saleManId) + '</td>'
-            : '<td>—</td>';
+        var activeBadge = active
+            ? '<span class="sm-status sm-status-ok">نشط</span>'
+            : '<span class="sm-status sm-status-off">ملغى</span>';
+        var workBadge = working
+            ? '<span class="sm-status sm-status-ok">يعمل</span>'
+            : '<span class="sm-status sm-status-muted">متوقف</span>';
+        var multiBadge = multi
+            ? '<span class="sm-status sm-status-info">متعدد (' + maxN + ')</span>'
+            : '<span class="sm-status sm-status-muted">طلب واحد</span>';
 
-        var rows = "<tr>" + 
-            activityCell +
-            availabilityCell +
-            multiCell +
-            "<td>—</td>" +  
-            "<td>" + (item.address || '') + "</td>" +   
-            "<td>" + (item.phone || '') + "</td>" +
-            "<td>" + (item.name || '') + "</td>" +
-            zoneCell
-            + "<td> <button type='button' class='btn btn-danger' onclick='deleteSaleMan(" + item.saleManId + ")'>حذف</button>"
-            + " | <button type='button' class='btn btn-primary' onclick='updateSaleMan(" + item.saleManId + ")' data-toggle='modal' data-target='#SaleManModal'>تعديل</button></td></tr>";
-        $('#tableSaleMan').append(rows);  
+        var restaurantsHtml = (typeof RestaurantPicker !== 'undefined')
+            ? RestaurantPicker.saleManRestaurantLabels(id)
+            : '<span class="text-muted">—</span>';
+        var zonesHtml = (typeof ZonePicker !== 'undefined')
+            ? ZonePicker.saleManZoneLabels(id)
+            : '<span class="text-muted">—</span>';
+
+        var html =
+            '<article class="saleman-card">' +
+                '<div class="saleman-card-top">' +
+                    '<div class="saleman-card-identity">' +
+                        '<div class="saleman-avatar"><i class="material-icons">person</i></div>' +
+                        '<div>' +
+                            '<h5 class="saleman-card-name">' + escapeHtmlSaleMan(item.name || '') + '</h5>' +
+                            '<div class="saleman-card-meta">' +
+                                '<span><i class="material-icons">phone</i> ' + escapeHtmlSaleMan(item.phone || '—') + '</span>' +
+                                (item.address ? '<span><i class="material-icons">place</i> ' + escapeHtmlSaleMan(item.address) + '</span>' : '') +
+                            '</div>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="saleman-card-badges">' +
+                        activeBadge + workBadge + multiBadge +
+                    '</div>' +
+                '</div>' +
+                '<div class="saleman-card-assign">' +
+                    '<div class="saleman-assign-block saleman-assign-block-res">' +
+                        '<div class="saleman-assign-label"><i class="material-icons">storefront</i> المطاعم</div>' +
+                        '<div class="saleman-assign-tags">' + restaurantsHtml + '</div>' +
+                    '</div>' +
+                    '<div class="saleman-assign-block saleman-assign-block-zone">' +
+                        '<div class="saleman-assign-label"><i class="material-icons">map</i> الزونات</div>' +
+                        '<div class="saleman-assign-tags">' + zonesHtml + '</div>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="saleman-card-actions">' +
+                    '<button type="button" class="btn btn-sm ' + (active ? 'btn-danger' : 'btn-success') + '" onclick="toggleSaleManActive(' + id + ',' + (!active) + ')">' +
+                        (active ? 'الغاء تنشيط' : 'تنشيط') +
+                    '</button>' +
+                    '<button type="button" class="btn btn-sm ' + (working ? 'btn-warning' : 'btn-success') + '" ' +
+                        (active ? '' : 'disabled title="المندوب غير نشط" ') +
+                        'onclick="toggleSaleManAvailability(' + id + ',' + (!working) + ')">' +
+                        (working ? 'ايقاف العمل' : 'تفعيل العمل') +
+                    '</button>' +
+                    '<button type="button" class="btn btn-sm btn-primary" onclick="updateSaleMan(' + id + ')" data-toggle="modal" data-target="#SaleManModal">تعديل</button>' +
+                    '<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSaleMan(' + id + ')">حذف</button>' +
+                '</div>' +
+            '</article>';
+
+        $wrap.append(html);
     });
 }
 
-// نشاط المندوب: تنشيط / الغاء تنشيط (الحساب يبقى، التطبيق يُقفل عند الإلغاء).
 function toggleSaleManActive(id, makeActive) {
     var msg = makeActive
         ? 'هل تريد تنشيط هذا المندوب؟ سيتمكن من استخدام التطبيق واستلام الطلبات.'
@@ -71,7 +95,6 @@ function toggleSaleManActive(id, makeActive) {
         null, RefreshSaleMan);
 }
 
-// حالة العمل: تفعيل / ايقاف.
 function toggleSaleManAvailability(id, makeAvailable) {
     var verb = makeAvailable ? 'تفعيل' : 'ايقاف';
     if (!confirm('هل تريد ' + verb + ' حالة العمل لهذا المندوب؟')) return;
@@ -82,20 +105,28 @@ function toggleSaleManAvailability(id, makeAvailable) {
 function deleteSaleMan(id) {
     var result = confirm("هل تريد الحذف؟!");
     if (result == true) {
-        var object1 = {
-            Id: id,
-        }
-        call_ajax("DELETE", "SaleMan/Delete", object1, RefreshSaleMan);
+        call_ajax("DELETE", "SaleMan/Delete", { Id: id }, RefreshSaleMan);
     }
 }
-function RefreshSaleMan() { 
+
+function RefreshSaleMan() {
     var obj = { Name: $("#Namese").val() };
+    function loadTable() {
+        call_ajax("GET", "SaleMan/GetAll", obj, filltableSaleMan);
+    }
+    function afterZones() {
+        if (typeof RestaurantPicker !== 'undefined') {
+            RestaurantPicker.invalidateSummary();
+            RestaurantPicker.loadSummary(loadTable);
+        } else {
+            loadTable();
+        }
+    }
     if (typeof ZonePicker !== 'undefined') {
-        ZonePicker.loadSummary(function () {
-            call_ajax("GET", "SaleMan/GetAll", obj, filltableSaleMan);
-        });
+        ZonePicker.invalidateSummary();
+        ZonePicker.loadSummary(afterZones);
     } else {
-        call_ajax("GET", "SaleMan/GetAll", obj, filltableSaleMan); 
+        afterZones();
     }
 }
 
@@ -106,6 +137,7 @@ function openAddSaleMan() {
     $("#Phone").val('');
     $("#Address").val('');
     $("#Password").val('');
+    $("#Password").attr('placeholder', 'اكتب كلمة المرور');
     $("#IsActive").prop("checked", true);
     $("#AllowMultiOrders").prop("checked", false);
     $("#MaxConcurrentOrders").val(2);
@@ -113,15 +145,20 @@ function openAddSaleMan() {
     if (typeof ZonePicker !== 'undefined') {
         ZonePicker.render('saleManZonePicker', []);
     }
+    if (typeof RestaurantPicker !== 'undefined') {
+        RestaurantPicker.render('saleManRestaurantPicker', []);
+    }
 }
 
 function updateSaleMan(id) {
-    var object1 = { Id: id };
-    call_ajax("GET", "SaleMan/GetById", object1, setdataSaleMan);
+    call_ajax("GET", "SaleMan/GetById", { Id: id }, setdataSaleMan);
     _SaleManId = id;
     $("#SaleManModalLabel").text("تعديل المندوب");
     if (typeof ZonePicker !== 'undefined') {
         ZonePicker.loadSaleMan(id, 'saleManZonePicker');
+    }
+    if (typeof RestaurantPicker !== 'undefined') {
+        RestaurantPicker.loadSaleMan(id, 'saleManRestaurantPicker');
     }
 }
 
@@ -149,6 +186,11 @@ function aftersaveSaleMan() {
     $("#MaxConcurrentOrdersWrap").hide();
     if (typeof ZonePicker !== 'undefined') {
         ZonePicker.render('saleManZonePicker', []);
+        ZonePicker.invalidateSummary();
+    }
+    if (typeof RestaurantPicker !== 'undefined') {
+        RestaurantPicker.render('saleManRestaurantPicker', []);
+        RestaurantPicker.invalidateSummary();
     }
     _SaleManId = 0;
     $("#SaleManModalLabel").text("اضافة جديد");

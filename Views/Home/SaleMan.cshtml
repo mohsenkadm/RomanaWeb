@@ -1,5 +1,4 @@
-﻿
-@{
+﻿@{
     ViewData["Title"] = "المندوبين";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
@@ -8,73 +7,37 @@
     <div class="content dark-edition">
         <div class="container-fluid">
 
-            <!-- Page Summary -->
             <div class="rm-page-summary">
                 <div class="rm-summary-icon bg-orange"><i class="material-icons">badge</i></div>
                 <div class="rm-summary-body">
                     <h4>ادارة المندوبين</h4>
-                    <p>عرض وادارة السائقين/المندوبين من قبل الادمن. حدّد زونات العمل لكل مندوب (PDF §2.3.1).</p>
+                    <p>عرض وادارة السائقين/المندوبين. حدّد لكل مندوب المطاعم والزونات بشكل منفصل.</p>
                 </div>
             </div>
 
             <div class="rm-filter-bar">
-                <div class="row">
-                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
-                        <div class="text-center wow fadeInDown">
-                            <label class="mb-2"> </label>
-                            <button type="button" class="btn btn-success btnwidth" style="text-align:center; width:100%;" onclick="openAddSaleMan()" data-toggle="modal" data-target="#SaleManModal">اضافة جديد <i class='material-icons'>add</i></button>
-                        </div>
+                <div class="row align-items-end">
+                    <div class="col-lg-2 col-md-3 col-sm-6 mb-2">
+                        <button type="button" class="btn btn-success btnwidth" style="width:100%;" onclick="openAddSaleMan()" data-toggle="modal" data-target="#SaleManModal">اضافة جديد <i class="material-icons">add</i></button>
                     </div>
-                    <div class="col-lg-6 col-md-6 col-sm-12">
-                        <label class="mb-2">بحث عن الاسم</label>
+                    <div class="col-lg-6 col-md-6 col-sm-12 mb-2">
+                        <label class="mb-1">بحث عن الاسم</label>
                         <input type="text" class="form-control alignright" placeholder="اكتب الاسم" autocomplete="off" name="Namese" id="Namese">
                     </div>
-                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
-                        <div class="text-center wow fadeInDown" style="text-align:left;">
-                            <label class="mb-2"> </label>
-                            <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث <i class='material-icons'>search</i>  </button>
-                        </div>
+                    <div class="col-lg-2 col-md-3 col-sm-6 mb-2">
+                        <button type="button" id="search-btn" class="btn btn-info btnwidth" style="width:100%;">بحث <i class="material-icons">search</i></button>
                     </div>
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="card">
-                        <div class="card-header card-header-primary" style="text-align:right">
-                            <h4 class="card-title ">المندوبين</h4>
-                            <p class="card-category">جدول لعرض المندوبين داخل التطبيق</p>
-                        </div>
-                        <div class="card-body">
-                            <div class="table-responsive" style="text-align: right;">
-                                <table class="table table-hover">
-                                    <thead class=" ">
-                                        <tr> 
-                                            <th scope="col">نشاط المندوب</th>
-                                            <th scope="col">حالة العمل</th>
-                                            <th scope="col">طلبات متعددة</th>
-                                            <th scope="col">كلمة المرور</th> 
-                                            <th scope="col">العنوان</th>
-                                            <th scope="col">رقم الهاتف</th>
-                                            <th scope="col">اسم المندوب</th>
-                                            <th scope="col">زونات العمل</th>
-                                            <th scope="col"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="tableSaleMan">
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
+            <div id="saleManCards" class="saleman-cards"></div>
         </div>
     </div>
 </div>
 
 <!-- Modal -->
 <div class="modal fade" id="SaleManModal" tabindex="-1" role="dialog" aria-labelledby="SaleManModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable saleman-modal" role="document">
         <div class="modal-content dark-edition">
             <div class="modal-header">
                 <h5 class="modal-title" id="SaleManModalLabel">اضافة جديد</h5>
@@ -82,57 +45,71 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body saleman-modal-body">
                 <div class="row">
-                    <div class="row col-md-6 alignright">
+                    <div class="col-md-6 mb-3 alignright">
                         <label class="text-primary">اسم المندوب</label>
                         <input type="text" placeholder="اكتب الاسم" class="form-control alignright" autocomplete="off" name="Name" id="Name" />
                     </div>
-                    <div class="row col-md-6 alignright">
+                    <div class="col-md-6 mb-3 alignright">
                         <label class="text-primary">رقم الهاتف</label>
                         <input type="text" placeholder="اكتب رقم الهاتف" class="form-control alignright" autocomplete="off" name="Phone" id="Phone" />
                     </div>
-                    <div class="row col-md-6 alignright">
+                    <div class="col-md-6 mb-3 alignright">
                         <label class="text-primary">العنوان</label>
                         <input type="text" placeholder="اكتب العنوان" class="form-control alignright" autocomplete="off" name="Address" id="Address" />
                     </div>
-                    <div class="row col-md-6 alignright">
+                    <div class="col-md-6 mb-3 alignright">
                         <label class="text-primary">كلمة المرور</label>
                         <input type="text" placeholder="اكتب كلمة المرور" class="form-control alignright" autocomplete="off" name="Password" id="Password" />
                     </div>
-                    <div class="form-group col-md-6 alignright">
+                    <div class="col-md-6 mb-3 alignright">
                         <label class="text-primary">نشاط المندوب</label>
-                        <div class='form-check col-md-6 alignright'>
-                            <label class='form-check-label'>
-                                <input class='form-check-input' type='checkbox' id='IsActive'>
-                                <span class='form-check-sign'>
-                                    <span class='check'></span>
-                                </span>
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input class="form-check-input" type="checkbox" id="IsActive">
+                                <span class="form-check-sign"><span class="check"></span></span>
                             </label>
                         </div>
                         <small class="d-block text-muted">عند الإلغاء يبقى الحساب لكن لا يمكنه استخدام التطبيق ولا تُجلب له طلبات</small>
                     </div>
-                    <div class="form-group col-md-6 alignright">
+                    <div class="col-md-6 mb-3 alignright">
                         <label class="text-primary">استلام أكثر من طلب في نفس الوقت</label>
-                        <div class='form-check col-md-6 alignright'>
-                            <label class='form-check-label'>
-                                <input class='form-check-input' type='checkbox' id='AllowMultiOrders'>
-                                <span class='form-check-sign'>
-                                    <span class='check'></span>
-                                </span>
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input class="form-check-input" type="checkbox" id="AllowMultiOrders">
+                                <span class="form-check-sign"><span class="check"></span></span>
                             </label>
                         </div>
-                        <small class="d-block text-muted">عند التفعيل: يُرسل له إشعار طلبات قريبة ويستطيع الموافقة حتى لو لديه طلبات جاري توصيلها، ضمن العدد المسموح أدناه. عند الإيقاف: طلب واحد فقط كما السابق.</small>
+                        <small class="d-block text-muted">عند التفعيل يستطيع استلام أكثر من طلب ضمن العدد المسموح</small>
                     </div>
-                    <div class="row col-md-6 alignright" id="MaxConcurrentOrdersWrap">
+                    <div class="col-md-6 mb-3 alignright" id="MaxConcurrentOrdersWrap">
                         <label class="text-primary">عدد الطلبات المسموح باستلامها معاً</label>
                         <input type="number" min="2" max="20" value="2" class="form-control alignright" autocomplete="off" name="MaxConcurrentOrders" id="MaxConcurrentOrders" />
                         <small class="d-block text-muted">يُطبَّق فقط عند تفعيل الاستلام المتعدد (حد أدنى 2)</small>
                     </div>
-                    <div class="form-group col-md-12 alignright">
-                        <label class="text-primary">زونات العمل</label>
-                        <small class="d-block text-muted mb-2">يستلم المندوب طلبات الزبائن داخل هذه الزونات فقط (PDF §2.3.1)</small>
-                        <div id="saleManZonePicker" class="zone-picker-box"></div>
+                </div>
+
+                <div class="saleman-assign-stack">
+                    <div class="saleman-assign-card saleman-assign-restaurants mb-3">
+                        <div class="saleman-assign-head">
+                            <span class="saleman-assign-icon"><i class="material-icons">storefront</i></span>
+                            <div class="flex-grow-1">
+                                <h6 class="saleman-assign-title mb-0">1) المطاعم التي يعمل لديها</h6>
+                                <small class="text-muted">اختر مطعماً أو أكثر — يستلم إشعارات طلبات هذه المطاعم فقط</small>
+                            </div>
+                        </div>
+                        <div id="saleManRestaurantPicker" class="saleman-picker-list"></div>
+                    </div>
+                    <div class="saleman-assign-card saleman-assign-zones mb-1">
+                        <div class="saleman-assign-head">
+                            <span class="saleman-assign-icon"><i class="material-icons">map</i></span>
+                            <div class="flex-grow-1">
+                                <h6 class="saleman-assign-title mb-0">2) زونات العمل</h6>
+                                <small class="text-muted">اختر زوناً أو أكثر — يستلم طلبات الزبائن داخل هذه الزونات فقط</small>
+                            </div>
+                        </div>
+                        <div id="saleManZonePicker" class="saleman-picker-list"></div>
                     </div>
                 </div>
             </div>
@@ -170,6 +147,16 @@
 
             if (typeof ZonePicker !== 'undefined') {
                 ZonePicker.loadSummary(function () {
+                    if (typeof RestaurantPicker !== 'undefined') {
+                        RestaurantPicker.loadSummary(function () {
+                            call_ajax("GET", "SaleMan/GetAll", null, filltableSaleMan);
+                        });
+                    } else {
+                        call_ajax("GET", "SaleMan/GetAll", null, filltableSaleMan);
+                    }
+                });
+            } else if (typeof RestaurantPicker !== 'undefined') {
+                RestaurantPicker.loadSummary(function () {
                     call_ajax("GET", "SaleMan/GetAll", null, filltableSaleMan);
                 });
             } else {
@@ -209,10 +196,23 @@
 
             call_ajax("POST", "SaleMan/Post", object, function (saved) {
                 var sid = _SaleManId || (saved && (saved.saleManId || saved.SaleManId));
-                ZonePicker.saveSaleMan(sid, 'saleManZonePicker', aftersaveSaleMan);
+                function saveRestaurantsThenZones() {
+                    if (typeof RestaurantPicker !== 'undefined') {
+                        RestaurantPicker.saveSaleMan(sid, 'saleManRestaurantPicker', function () {
+                            if (typeof ZonePicker !== 'undefined') {
+                                ZonePicker.saveSaleMan(sid, 'saleManZonePicker', aftersaveSaleMan);
+                            } else {
+                                aftersaveSaleMan();
+                            }
+                        });
+                    } else if (typeof ZonePicker !== 'undefined') {
+                        ZonePicker.saveSaleMan(sid, 'saleManZonePicker', aftersaveSaleMan);
+                    } else {
+                        aftersaveSaleMan();
+                    }
+                }
+                saveRestaurantsThenZones();
             });
         });
     </script>
 </div>
-
-

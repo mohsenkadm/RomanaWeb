@@ -24,6 +24,9 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
+        [NonAction]
+        private bool IsAdmin() =>
+            string.Equals(UserManager?.Role, "admin", StringComparison.OrdinalIgnoreCase);
 
         #region Get Info RestaurantSaleMan  
         [HttpGet]
@@ -97,7 +100,7 @@ namespace RomanaWeb.Controllers
                 return Response(false, "حدث خطا اثناء عملية جلب البيانات");
             }
         }
-        #endregion      
+        #endregion
 
         #region Get RestaurantSaleMan ById Info GetByResId 
         [HttpGet("RestaurantSaleMan/GetByResId/{Id}")]
@@ -117,5 +120,57 @@ namespace RomanaWeb.Controllers
             }
         }
         #endregion
+
+        /// <summary>Restaurant IDs assigned to a salesman (admin UI multi-select).</summary>
+        [HttpGet("RestaurantSaleMan/saleman/{saleManId:int}")]
+        public async Task<IActionResult> GetSaleManRestaurants(int saleManId)
+        {
+            try
+            {
+                if (!IsAdmin() && UserManager?.Id != saleManId)
+                    return Response(false, "غير مصرح");
+                ResObj res = await _RestaurantSaleManService.GetBySaleManId(saleManId);
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantSaleManController => GetSaleManRestaurants");
+                return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
+            }
+        }
+
+        /// <summary>Replace all restaurants for a salesman (many-to-many).</summary>
+        [HttpPut("RestaurantSaleMan/saleman/{saleManId:int}")]
+        public async Task<IActionResult> SetSaleManRestaurants(int saleManId, [FromBody] int[] restaurantIds)
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                ResObj res = await _RestaurantSaleManService.SetSaleManRestaurants(saleManId, restaurantIds ?? Array.Empty<int>());
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantSaleManController => SetSaleManRestaurants");
+                return Response(false, "حدث خطأ اثناء عملية الحفظ");
+            }
+        }
+
+        /// <summary>Summary for SaleMan table tags: restaurants list + bySaleMan map.</summary>
+        [HttpGet("RestaurantSaleMan/links-summary")]
+        public async Task<IActionResult> LinksSummary()
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+                ResObj res = await _RestaurantSaleManService.LinksSummary();
+                return Response(res.success, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantSaleManController => LinksSummary");
+                return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
+            }
+        }
     }
 }

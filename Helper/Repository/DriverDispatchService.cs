@@ -83,15 +83,24 @@ namespace RomanaWeb.Helper.Repository
             var zonesByDriver = driverZones.GroupBy(z => z.SaleManId)
                 .ToDictionary(g => g.Key, g => g.Select(x => x.ZoneId).ToHashSet());
 
+            var driverRestaurants = await _context.RestaurantSaleMan.AsNoTracking().ToListAsync();
+            var restaurantsByDriver = driverRestaurants.GroupBy(r => r.SaleManId)
+                .ToDictionary(g => g.Key, g => g.Select(x => x.RestaurantId).ToHashSet());
+
+            // Conditions: (1) dropoff zone in SaleManZone (2) order restaurant in RestaurantSaleMan
             var eligible = drivers.Where(d =>
             {
                 if (!zonesByDriver.TryGetValue(d.SaleManId, out var zoneSet) || zoneSet.Count == 0)
                     return false;
-                return dropoffZoneId.HasValue && zoneSet.Contains(dropoffZoneId.Value);
+                if (!dropoffZoneId.HasValue || !zoneSet.Contains(dropoffZoneId.Value))
+                    return false;
+                if (!restaurantsByDriver.TryGetValue(d.SaleManId, out var resSet) || resSet.Count == 0)
+                    return false;
+                return resSet.Contains(order.RestaurantId);
             }).ToList();
 
             if (eligible.Count == 0)
-                return Result.Return(false, "لا يوجد سائقين لهذا الزون — يرجى التخصيص من لوحة الحالات");
+                return Result.Return(false, "لا يوجد مندوبين لهذا المطعم/الزون — راجع تخصيص المطاعم والزونات من لوحة المندوبين");
 
             var ranked = eligible
                 .Select(d =>
@@ -138,9 +147,9 @@ namespace RomanaWeb.Helper.Repository
 
             try
             {
+                // Only drivers assigned to this restaurant (and zone) — do not broadcast to drivers_all.
                 foreach (var driverId in nearby)
                     await _hubNotifier.NotifyDriverAsync(driverId, title, body, orderId, "new_order", 1, "banner");
-                await _hubNotifier.NotifyAllDriversAsync(title, body, orderId, "new_order", 1, "banner");
             }
             catch (Exception ex)
             {
@@ -307,6 +316,13 @@ namespace RomanaWeb.Helper.Repository
 
             var driverZones = await ZoneCoverageHelper.GetDriverZoneIdsAsync(_context, saleManId);
             return ZoneCoverageHelper.ServesZone(driverZones, dropoffZoneId);
+        }
+
+        public async Task<bool> DriverServesOrderRestaurantAsync(int saleManId, Orders order)
+        {
+            if (order == null || order.RestaurantId <= 0) return false;
+            var restaurantIds = await ZoneCoverageHelper.GetDriverRestaurantIdsAsync(_context, saleManId);
+            return ZoneCoverageHelper.ServesRestaurant(restaurantIds, order.RestaurantId);
         }
 
         public async Task<bool> DriverHasActiveOrderAsync(int saleManId, int? excludeOrderId = null)
