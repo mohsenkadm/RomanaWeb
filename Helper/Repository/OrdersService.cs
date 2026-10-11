@@ -21,6 +21,7 @@ namespace RomanaWeb.Helper.Repository
         private readonly IPricingService _pricing;
         private readonly IConfiguration _config;
         private readonly ILoggerRepository _logger;
+        private readonly IPromoCodeService _promoCode;
 
         public OrdersService(
             DB_Context context,
@@ -30,7 +31,8 @@ namespace RomanaWeb.Helper.Repository
             IDistanceService distance,
             IPricingService pricing,
             IConfiguration config,
-            ILoggerRepository logger)
+            ILoggerRepository logger,
+            IPromoCodeService promoCode)
         {
             _context = context;
             _OrdersRepository = orderRepository;
@@ -40,6 +42,7 @@ namespace RomanaWeb.Helper.Repository
             _pricing = pricing;
             _config = config;
             _logger = logger;
+            _promoCode = promoCode;
         }
 
 
@@ -100,6 +103,8 @@ namespace RomanaWeb.Helper.Repository
             List<Orders> data = await _OrdersRepository.GetEntityListAsync("dbo.GetOrderAll",
                 new { OrderNo, RestaurantName, datefrom, dateto,RestaurantId , CountriesId , state });
 
+
+
             if (!string.IsNullOrWhiteSpace(phone))
                 data = data.Where(o => o.Phone != null && o.Phone.Contains(phone.Trim())).ToList();
 
@@ -132,6 +137,8 @@ namespace RomanaWeb.Helper.Repository
                 totalPages
             });
         }
+
+   
 
         /// <summary>0=pending,1=approved,3=driverAccepted,4=driverEnRoute,5=pickedUp,6=outForDelivery,7=delivered,8=confirmed,9=cancelled</summary>
         public static int MapOrderStatus(Orders o)
@@ -191,6 +198,8 @@ namespace RomanaWeb.Helper.Repository
             {
                 return Result.Return(false,"اسم المطعم غير موجود");
             }
+            if (checkshop.IsClosed == true)
+                return Result.Return(false, "المطعم مغلق");
 
             var userForZone = await _context.Users.AsNoTracking()
                 .FirstOrDefaultAsync(u => u.UserId == orders.UserId);
@@ -288,6 +297,7 @@ namespace RomanaWeb.Helper.Repository
             orders.Reason = "";
             orders.Reason2 = "";
             orders.SaleManId = 0;
+            orders.IsPromoUsageCommitted = false;
 
             await _context.Orders.AddAsync(orders);
             await _context.SaveChangesAsync();
@@ -327,6 +337,15 @@ namespace RomanaWeb.Helper.Repository
 
             _context.Entry(orders).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+
+            try
+            {
+                await _promoCode.CommitPromoUsageForOrderAsync(orders);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersService => SetIsApporve => CommitPromoUsage");
+            }
 
             // Section 6: auto-dispatch the approved order to nearby drivers (first-accept-wins).
             // Gated by Dispatch:AutoDispatchOnOrderApprove (default true).
@@ -496,6 +515,16 @@ namespace RomanaWeb.Helper.Repository
             if (orders.IsCancel)
                 return Result.Return(false, "تمت الغاء الطلب سابقا");
             var saleManId = orders.SaleManId;
+
+            try
+            {
+                await _promoCode.ReleasePromoUsageForOrderAsync(orders);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersService => SetIsCancel => ReleasePromoUsage");
+            }
+
             orders.IsCancel = true;
             orders.IsApporve = false;
             orders.IsDone = false;
@@ -520,6 +549,16 @@ namespace RomanaWeb.Helper.Repository
 
             _context.Entry(orders).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+
+            try
+            {
+                await _promoCode.CommitPromoUsageForOrderAsync(orders);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersService => SetIsDone => CommitPromoUsage");
+            }
+
             return Result.Return(true, "تم وضع الطلب في حالة الانتهاء", orders);
         }
 
@@ -696,6 +735,7 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(false, "الطلب غير موجود");
 
             var previousSaleManId = order.SaleManId;
+            bool wasPromoCommitted = order.IsPromoUsageCommitted;
 
             // Reset flags then apply the target status ladder.
             order.IsCancel = false;
@@ -773,6 +813,18 @@ namespace RomanaWeb.Helper.Repository
 
             _context.Entry(order).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+
+            try
+            {
+                if (statusCode == 9 && wasPromoCommitted)
+                    await _promoCode.ReleasePromoUsageForOrderAsync(order);
+                else if (order.IsApporve)
+                    await _promoCode.CommitPromoUsageForOrderAsync(order);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "OrdersService => AdminSetStatus => PromoUsage");
+            }
 
             // Clear driver active order when cancelling or confirming delivery.
             if ((statusCode == 9 || statusCode == 8) && previousSaleManId is > 0)
@@ -977,6 +1029,70 @@ namespace RomanaWeb.Helper.Repository
             await _dispatch.SetActiveOrderAsync(saleManId, orderId);
 
             return Result.Return(true, "تم قبول الطلب بنجاح", order);
+        }
+
+        /// <summary>Admin: assign or switch salesman on an open order with capacity/zone/restaurant checks.</summary>
+        public async Task<ResObj> AdminReassignDriver(int orderId, int saleManId)
+        {
+            if (saleManId <= 0)
+                return Result.Return(false, "اختر مندوباً");
+
+            var order = await GetOrdersById(orderId);
+            if (order == null)
+                return Result.Return(false, "الطلب غير موجود");
+            if (order.IsCancel)
+                return Result.Return(false, "الطلب ملغي");
+            if (order.IsDone || order.IsDeliveryConfirmed || order.IsDelivered == true)
+                return Result.Return(false, "لا يمكن تبديل المندوب لطلب مكتمل أو مُسلَّم");
+
+            var previousSaleManId = order.SaleManId is > 0 ? order.SaleManId.Value : 0;
+            if (previousSaleManId == saleManId)
+                return Result.Return(false, "هذا المندوب مسند للطلب بالفعل");
+
+            var driver = await _context.SaleMan.AsNoTracking()
+                .FirstOrDefaultAsync(s => s.SaleManId == saleManId && s.IsDelete != true);
+            if (driver == null)
+                return Result.Return(false, "المندوب غير موجود");
+            if (driver.IsActive == false)
+                return Result.Return(false, "المندوب غير نشط — لا يمكن تعيينه");
+            if (!driver.IsAvailable)
+                return Result.Return(false, "المندوب متوقف عن العمل حالياً");
+
+            if (!await _dispatch.DriverCanAcceptMoreOrdersAsync(saleManId, orderId))
+            {
+                var max = DriverDispatchService.EffectiveMaxConcurrentOrders(driver);
+                return Result.Return(false,
+                    max <= 1
+                        ? "المندوب لديه طلب نشط"
+                        : $"المندوب وصل للحد الأقصى ({max}) من الطلبات المتزامنة");
+            }
+
+            if (!await _dispatch.DriverServesOrderZoneAsync(saleManId, order))
+                return Result.Return(false, "المندوب لا يعمل في زون موقع الزبون");
+
+            if (!await _dispatch.DriverServesOrderRestaurantAsync(saleManId, order))
+                return Result.Return(false, "المندوب غير مخصص لمطعم هذا الطلب");
+
+            order.SaleManId = saleManId;
+            order.IsSaleManApprove = true;
+            order.IsSaleManCancel = false;
+            _context.Entry(order).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            if (previousSaleManId > 0)
+                await _dispatch.ClearActiveOrderAsync(previousSaleManId);
+
+            await _dispatch.SetActiveOrderAsync(saleManId, orderId);
+
+            return Result.Return(true, previousSaleManId > 0 ? "تم تبديل المندوب" : "تم تعيين المندوب", new
+            {
+                order.OrderId,
+                order.OrderNo,
+                order.SaleManId,
+                driverName = driver.Name,
+                driverPhone = driver.Phone,
+                previousSaleManId
+            });
         }
     }
 }

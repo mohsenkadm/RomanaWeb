@@ -176,4 +176,56 @@ function getCookie(cname) {
     return "";
 }
 
- 
+/** Authenticated Excel download (Bearer from cookie token2) — replaces window.open. */
+function downloadExcel(url, fallbackFileName) {
+    var userToken = typeof getCookie === 'function' ? getCookie('token2') : '';
+    if (!url) return;
+    if (url.charAt(0) !== '/') url = '/' + url;
+    fallbackFileName = fallbackFileName || 'export.xlsx';
+
+    if (typeof mouseevent === 'function') mouseevent('progress');
+    if (window.$) $('.progress').fadeIn();
+
+    fetch(url, {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + userToken }
+    })
+        .then(function (res) {
+            var ctype = (res.headers.get('Content-Type') || '').toLowerCase();
+            if (!res.ok || ctype.indexOf('application/json') >= 0) {
+                return res.text().then(function (text) {
+                    var msg = 'فشل تصدير الاكسل — تأكد من تسجيل الدخول';
+                    try {
+                        var j = JSON.parse(text);
+                        if (j && j.msg) msg = j.msg;
+                    } catch (e) { }
+                    throw new Error(msg);
+                });
+            }
+            var disposition = res.headers.get('Content-Disposition') || '';
+            var fileName = fallbackFileName;
+            var match = /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(disposition);
+            if (match && match[1]) fileName = decodeURIComponent(match[1].replace(/['"]/g, ''));
+            return res.blob().then(function (blob) { return { blob: blob, fileName: fileName }; });
+        })
+        .then(function (file) {
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(file.blob);
+            link.download = file.fileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(link.href);
+        })
+        .catch(function (err) {
+            var msg = (err && err.message) ? err.message : 'فشل تصدير الاكسل';
+            if (typeof md !== 'undefined' && md.showNotification) md.showNotification(msg);
+            else alert(msg);
+        })
+        .finally(function () {
+            if (typeof mouseevent === 'function') mouseevent('default');
+            if (window.$) $('.progress').fadeOut();
+        });
+}
+
+

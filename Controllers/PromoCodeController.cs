@@ -16,7 +16,6 @@ namespace RomanaWeb.Controllers
         #region Readonly 
         private readonly ILoggerRepository _logger;
         private readonly IPromoCodeService _PromoCodeService;
-        private readonly INotificationService _noteService;
         private readonly IRestaurantService _RestaurantService;
         #endregion
 
@@ -24,11 +23,10 @@ namespace RomanaWeb.Controllers
         public PromoCodeController(
             ILoggerRepository logger,
             IPromoCodeService PromoCodeService,
-            INotificationService noteService,IRestaurantService restaurantService)
+            IRestaurantService restaurantService)
         {
             _logger = logger;
             _PromoCodeService = PromoCodeService;
-            _noteService = noteService;
             _RestaurantService = restaurantService;
         }
         #endregion
@@ -82,16 +80,6 @@ namespace RomanaWeb.Controllers
 
                 ResObj res;
                 res = await _PromoCodeService.Post(PromoCode);
-                Notification notifications = new Notification
-                {
-                    Title = "برومو كود",
-                    Details = $" برومو ",           
-                };                                      
-                try
-                {
-                    await OneSignalSender(notifications.Title, notifications.Details);
-                }
-                catch (Exception ex) { }
                 return Response(res.success, res.msg, res.data);
             }
             catch (Exception ex)
@@ -116,20 +104,6 @@ namespace RomanaWeb.Controllers
 
                 ResObj res;
                 res = await _PromoCodeService.Post(PromoCode);
-                Restaurant resname = await _RestaurantService.GetRestaurantById(PromoCode.RestaurantId);
-
-                Notification notifications = new Notification
-                {
-                    Title = "برومو كود",
-                    Details = $"مرحباً عزيزنا متوفر خصم في {resname.Name} سارع في التسوق الان "
-                    ,ResId=0,UserId=0,SaleManId=0
-                };
-                try
-                {
-                    await _noteService.Post(notifications);
-                    await OneSignalSender(notifications.Title, notifications.Details);
-                }
-                catch (Exception ex) { }
                 return Response(res.success, res.msg, res.data);
             }
             catch (Exception ex)

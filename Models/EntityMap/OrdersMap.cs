@@ -21,6 +21,7 @@ namespace RomanaWeb.Model.EntityMap
             builder.Property(x => x.IsDone) ;       
             builder.Property(x => x.Notes) ;       
             builder.Property(x => x.PromoCode) ;       
+            builder.Property(x => x.IsPromoUsageCommitted);
             builder.Property(x => x.IsDone) ;       
             builder.Property(x => x.IsApporve) ;       
             builder.Property(x => x.IsCancel) ;    
@@ -54,7 +55,8 @@ namespace RomanaWeb.Model.EntityMap
             builder.Ignore(x => x.UserName);    
             builder.Ignore(x => x.RestaurantName);    
             builder.Ignore(x => x.CategoriesName);    
-            builder.Ignore(x => x.SaleManName);    
+            builder.Ignore(x => x.SaleManName);
+            builder.Ignore(x => x.SaleManPhone);
             builder.Ignore(x => x.Address);    
             builder.Ignore(x => x.FunctionPoint);    
             builder.Ignore(x => x.CityName);    

@@ -1,5 +1,7 @@
+using AutoMapper;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Helper.Repository;
 using RomanaWeb.Models.Entity;
@@ -18,7 +20,9 @@ public class NearbyDriverOrdersTests
         public Task<List<T>> GetEntityListScriptAsync(string Query, string pars) => Task.FromResult(new List<T>());
         public Task<T> GetEntityScriptAsync(string Query, string pars) => Task.FromResult(default(T)!);
         public void RunScript(string Query) { }
+        public void RunScript(string Query, object pars) { }
         public Task RunScriptAsync(string Query) => Task.CompletedTask;
+        public Task RunScriptAsync(string Query, object pars) => Task.CompletedTask;
         public void RunSp(string spName, object pars) { }
         public Task RunSpAsync(string spName, object pars) => Task.CompletedTask;
     }
@@ -45,12 +49,17 @@ public class NearbyDriverOrdersTests
         public Task NotifyUserDriverLocationUpdatedAsync(int userId, int orderId, int saleManId, double lat, double lng, DateTime at) => Task.CompletedTask;
     }
 
+    private sealed class FakeOrderLog : IOrderLogService
+    {
+        public Task LogAsync(int orderId, string action, string title, string? details = null, int? orderNo = null) => Task.CompletedTask;
+    }
+
     private static OrdersService NewOrdersService(RomanaWeb.Model.DB_Context ctx)
     {
         var distance = new DistanceService();
         var pricing = new PricingService(ctx, distance, new FakeRoutingService());
         var dispatch = new DriverDispatchService(ctx, new FakeNotifier(), new FakeHub(), new FakeLogger(),
-            new MemoryCache(new MemoryCacheOptions()), pricing, distance);
+            new MemoryCache(new MemoryCacheOptions()), pricing, distance, new FakeOrderLog());
         return new OrdersService(
             ctx,
             new FakeDapper<Orders>(),
@@ -59,7 +68,9 @@ public class NearbyDriverOrdersTests
             distance,
             pricing,
             new ConfigurationBuilder().Build(),
-            new FakeLogger());
+            new FakeLogger(),
+            new PromoCodeService(ctx, new MapperConfiguration(_ => { }, NullLoggerFactory.Instance).CreateMapper(), null!,
+                new ConfigurationBuilder().Build()));
     }
 
     [Fact]

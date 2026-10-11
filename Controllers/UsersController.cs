@@ -379,6 +379,65 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
+        #region Update profile (Name/Phone/Address/FunctionPoint) + phone OTP
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> UpdateProfile([FromForm] Users model)
+        {
+            try
+            {
+                if (!TryGetUserManager(out var manager) || manager == null)
+                    return Response(false, "غير مصرح");
+
+                ResObj res = await _UsersService.UpdateProfile(manager.Id, model);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "UsersController => UpdateProfile");
+                return Response(false, "حدث خطا اثناء عملية الحفظ");
+            }
+        }
+
+        [Authorize]
+        [HttpPost("Users/ConfirmPhoneChange/{Code}")]
+        public async Task<IActionResult> ConfirmPhoneChange(string Code)
+        {
+            try
+            {
+                if (!TryGetUserManager(out var manager) || manager == null)
+                    return Response(false, "غير مصرح");
+
+                ResObj res = await _UsersService.ConfirmPhoneChange(manager.Id, Code);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "UsersController => ConfirmPhoneChange");
+                return Response(false, "حدث خطا اثناء التحقق من الكود");
+            }
+        }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> ResendPhoneChangeOtp()
+        {
+            try
+            {
+                if (!TryGetUserManager(out var manager) || manager == null)
+                    return Response(false, "غير مصرح");
+
+                ResObj res = await _UsersService.ResendPhoneChangeOtp(manager.Id);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "UsersController => ResendPhoneChangeOtp");
+                return Response(false, "حدث خطا اثناء اعادة ارسال الكود");
+            }
+        }
+        #endregion
+
         #region delete Info Users 
         [Authorize]
         [HttpDelete]

@@ -116,7 +116,7 @@ namespace RomanaWeb.Controllers
             {
                 ResObj res = await _RestaurantService.GetCountForRes(Id, datefrom,dateto);
 
-                return Response(res.success, res.data);
+                return Response(res.success, res.msg, res.data);
             }
             catch (Exception ex)
             {
@@ -131,14 +131,76 @@ namespace RomanaWeb.Controllers
         {
             try
             {
-                ResObj res = await _RestaurantService.GetReportRes(RestaurantName, datefrom,dateto);
-
-                return Response(res.success, res.data);
+                ResObj res = await _RestaurantService.GetReportRes(RestaurantName, datefrom, dateto);
+                if (!res.success) return Response(false, res.msg ?? "لا توجد بيانات");
+                return Response(true, res.data);
             }
             catch (Exception ex)
             {
-                await _logger.WriteAsync(ex, "RestaurantController => GetCountForRes => name:");
+                await _logger.WriteAsync(ex, "RestaurantController => GetReportRes");
                 return Response(false, "حدث خطأ اثناء عملية جلب البيانات");
+            }
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> GetReportResExcel(string? RestaurantName, DateTime datefrom, DateTime dateto)
+        {
+            try
+            {
+                if (!IsAdminRole()) return ForbidAdminOnly();
+
+                ResObj res = await _RestaurantService.GetReportRes(RestaurantName ?? "", datefrom, dateto);
+                if (!res.success) return Response(false, res.msg ?? "لا توجد بيانات");
+
+                var json = Newtonsoft.Json.JsonConvert.SerializeObject(res.data);
+                var root = Newtonsoft.Json.Linq.JObject.Parse(json);
+                var rows = root["rows"] as Newtonsoft.Json.Linq.JArray ?? new Newtonsoft.Json.Linq.JArray();
+                var totals = root["totals"] as Newtonsoft.Json.Linq.JObject;
+
+                using var wb = new XLWorkbook();
+                var ws = wb.Worksheets.Add("كشف المطاعم");
+                ws.Cell(1, 1).Value = "اسم المطعم";
+                ws.Cell(1, 2).Value = "عدد الطلبات";
+                ws.Cell(1, 3).Value = "الإجمالي";
+                ws.Cell(1, 4).Value = "الخصومات";
+                ws.Cell(1, 5).Value = "الصافي";
+                ws.Cell(1, 6).Value = "رسوم التوصيل";
+                ws.Range(1, 1, 1, 6).Style.Font.Bold = true;
+
+                int r = 2;
+                foreach (var row in rows)
+                {
+                    ws.Cell(r, 1).Value = (string?)row["name"] ?? "";
+                    ws.Cell(r, 2).Value = (int?)row["countOrder"] ?? 0;
+                    ws.Cell(r, 3).Value = (decimal?)row["total"] ?? 0m;
+                    ws.Cell(r, 4).Value = (decimal?)row["totalDiscount"] ?? 0m;
+                    ws.Cell(r, 5).Value = (decimal?)row["netAmount"] ?? 0m;
+                    ws.Cell(r, 6).Value = (decimal?)row["costDelivery"] ?? 0m;
+                    r++;
+                }
+
+                if (totals != null)
+                {
+                    ws.Cell(r, 1).Value = "الإجمالي";
+                    ws.Cell(r, 2).Value = (int?)totals["countOrder"] ?? 0;
+                    ws.Cell(r, 3).Value = (decimal?)totals["total"] ?? 0m;
+                    ws.Cell(r, 4).Value = (decimal?)totals["totalDiscount"] ?? 0m;
+                    ws.Cell(r, 5).Value = (decimal?)totals["netAmount"] ?? 0m;
+                    ws.Cell(r, 6).Value = (decimal?)totals["costDelivery"] ?? 0m;
+                    ws.Range(r, 1, r, 6).Style.Font.Bold = true;
+                }
+
+                ws.Columns().AdjustToContents();
+                using var ms = new MemoryStream();
+                wb.SaveAs(ms);
+                string fileName = "restaurant-report-" + Key.DateTimeIQ.ToString("yyyyMMdd-HHmm") + ".xlsx";
+                return File(ms.ToArray(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "RestaurantController => GetReportResExcel");
+                return Response(false, "حدث خطأ اثناء تصدير البيانات");
             }
         }
         #endregion   

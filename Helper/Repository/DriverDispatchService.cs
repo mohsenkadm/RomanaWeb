@@ -21,6 +21,7 @@ namespace RomanaWeb.Helper.Repository
         private readonly IMemoryCache _cache;
         private readonly IPricingService _pricing;
         private readonly IDistanceService _distance;
+        private readonly IOrderLogService _orderLog;
 
         public DriverDispatchService(
             DB_Context context,
@@ -29,7 +30,8 @@ namespace RomanaWeb.Helper.Repository
             ILoggerRepository logger,
             IMemoryCache cache,
             IPricingService pricing,
-            IDistanceService distance)
+            IDistanceService distance,
+            IOrderLogService orderLog)
         {
             _context = context;
             _notifier = notifier;
@@ -38,6 +40,7 @@ namespace RomanaWeb.Helper.Repository
             _cache = cache;
             _pricing = pricing;
             _distance = distance;
+            _orderLog = orderLog;
         }
 
         public async Task<ResObj> DispatchOrder(int orderId, double radiusKm = 5d)
@@ -75,7 +78,10 @@ namespace RomanaWeb.Helper.Repository
             }
 
             if (drivers.Count == 0)
+            {
+                await _orderLog.LogAsync(orderId, "dispatched", "محاولة إرسال الطلب", "لا يوجد سائقين متاحين", order.OrderNo);
                 return Result.Return(false, "لا يوجد سائقين متاحين — يرجى التخصيص من لوحة التحكم");
+            }
 
             int? dropoffZoneId = await ResolveOrderDropoffZoneIdAsync(order);
 
@@ -100,7 +106,10 @@ namespace RomanaWeb.Helper.Repository
             }).ToList();
 
             if (eligible.Count == 0)
+            {
+                await _orderLog.LogAsync(orderId, "dispatched", "محاولة إرسال الطلب", "لا يوجد مندوبين لهذا المطعم/الزون", order.OrderNo);
                 return Result.Return(false, "لا يوجد مندوبين لهذا المطعم/الزون — راجع تخصيص المطاعم والزونات من لوحة المندوبين");
+            }
 
             var ranked = eligible
                 .Select(d =>
@@ -155,6 +164,9 @@ namespace RomanaWeb.Helper.Repository
             {
                 await _logger.WriteAsync(ex, "DriverDispatchService => DispatchOrder => SignalR");
             }
+
+            await _orderLog.LogAsync(orderId, "dispatched", "إرسال الطلب للمندوبين",
+                $"تم إرسال الطلب إلى {nearby.Count} مندوب", order.OrderNo);
 
             return Result.Return(true, $"تم ارسال الطلب الى {nearby.Count} سائق");
         }

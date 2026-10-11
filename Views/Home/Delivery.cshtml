@@ -117,9 +117,14 @@
         });
 
         $("#execel-btn").on("click", (e) => {
-            e.preventDefault(); 
-            window.open("/Delivery/GetExcelAll?Name=" + $("#Name").val() + "&CountriesId=" + $("#CountriesId").val() + "&RestaurantName" +
-                $("#RestaurantName").val() + "&datefrom=" + $("#datefrom").val() + "&dateto=" + $("#dateto").val() + "&No=" + $("#No").val());
+            e.preventDefault();
+            var qs = "Name=" + encodeURIComponent($("#Name").val() || "") +
+                "&CountriesId=" + encodeURIComponent($("#CountriesId").val() || "") +
+                "&RestaurantName=" + encodeURIComponent($("#RestaurantName").val() || "") +
+                "&datefrom=" + encodeURIComponent($("#datefrom").val() || "") +
+                "&dateto=" + encodeURIComponent($("#dateto").val() || "") +
+                "&No=" + encodeURIComponent($("#No").val() || "");
+            downloadExcel("/Delivery/GetExcelAll?" + qs, "report-delivery.xlsx");
         });
 
     </script>

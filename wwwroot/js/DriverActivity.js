@@ -49,10 +49,36 @@
         return undefined;
     }
 
-    function renderRows(rows) {
-        rows = rows || [];
+    function renderTotals(totals) {
+        totals = totals || {};
+        $('#daTotDrivers').text(val(totals, 'driversCount', 'DriversCount') || 0);
+        $('#daTotDelivered').text(val(totals, 'deliveredOrders', 'DeliveredOrders') || 0);
+        $('#daTotCancelled').text(val(totals, 'cancelledOrders', 'CancelledOrders') || 0);
+        $('#daTotActive').text(val(totals, 'activeOrders', 'ActiveOrders') || 0);
+        $('#daTotFees').text(fmtMoney(val(totals, 'totalDeliveryFees', 'TotalDeliveryFees') || 0));
+        $('#daTotKm').text(val(totals, 'totalRouteKm', 'TotalRouteKm') || 0);
+    }
+
+    function renderRows(payload) {
+        var rows = [];
+        var totals = null;
+        if (payload && Array.isArray(payload)) {
+            rows = payload;
+        } else if (payload) {
+            rows = val(payload, 'rows', 'Rows') || [];
+            totals = val(payload, 'totals', 'Totals');
+        }
+        renderTotals(totals || {
+            driversCount: rows.length,
+            deliveredOrders: rows.reduce(function (s, r) { return s + (val(r, 'deliveredOrders', 'DeliveredOrders') || 0); }, 0),
+            cancelledOrders: rows.reduce(function (s, r) { return s + (val(r, 'cancelledOrders', 'CancelledOrders') || 0); }, 0),
+            activeOrders: rows.reduce(function (s, r) { return s + (val(r, 'activeOrders', 'ActiveOrders') || 0); }, 0),
+            totalDeliveryFees: rows.reduce(function (s, r) { return s + (Number(val(r, 'totalDeliveryFees', 'TotalDeliveryFees')) || 0); }, 0),
+            totalRouteKm: rows.reduce(function (s, r) { return s + (Number(val(r, 'totalRouteKm', 'TotalRouteKm')) || 0); }, 0)
+        });
+
         if (!rows.length) {
-            $('#driverActivityBody').html('<tr><td colspan="9" class="text-center">لا توجد بيانات</td></tr>');
+            $('#driverActivityBody').html('<tr><td colspan="10" class="text-center">لا توجد بيانات</td></tr>');
             return;
         }
         var html = '';
@@ -71,6 +97,7 @@
                 '<td>' + (val(r, 'assignedOrders', 'AssignedOrders') || 0) + '</td>' +
                 '<td>' + (val(r, 'deliveredOrders', 'DeliveredOrders') || 0) + '</td>' +
                 '<td>' + (val(r, 'cancelledOrders', 'CancelledOrders') || 0) + '</td>' +
+                '<td>' + (val(r, 'activeOrders', 'ActiveOrders') || 0) + '</td>' +
                 '<td>' + fmtMoney(val(r, 'totalDeliveryFees', 'TotalDeliveryFees') || 0) + '</td>' +
                 '<td>' + (val(r, 'totalRouteKm', 'TotalRouteKm') || 0) + '</td>' +
                 '<td class="da-actions-col">' +
@@ -231,9 +258,9 @@
 
     $('#btnActExcel').on('click', function () {
         var p = queryParams();
-        window.open('/driver-activity/excel?dateFrom=' + encodeURIComponent(p.dateFrom) +
+        downloadExcel('/driver-activity/excel?dateFrom=' + encodeURIComponent(p.dateFrom) +
             '&dateTo=' + encodeURIComponent(p.dateTo) +
-            '&name=' + encodeURIComponent(p.name));
+            '&name=' + encodeURIComponent(p.name), 'driver-activity.xlsx');
     });
 
     $('#driverActivityBody').on('click', '.da-btn-details', function () {

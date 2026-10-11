@@ -1,5 +1,7 @@
+using AutoMapper;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using RomanaWeb.Helper.Interface;
 using RomanaWeb.Helper.Repository;
 using RomanaWeb.Models.Entity;
@@ -19,6 +21,11 @@ public class DriverLocationServiceTests
     {
         public void Write(Exception exception, string message) { }
         public Task WriteAsync(Exception exception, string message) => Task.CompletedTask;
+    }
+
+    private sealed class FakeOrderLog : IOrderLogService
+    {
+        public Task LogAsync(int orderId, string action, string title, string? details = null, int? orderNo = null) => Task.CompletedTask;
     }
 
     private sealed class FakeHubNotifier : IOrderHubNotifier
@@ -54,7 +61,9 @@ public class DriverLocationServiceTests
         public Task<List<T>> GetEntityListScriptAsync(string Query, string pars) => Task.FromResult(new List<T>());
         public Task<T> GetEntityScriptAsync(string Query, string pars) => Task.FromResult(default(T)!);
         public void RunScript(string Query) { }
+        public void RunScript(string Query, object pars) { }
         public Task RunScriptAsync(string Query) => Task.CompletedTask;
+        public Task RunScriptAsync(string Query, object pars) => Task.CompletedTask;
         public void RunSp(string spName, object pars) { }
         public Task RunSpAsync(string spName, object pars) => Task.CompletedTask;
     }
@@ -73,7 +82,8 @@ public class DriverLocationServiceTests
             new FakeLogger(),
             cache ?? new MemoryCache(new MemoryCacheOptions()),
             new PricingService(ctx, new DistanceService(), new FakeRoutingService()),
-            new DistanceService());
+            new DistanceService(),
+            new FakeOrderLog());
     }
 
     private static OrdersService NewOrdersService(
@@ -83,7 +93,7 @@ public class DriverLocationServiceTests
         ctx = TestDbContext.New();
         var hub = new FakeHubNotifier();
         dispatch ??= new DriverDispatchService(ctx, new FakeNotifier(), hub, new FakeLogger(), new MemoryCache(new MemoryCacheOptions()),
-            new PricingService(ctx, new DistanceService(), new FakeRoutingService()), new DistanceService());
+            new PricingService(ctx, new DistanceService(), new FakeRoutingService()), new DistanceService(), new FakeOrderLog());
         var config = new ConfigurationBuilder().AddInMemoryCollection().Build();
         return new OrdersService(
             ctx,
@@ -93,7 +103,9 @@ public class DriverLocationServiceTests
             new DistanceService(),
             new PricingService(ctx, new DistanceService(), new FakeRoutingService()),
             new ConfigurationBuilder().Build(),
-            new FakeLogger());
+            new FakeLogger(),
+            new PromoCodeService(ctx, new MapperConfiguration(_ => { }, NullLoggerFactory.Instance).CreateMapper(), null!,
+                new ConfigurationBuilder().Build()));
     }
 
     private static SaleMan SeedDriver(RomanaWeb.Model.DB_Context ctx, int id = 8, bool assignDefaultZone = true)
@@ -236,7 +248,9 @@ public class DriverLocationServiceTests
             new DistanceService(),
             new PricingService(ctx, new DistanceService(), new FakeRoutingService()),
             new ConfigurationBuilder().Build(),
-            new FakeLogger());
+            new FakeLogger(),
+            new PromoCodeService(ctx, new MapperConfiguration(_ => { }, NullLoggerFactory.Instance).CreateMapper(), null!,
+                new ConfigurationBuilder().Build()));
 
         var res = await ordersSvc.GetOrderFullDetails(456);
         Assert.True(res.success);

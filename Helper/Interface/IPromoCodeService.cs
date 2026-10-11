@@ -12,6 +12,10 @@ namespace RomanaWeb.Helper.Interface
         public Task<ResObj> Post(PromoCode PromoCode);
         public Task<ResObj> ValidatePromoCode(string promoName, int restaurantId, int userId = 0);
         public Task<ResObj> ApplyPromoCode(string promoName, int restaurantId, decimal orderTotal, int userId = 0);
+        /// <summary>Commit promo usage counters when restaurant approves the order.</summary>
+        public Task CommitPromoUsageForOrderAsync(Orders order);
+        /// <summary>Release promo usage counters when an approved order is cancelled.</summary>
+        public Task ReleasePromoUsageForOrderAsync(Orders order);
         public Task<ResObj> GetAnalytics(DateTime dateFrom, DateTime dateTo);
         public Task<ResObj> GetStoreLiabilityReport(int? restaurantId, DateTime dateFrom, DateTime dateTo);
     }

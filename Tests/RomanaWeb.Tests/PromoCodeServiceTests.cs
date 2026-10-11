@@ -40,7 +40,8 @@ public class PromoCodeServiceTests
             IsActive = true,
             IsForAllStores = true,
             DiscountType = "Percentage",
-            MaxDiscountAmount = 0
+            MaxDiscountAmount = 0,
+            MaxUsagePerUser = 0 // unlimited unless a test opts into per-user limits
         };
         tweak(p);
         ctx.PromoCodes.Add(p);
@@ -181,29 +182,208 @@ public class PromoCodeServiceTests
     }
 
     [Fact]
-    public async Task Apply_StampsFirstUsedAtAndIncrementsUsedOrders()
+    public async Task Apply_IncrementsUsedOrdersAndRejectsSecondUse()
     {
         var svc = NewService(out var ctx);
-        SeedPromo(ctx, p =>
+        var promo = SeedPromo(ctx, p =>
         {
             p.PromoName = "ONCE";
             p.DiscountType = "Fixed";
             p.DiscountAmount = 100m;
             p.MaxOrders = 1;
+            p.MaxUsagePerUser = 1;
         });
 
-        var first = await svc.ApplyPromoCode("ONCE", 1, 1000m);
+        var first = await svc.ApplyPromoCode("ONCE", 1, 1000m, userId: 42);
         Assert.True(first.success);
 
         ctx.ChangeTracker.Clear();
         var stored = ctx.PromoCodes.AsNoTracking().Single(p => p.PromoName == "ONCE");
         Assert.NotNull(stored.FirstUsedAt);
         Assert.Equal(1, stored.UsedOrders);
-        // Auto-deactivated when MaxOrders reached.
         Assert.False(stored.IsActive);
 
-        // Second attempt rejected (limit reached / inactive).
-        var second = await svc.ApplyPromoCode("ONCE", 1, 1000m);
+        var usage = ctx.PromoCodeUsage.AsNoTracking()
+            .Single(u => u.PromoCodeId == promo.PromoCodeId && u.UserId == 42);
+        Assert.Equal(1, usage.UsedCount);
+
+        var second = await svc.ApplyPromoCode("ONCE", 1, 1000m, userId: 42);
         Assert.False(second.success);
+    }
+
+    [Fact]
+    public async Task Apply_RejectsWhenMaxUsagePerUserRequiresUserId()
+    {
+        var svc = NewService(out var ctx);
+        SeedPromo(ctx, p =>
+        {
+            p.PromoName = "NEEDUSER";
+            p.DiscountType = "Fixed";
+            p.DiscountAmount = 100m;
+            p.MaxUsagePerUser = 1;
+        });
+
+        var res = await svc.ApplyPromoCode("NEEDUSER", restaurantId: 1, orderTotal: 1000m, userId: 0);
+        Assert.False(res.success);
+    }
+
+    [Fact]
+    public async Task Commit_OnlySetsFlag_DoesNotDoubleCountAfterApply()
+    {
+        var svc = NewService(out var ctx);
+        var promo = SeedPromo(ctx, p =>
+        {
+            p.PromoName = "COMMIT";
+            p.DiscountType = "Fixed";
+            p.DiscountAmount = 100m;
+            p.MaxOrders = 10;
+            p.MaxUsagePerUser = 1;
+        });
+
+        var apply = await svc.ApplyPromoCode("COMMIT", 1, 1000m, userId: 42);
+        Assert.True(apply.success);
+
+        var order = new Orders
+        {
+            OrderNo = 1,
+            OrderDate = DateTime.UtcNow,
+            RestaurantId = 1,
+            UserId = 42,
+            PromoCode = "COMMIT",
+            IsPromoUsageCommitted = false,
+            IsCancel = false,
+            IsApporve = true
+        };
+        ctx.Orders.Add(order);
+        ctx.SaveChanges();
+
+        await svc.CommitPromoUsageForOrderAsync(order);
+
+        ctx.ChangeTracker.Clear();
+        var stored = ctx.PromoCodes.AsNoTracking().Single(p => p.PromoName == "COMMIT");
+        Assert.Equal(1, stored.UsedOrders);
+        Assert.NotNull(stored.FirstUsedAt);
+
+        var committedOrder = ctx.Orders.AsNoTracking().Single(o => o.OrderId == order.OrderId);
+        Assert.True(committedOrder.IsPromoUsageCommitted);
+
+        var usage = ctx.PromoCodeUsage.AsNoTracking()
+            .Single(u => u.PromoCodeId == promo.PromoCodeId && u.UserId == 42);
+        Assert.Equal(1, usage.UsedCount);
+
+        // Idempotent: second commit does not double-count.
+        var tracked = ctx.Orders.Single(o => o.OrderId == order.OrderId);
+        await svc.CommitPromoUsageForOrderAsync(tracked);
+        ctx.ChangeTracker.Clear();
+        Assert.Equal(1, ctx.PromoCodes.AsNoTracking().Single(p => p.PromoName == "COMMIT").UsedOrders);
+    }
+
+    [Fact]
+    public async Task Release_DecrementsUsageAfterApplyAndCommit()
+    {
+        var svc = NewService(out var ctx);
+        SeedPromo(ctx, p =>
+        {
+            p.PromoName = "REL";
+            p.DiscountType = "Fixed";
+            p.DiscountAmount = 50m;
+            p.MaxOrders = 5;
+            p.MaxUsagePerUser = 2;
+        });
+
+        var apply = await svc.ApplyPromoCode("REL", 1, 1000m, userId: 7);
+        Assert.True(apply.success);
+
+        var order = new Orders
+        {
+            OrderNo = 2,
+            OrderDate = DateTime.UtcNow,
+            RestaurantId = 1,
+            UserId = 7,
+            PromoCode = "REL",
+            IsPromoUsageCommitted = false,
+            IsCancel = false,
+            IsApporve = true
+        };
+        ctx.Orders.Add(order);
+        ctx.SaveChanges();
+
+        await svc.CommitPromoUsageForOrderAsync(order);
+        await svc.ReleasePromoUsageForOrderAsync(order);
+
+        ctx.ChangeTracker.Clear();
+        var stored = ctx.PromoCodes.AsNoTracking().Single(p => p.PromoName == "REL");
+        Assert.Equal(0, stored.UsedOrders);
+        Assert.True(stored.IsActive);
+
+        var released = ctx.Orders.AsNoTracking().Single(o => o.OrderId == order.OrderId);
+        Assert.False(released.IsPromoUsageCommitted);
+
+        var usage = ctx.PromoCodeUsage.AsNoTracking()
+            .SingleOrDefault(u => u.UserId == 7);
+        Assert.NotNull(usage);
+        Assert.Equal(0, usage!.UsedCount);
+    }
+
+    [Fact]
+    public async Task Validate_CountsPendingOrdersTowardMaxOrders()
+    {
+        var svc = NewService(out var ctx);
+        SeedPromo(ctx, p =>
+        {
+            p.PromoName = "PEND";
+            p.DiscountType = "Fixed";
+            p.DiscountAmount = 100m;
+            p.MaxOrders = 1;
+            p.UsedOrders = 0;
+        });
+
+        ctx.Orders.Add(new Orders
+        {
+            OrderNo = 3,
+            OrderDate = DateTime.UtcNow,
+            RestaurantId = 1,
+            UserId = 1,
+            PromoCode = "PEND",
+            IsPromoUsageCommitted = false,
+            IsCancel = false,
+            IsApporve = false
+        });
+        ctx.SaveChanges();
+        ctx.ChangeTracker.Clear();
+
+        var res = await svc.ValidatePromoCode("PEND", restaurantId: 1);
+        Assert.False(res.success);
+    }
+
+    [Fact]
+    public async Task Validate_CountsPendingOrdersTowardPerUserLimit()
+    {
+        var svc = NewService(out var ctx);
+        SeedPromo(ctx, p =>
+        {
+            p.PromoName = "USER1";
+            p.DiscountType = "Fixed";
+            p.DiscountAmount = 100m;
+            p.MaxOrders = 100;
+            p.MaxUsagePerUser = 1;
+        });
+
+        ctx.Orders.Add(new Orders
+        {
+            OrderNo = 4,
+            OrderDate = DateTime.UtcNow,
+            RestaurantId = 1,
+            UserId = 99,
+            PromoCode = "USER1",
+            IsPromoUsageCommitted = false,
+            IsCancel = false,
+            IsApporve = false
+        });
+        ctx.SaveChanges();
+        ctx.ChangeTracker.Clear();
+
+        var res = await svc.ValidatePromoCode("USER1", restaurantId: 1, userId: 99);
+        Assert.False(res.success);
     }
 }

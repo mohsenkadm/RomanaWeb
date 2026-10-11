@@ -18,17 +18,20 @@ namespace RomanaWeb.Controllers
         private readonly ILoggerRepository _logger;
         private readonly IDriverDispatchService _dispatch;
         private readonly IOrderHubNotifier _hubNotifier;
+        private readonly IOrderLogService _orderLog;
 
         public EmergencyOrdersController(
             DB_Context context,
             ILoggerRepository logger,
             IDriverDispatchService dispatch,
-            IOrderHubNotifier hubNotifier)
+            IOrderHubNotifier hubNotifier,
+            IOrderLogService orderLog)
         {
             _context = context;
             _logger = logger;
             _dispatch = dispatch;
             _hubNotifier = hubNotifier;
+            _orderLog = orderLog;
         }
 
         private bool IsAdmin() =>
@@ -99,14 +102,110 @@ namespace RomanaWeb.Controllers
                 var drivers = await _context.SaleMan.AsNoTracking()
                     .Where(s => s.IsDelete != true && s.IsActive != false)
                     .OrderBy(s => s.Name)
-                    .Select(s => new { s.SaleManId, s.Name, s.Phone, s.IsAvailable })
+                    .Select(s => new
+                    {
+                        s.SaleManId,
+                        s.Name,
+                        s.Phone,
+                        s.IsAvailable,
+                        s.AllowMultiOrders,
+                        s.MaxConcurrentOrders
+                    })
                     .ToListAsync();
 
-                return Response(true, drivers);
+                var activeCounts = await _context.Orders.AsNoTracking()
+                    .Where(o => o.SaleManId != null && o.SaleManId > 0
+                        && o.IsSaleManApprove == true
+                        && !o.IsDone
+                        && !o.IsCancel)
+                    .GroupBy(o => o.SaleManId!.Value)
+                    .Select(g => new { SaleManId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.SaleManId, x => x.Count);
+
+                var result = drivers.Select(d =>
+                {
+                    activeCounts.TryGetValue(d.SaleManId, out var active);
+                    int max = d.AllowMultiOrders ? Math.Max(2, d.MaxConcurrentOrders) : 1;
+                    return new
+                    {
+                        d.SaleManId,
+                        d.Name,
+                        d.Phone,
+                        d.IsAvailable,
+                        activeOrders = active,
+                        maxConcurrent = max,
+                        isIdle = active < max
+                    };
+                }).ToList();
+
+                return Response(true, result);
             }
             catch (Exception ex)
             {
                 await _logger.WriteAsync(ex, "EmergencyOrdersController => Drivers");
+                return Response(false, "خطأ");
+            }
+        }
+
+        /// <summary>On-shift drivers with zero active orders (idle capacity).</summary>
+        [HttpGet("idle-drivers")]
+        public async Task<IActionResult> IdleDrivers()
+        {
+            try
+            {
+                if (!IsAdmin()) return Response(false, "غير مصرح");
+
+                var busyIds = await _context.Orders.AsNoTracking()
+                    .Where(o => o.SaleManId != null && o.SaleManId > 0
+                        && o.IsSaleManApprove == true
+                        && !o.IsDone
+                        && !o.IsCancel)
+                    .Select(o => o.SaleManId!.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                var idle = await _context.SaleMan.AsNoTracking()
+                    .Where(s => s.IsDelete != true
+                        && s.IsActive != false
+                        && s.IsAvailable
+                        && !busyIds.Contains(s.SaleManId))
+                    .OrderBy(s => s.Name)
+                    .Select(s => new
+                    {
+                        s.SaleManId,
+                        s.Name,
+                        s.Phone,
+                        s.IsAvailable,
+                        activeOrders = 0
+                    })
+                    .ToListAsync();
+
+                var idleIds = idle.Select(d => d.SaleManId).ToList();
+                var locations = await _context.DriverLocations.AsNoTracking()
+                    .Where(l => idleIds.Contains(l.SaleManId))
+                    .ToDictionaryAsync(l => l.SaleManId, l => l);
+
+                var result = idle.Select(d =>
+                {
+                    locations.TryGetValue(d.SaleManId, out var loc);
+                    return new
+                    {
+                        d.SaleManId,
+                        d.Name,
+                        d.Phone,
+                        d.IsAvailable,
+                        d.activeOrders,
+                        lat = loc?.Lat,
+                        lng = loc?.Lng,
+                        locationUpdatedAt = loc?.UpdatedAt
+                    };
+                }).ToList();
+
+                return Response(true, result);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "EmergencyOrdersController => IdleDrivers");
                 return Response(false, "خطأ");
             }
         }
@@ -194,6 +293,9 @@ namespace RomanaWeb.Controllers
                 if (order == null) return Response(false, "الطلب غير موجود");
                 if (order.SaleManId is > 0)
                     return Response(false, "الطلب مُسند لمندوب — لا يمكن إعادة الإرسال");
+
+                await _orderLog.LogAsync(orderId, "redispatch", "إعادة إرسال من لوحة الطوارئ",
+                    $"نصف قطر البحث: {radius_km} كم", order.OrderNo);
 
                 var res = await _dispatch.DispatchOrder(orderId, radius_km);
                 return Response(res.success, res.msg ?? (res.success ? "تم الإرسال" : "فشل الإرسال"));

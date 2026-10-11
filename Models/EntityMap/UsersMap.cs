@@ -12,7 +12,8 @@ namespace RomanaWeb.Model.EntityMap
             builder.ToTable("Users", "dbo");
             builder.HasKey(x => x.UserId);
             builder.Property(x => x.Name).IsRequired();       
-            builder.Property(x => x.Phone).IsRequired();          
+            builder.Property(x => x.Phone).IsRequired();
+            builder.Property(x => x.PendingPhone);
             builder.Ignore(x => x.Token);                        
             builder.Property(x => x.Address);            
             builder.Property(x => x.FunctionPoint);           

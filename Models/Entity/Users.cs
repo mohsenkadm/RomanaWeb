@@ -10,7 +10,9 @@ namespace RomanaWeb.Models.Entity
     {
         public int UserId { get; set; }
         public string? Name { get; set; }
-        public string? Phone { get; set; }      
+        public string? Phone { get; set; }
+        /// <summary>New phone awaiting OTP confirmation during profile update.</summary>
+        public string? PendingPhone { get; set; }
         public string? Token { get; set; }        
         public string? Address { get; set; }    
         public string? FunctionPoint { get; set; }

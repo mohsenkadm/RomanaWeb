@@ -191,39 +191,6 @@ function aftersaveUsers() {
 }
 
 function downloadUsersExcel() {
-    var userToken = typeof getCookie === 'function' ? getCookie("token2") : '';
     var name = ($("#Namese").val() || '').trim();
-    var url = "/Users/GetExcelAll?Name=" + encodeURIComponent(name);
-
-    mouseevent("progress");
-    $('.progress').fadeIn();
-
-    fetch(url, {
-        method: 'GET',
-        headers: { 'Authorization': 'Bearer ' + userToken }
-    })
-        .then(function (res) {
-            if (!res.ok) throw new Error('export failed');
-            var disposition = res.headers.get('Content-Disposition') || '';
-            var fileName = 'report-users.xlsx';
-            var match = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(disposition);
-            if (match && match[1]) fileName = match[1].replace(/['"]/g, '');
-            return res.blob().then(function (blob) { return { blob: blob, fileName: fileName }; });
-        })
-        .then(function (file) {
-            var link = document.createElement('a');
-            link.href = URL.createObjectURL(file.blob);
-            link.download = file.fileName;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(link.href);
-        })
-        .catch(function () {
-            if (typeof md !== 'undefined') md.showNotification('فشل تصدير الاكسل — تأكد من تسجيل الدخول');
-        })
-        .finally(function () {
-            mouseevent("default");
-            $('.progress').fadeOut();
-        });
+    downloadExcel("/Users/GetExcelAll?Name=" + encodeURIComponent(name), "report-users.xlsx");
 }

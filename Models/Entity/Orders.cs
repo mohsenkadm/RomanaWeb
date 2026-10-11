@@ -20,7 +20,9 @@ namespace RomanaWeb.Models.Entity
         public bool IsApporve { get; set; }
         public bool IsDone { get; set; }
         public string? Notes { get; set; }
-        public string? PromoCode { get; set; }    
+        public string? PromoCode { get; set; }
+        /// <summary>True after promo usage counters were committed on restaurant approval.</summary>
+        public bool IsPromoUsageCommitted { get; set; }
         public int? SaleManId { get; set; }    
         public bool? IsSaleManApprove { get; set; }    
         public bool? IsSaleManCancel { get; set; }    
@@ -35,6 +37,8 @@ namespace RomanaWeb.Models.Entity
         public string? Reason { get; set; }
         public string? Reason2 { get; set; }
         public string? SaleManName { get; set; }
+        /// <summary>API-only: salesman phone from SaleMan join (not persisted).</summary>
+        public string? SaleManPhone { get; set; }
         /// <summary>Populated on order-detail API; not mapped to Orders table.</summary>
         public SaleMan? Driver { get; set; }
 

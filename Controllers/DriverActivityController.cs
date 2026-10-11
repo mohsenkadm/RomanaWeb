@@ -41,7 +41,17 @@ namespace RomanaWeb.Controllers
             {
                 if (!IsAdmin()) return Response(false, "غير مصرح");
                 var rows = await BuildRowsAsync(dateFrom, dateTo, name);
-                return Response(true, rows);
+                var totals = new
+                {
+                    driversCount = rows.Count,
+                    assignedOrders = rows.Sum(r => r.AssignedOrders),
+                    deliveredOrders = rows.Sum(r => r.DeliveredOrders),
+                    cancelledOrders = rows.Sum(r => r.CancelledOrders),
+                    activeOrders = rows.Sum(r => r.ActiveOrders),
+                    totalDeliveryFees = rows.Sum(r => r.TotalDeliveryFees),
+                    totalRouteKm = rows.Sum(r => r.TotalRouteKm)
+                };
+                return Response(true, new { rows, totals });
             }
             catch (Exception ex)
             {
@@ -266,9 +276,10 @@ namespace RomanaWeb.Controllers
                 ws.Cell(1, 4).Value = "طلبات معينة";
                 ws.Cell(1, 5).Value = "تم التوصيل";
                 ws.Cell(1, 6).Value = "ملغي";
-                ws.Cell(1, 7).Value = "رسوم توصيل (د.ع)";
-                ws.Cell(1, 8).Value = "مسافة (كم)";
-                ws.Range(1, 1, 1, 8).Style.Font.Bold = true;
+                ws.Cell(1, 7).Value = "جارية";
+                ws.Cell(1, 8).Value = "مستحق التوصيل (د.ع)";
+                ws.Cell(1, 9).Value = "مسافة (كم)";
+                ws.Range(1, 1, 1, 9).Style.Font.Bold = true;
 
                 int r = 2;
                 foreach (var row in rows)
@@ -279,10 +290,25 @@ namespace RomanaWeb.Controllers
                     ws.Cell(r, 4).Value = row.AssignedOrders;
                     ws.Cell(r, 5).Value = row.DeliveredOrders;
                     ws.Cell(r, 6).Value = row.CancelledOrders;
-                    ws.Cell(r, 7).Value = row.TotalDeliveryFees;
-                    ws.Cell(r, 8).Value = row.TotalRouteKm;
+                    ws.Cell(r, 7).Value = row.ActiveOrders;
+                    ws.Cell(r, 8).Value = row.TotalDeliveryFees;
+                    ws.Cell(r, 9).Value = row.TotalRouteKm;
                     r++;
                 }
+
+                if (rows.Count > 0)
+                {
+                    ws.Cell(r, 1).Value = "الإجمالي";
+                    ws.Cell(r, 1).Style.Font.Bold = true;
+                    ws.Cell(r, 4).Value = rows.Sum(x => x.AssignedOrders);
+                    ws.Cell(r, 5).Value = rows.Sum(x => x.DeliveredOrders);
+                    ws.Cell(r, 6).Value = rows.Sum(x => x.CancelledOrders);
+                    ws.Cell(r, 7).Value = rows.Sum(x => x.ActiveOrders);
+                    ws.Cell(r, 8).Value = rows.Sum(x => x.TotalDeliveryFees);
+                    ws.Cell(r, 9).Value = rows.Sum(x => x.TotalRouteKm);
+                    ws.Range(r, 1, r, 9).Style.Font.Bold = true;
+                }
+
                 ws.Columns().AdjustToContents();
 
                 using var ms = new MemoryStream();
@@ -305,7 +331,12 @@ namespace RomanaWeb.Controllers
             var driversQuery = _context.SaleMan.AsNoTracking()
                 .Where(s => s.IsDelete == null || s.IsDelete == false);
             if (!string.IsNullOrWhiteSpace(name))
-                driversQuery = driversQuery.Where(s => s.Name != null && s.Name.Contains(name.Trim()));
+            {
+                var q = name.Trim();
+                driversQuery = driversQuery.Where(s =>
+                    (s.Name != null && s.Name.Contains(q))
+                    || (s.Phone != null && s.Phone.Contains(q)));
+            }
 
             var drivers = await driversQuery.OrderBy(s => s.Name).ToListAsync();
 
@@ -315,8 +346,10 @@ namespace RomanaWeb.Controllers
                 {
                     o.SaleManId,
                     o.IsCancel,
+                    o.IsDone,
                     o.IsDelivered,
                     o.IsDeliveryConfirmed,
+                    o.IsSaleManApprove,
                     o.CostDelivery,
                     o.RouteDistanceKm
                 })
@@ -324,13 +357,20 @@ namespace RomanaWeb.Controllers
 
             var stats = orders
                 .GroupBy(o => o.SaleManId!.Value)
-                .ToDictionary(g => g.Key, g => new
+                .ToDictionary(g => g.Key, g =>
                 {
-                    Assigned = g.Count(),
-                    Delivered = g.Count(x => x.IsDelivered == true || x.IsDeliveryConfirmed),
-                    Cancelled = g.Count(x => x.IsCancel),
-                    Fees = g.Sum(x => x.CostDelivery ?? 0m),
-                    Km = g.Sum(x => x.RouteDistanceKm ?? 0m)
+                    var delivered = g.Where(x => x.IsDelivered == true || x.IsDeliveryConfirmed).ToList();
+                    return new
+                    {
+                        Assigned = g.Count(),
+                        Delivered = delivered.Count,
+                        Cancelled = g.Count(x => x.IsCancel),
+                        Active = g.Count(x => !x.IsCancel && !x.IsDone
+                            && x.IsDelivered != true && !x.IsDeliveryConfirmed
+                            && x.IsSaleManApprove == true),
+                        Fees = delivered.Sum(x => x.CostDelivery ?? 0m),
+                        Km = g.Sum(x => x.RouteDistanceKm ?? 0m)
+                    };
                 });
 
             return drivers.Select(d =>
@@ -346,6 +386,7 @@ namespace RomanaWeb.Controllers
                     AssignedOrders = s?.Assigned ?? 0,
                     DeliveredOrders = s?.Delivered ?? 0,
                     CancelledOrders = s?.Cancelled ?? 0,
+                    ActiveOrders = s?.Active ?? 0,
                     TotalDeliveryFees = s?.Fees ?? 0m,
                     TotalRouteKm = s?.Km ?? 0m
                 };
@@ -379,6 +420,7 @@ namespace RomanaWeb.Controllers
             public int AssignedOrders { get; set; }
             public int DeliveredOrders { get; set; }
             public int CancelledOrders { get; set; }
+            public int ActiveOrders { get; set; }
             public decimal TotalDeliveryFees { get; set; }
             public decimal TotalRouteKm { get; set; }
         }

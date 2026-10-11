@@ -143,17 +143,69 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true, "تم الحفظ بنجاح", PromoCode);
         }
 
+        /// <summary>
+        /// Pending = non-cancelled orders that hold this promo but have not yet committed usage
+        /// (waiting for restaurant approval).
+        /// </summary>
+        private async Task<int> CountPendingPromoOrdersAsync(string promoName, int? userId = null)
+        {
+            if (string.IsNullOrWhiteSpace(promoName))
+                return 0;
+
+            var name = promoName.Trim();
+            var q = _Context.Orders.AsNoTracking()
+                .Where(o => !o.IsCancel
+                            && !o.IsPromoUsageCommitted
+                            && o.PromoCode != null
+                            && o.PromoCode == name);
+
+            if (userId is > 0)
+                q = q.Where(o => o.UserId == userId.Value);
+
+            return await q.CountAsync();
+        }
+
+        private async Task<int> GetEffectiveUsedOrdersAsync(PromoCode promo)
+        {
+            int pending = await CountPendingPromoOrdersAsync(promo.PromoName);
+            return promo.UsedOrders + pending;
+        }
+
         private async Task<ResObj?> CheckPerUserLimitAsync(PromoCode promo, int userId)
         {
             if (userId <= 0 || promo.MaxUsagePerUser <= 0)
                 return null;
 
-            var usage = await _Context.PromoCodeUsage
+            var usage = await _Context.PromoCodeUsage.AsNoTracking()
                 .FirstOrDefaultAsync(u => u.PromoCodeId == promo.PromoCodeId && u.UserId == userId);
 
             int used = usage?.UsedCount ?? 0;
-            if (used >= promo.MaxUsagePerUser)
+            int pending = await CountPendingPromoOrdersAsync(promo.PromoName, userId);
+            if (used + pending >= promo.MaxUsagePerUser)
                 return Result.Return(false, "لقد استخدمت هذا الكود الحد الأقصى المسموح لك");
+
+            return null;
+        }
+
+        private async Task<ResObj?> CheckGlobalLimitAsync(PromoCode promo, bool persistDeactivate)
+        {
+            if (promo.MaxOrders <= 0)
+                return null;
+
+            int effectiveUsed = await GetEffectiveUsedOrdersAsync(promo);
+            if (effectiveUsed >= promo.MaxOrders)
+            {
+                if (promo.UsedOrders >= promo.MaxOrders)
+                {
+                    if (persistDeactivate && promo.IsActive)
+                    {
+                        promo.IsActive = false;
+                        _Context.Entry(promo).State = EntityState.Modified;
+                        await _Context.SaveChangesAsync();
+                    }
+                }
+                return Result.Return(false, "كود الخصم تجاوز الحد الاقصى للاستخدام");
+            }
 
             return null;
         }
@@ -169,13 +221,8 @@ namespace RomanaWeb.Helper.Repository
             if (!promo.IsActive)
                 return Result.Return(false, "كود الخصم غير فعال");
 
-            if (promo.MaxOrders > 0 && promo.UsedOrders >= promo.MaxOrders)
-            {
-                promo.IsActive = false;
-                _Context.Entry(promo).State = EntityState.Modified;
-                await _Context.SaveChangesAsync();
-                return Result.Return(false, "كود الخصم تجاوز الحد الاقصى للاستخدام");
-            }
+            var globalLimit = await CheckGlobalLimitAsync(promo, persistDeactivate: true);
+            if (globalLimit != null) return globalLimit;
 
             var perUser = await CheckPerUserLimitAsync(promo, userId);
             if (perUser != null) return perUser;
@@ -192,6 +239,44 @@ namespace RomanaWeb.Helper.Repository
             return Result.Return(true, "كود الخصم صالح", promo);
         }
 
+        /// <summary>
+        /// Increments global + per-user usage counters. Called from Apply (live app
+        /// does not send PromoCode on order create, so approval cannot commit usage).
+        /// </summary>
+        private async Task RecordPromoUsageCountersAsync(PromoCode promo, int userId)
+        {
+            bool isFirstUse = promo.FirstUsedAt == null;
+            promo.UsedOrders += 1;
+            if (isFirstUse)
+                promo.FirstUsedAt = DateTime.UtcNow;
+            if (promo.MaxOrders > 0 && promo.UsedOrders >= promo.MaxOrders)
+                promo.IsActive = false;
+
+            if (userId > 0 && promo.MaxUsagePerUser > 0)
+            {
+                var usage = await _Context.PromoCodeUsage
+                    .FirstOrDefaultAsync(u => u.PromoCodeId == promo.PromoCodeId && u.UserId == userId);
+                if (usage == null)
+                {
+                    usage = new PromoCodeUsage
+                    {
+                        PromoCodeId = promo.PromoCodeId,
+                        UserId = userId,
+                        UsedCount = 1
+                    };
+                    await _Context.PromoCodeUsage.AddAsync(usage);
+                }
+                else
+                {
+                    usage.UsedCount += 1;
+                    _Context.Entry(usage).State = EntityState.Modified;
+                }
+            }
+
+            _Context.Entry(promo).State = EntityState.Modified;
+            await _Context.SaveChangesAsync();
+        }
+
         public async Task<ResObj> ApplyPromoCode(string promoName, int restaurantId, decimal orderTotal, int userId = 0)
         {
             var promo = await _Context.PromoCodes
@@ -203,13 +288,11 @@ namespace RomanaWeb.Helper.Repository
             if (!promo.IsActive)
                 return Result.Return(false, "كود الخصم غير فعال");
 
-            if (promo.MaxOrders > 0 && promo.UsedOrders >= promo.MaxOrders)
-            {
-                promo.IsActive = false;
-                _Context.Entry(promo).State = EntityState.Modified;
-                await _Context.SaveChangesAsync();
-                return Result.Return(false, "كود الخصم تجاوز الحد الاقصى للاستخدام");
-            }
+            if (promo.MaxUsagePerUser > 0 && userId <= 0)
+                return Result.Return(false, "يجب تسجيل الدخول لاستخدام كود الخصم");
+
+            var globalLimit = await CheckGlobalLimitAsync(promo, persistDeactivate: true);
+            if (globalLimit != null) return globalLimit;
 
             var perUserCheck = await CheckPerUserLimitAsync(promo, userId);
             if (perUserCheck != null) return perUserCheck;
@@ -220,7 +303,6 @@ namespace RomanaWeb.Helper.Repository
             if (!effectiveGlobal && promo.RestaurantId != restaurantId)
                 return Result.Return(false, "كود الخصم غير صالح لهذا المطعم");
 
-            // Calculate discount.
             decimal discountValue;
             if (string.Equals(promo.DiscountType, "Percentage", StringComparison.OrdinalIgnoreCase))
                 discountValue = orderTotal * promo.Percentage / 100m;
@@ -240,34 +322,12 @@ namespace RomanaWeb.Helper.Repository
 
             decimal netAmount = orderTotal - discountValue;
 
+            // Live app omits PromoCode on order create — usage is recorded here.
+            await RecordPromoUsageCountersAsync(promo, userId);
+
             // Section 3.2: store-scoped promo => discount is funded by the store, not the platform.
             // Global promo => funded by admin/platform.
             bool fundedByStore = !promo.IsForAllStores;
-
-            // Increment usage and stamp first-use.
-            promo.UsedOrders += 1;
-            if (isFirstUse) promo.FirstUsedAt = DateTime.UtcNow;
-            if (promo.MaxOrders > 0 && promo.UsedOrders >= promo.MaxOrders)
-                promo.IsActive = false;
-
-            if (userId > 0 && promo.MaxUsagePerUser > 0)
-            {
-                var usage = await _Context.PromoCodeUsage
-                    .FirstOrDefaultAsync(u => u.PromoCodeId == promo.PromoCodeId && u.UserId == userId);
-                if (usage == null)
-                {
-                    usage = new PromoCodeUsage { PromoCodeId = promo.PromoCodeId, UserId = userId, UsedCount = 1 };
-                    await _Context.PromoCodeUsage.AddAsync(usage);
-                }
-                else
-                {
-                    usage.UsedCount += 1;
-                    _Context.Entry(usage).State = EntityState.Modified;
-                }
-            }
-
-            _Context.Entry(promo).State = EntityState.Modified;
-            await _Context.SaveChangesAsync();
 
             var result = new
             {
@@ -288,6 +348,62 @@ namespace RomanaWeb.Helper.Repository
             };
 
             return Result.Return(true, "تم تطبيق كود الخصم بنجاح", result);
+        }
+
+        /// <summary>
+        /// Marks the order so Release can run on cancel. Counters are already
+        /// incremented in ApplyPromoCode — do not increment again here.
+        /// </summary>
+        public async Task CommitPromoUsageForOrderAsync(Orders order)
+        {
+            if (order == null || order.IsPromoUsageCommitted)
+                return;
+            if (string.IsNullOrWhiteSpace(order.PromoCode))
+                return;
+
+            order.IsPromoUsageCommitted = true;
+            _Context.Entry(order).State = EntityState.Modified;
+            await _Context.SaveChangesAsync();
+        }
+
+        public async Task ReleasePromoUsageForOrderAsync(Orders order)
+        {
+            if (order == null || !order.IsPromoUsageCommitted)
+                return;
+            if (string.IsNullOrWhiteSpace(order.PromoCode))
+            {
+                order.IsPromoUsageCommitted = false;
+                return;
+            }
+
+            var promoName = order.PromoCode.Trim();
+            var promo = await _Context.PromoCodes
+                .FirstOrDefaultAsync(i => i.PromoName == promoName);
+            if (promo != null)
+            {
+                if (promo.UsedOrders > 0)
+                    promo.UsedOrders -= 1;
+
+                if (promo.MaxOrders > 0 && promo.UsedOrders < promo.MaxOrders && !promo.IsActive)
+                    promo.IsActive = true;
+
+                if (order.UserId > 0 && promo.MaxUsagePerUser > 0)
+                {
+                    var usage = await _Context.PromoCodeUsage
+                        .FirstOrDefaultAsync(u => u.PromoCodeId == promo.PromoCodeId && u.UserId == order.UserId);
+                    if (usage != null && usage.UsedCount > 0)
+                    {
+                        usage.UsedCount -= 1;
+                        _Context.Entry(usage).State = EntityState.Modified;
+                    }
+                }
+
+                _Context.Entry(promo).State = EntityState.Modified;
+            }
+
+            order.IsPromoUsageCommitted = false;
+            _Context.Entry(order).State = EntityState.Modified;
+            await _Context.SaveChangesAsync();
         }
 
         public async Task<ResObj> GetAnalytics(DateTime dateFrom, DateTime dateTo)

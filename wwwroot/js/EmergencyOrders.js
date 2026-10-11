@@ -7,6 +7,39 @@
         return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' د.ع';
     }
 
+    function escapeHtml(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function renderIdleDrivers(rows) {
+        rows = rows || [];
+        $('#idleDriversCount').text(rows.length);
+        if (!rows.length) {
+            $('#idleDriversBody').html('<tr><td colspan="4" class="text-center text-muted">لا يوجد مندوبون فارغون حالياً</td></tr>');
+            return;
+        }
+        var html = '';
+        rows.forEach(function (d) {
+            var name = d.name || d.Name || '-';
+            var phone = d.phone || d.Phone || '-';
+            html += '<tr>' +
+                '<td>' + escapeHtml(name) + '</td>' +
+                '<td>' + escapeHtml(phone) + '</td>' +
+                '<td><span class="badge badge-success">فارغ</span></td>' +
+                '<td>0</td>' +
+                '</tr>';
+        });
+        $('#idleDriversBody').html(html);
+    }
+
+    function loadIdleDrivers() {
+        call_ajax('GET', 'emergency-orders/idle-drivers', null, renderIdleDrivers);
+    }
+
     function renderRows(rows) {
         rows = rows || [];
         $('#emergencyCount').text(rows.length ? ('عدد الطلبات: ' + rows.length) : 'لا توجد طلبات طوارئ');
@@ -36,6 +69,7 @@
 
     function loadList() {
         call_ajax('GET', 'emergency-orders', null, renderRows);
+        loadIdleDrivers();
     }
 
     function loadDrivers(cb) {
@@ -44,10 +78,14 @@
             var opts = '<option value="">— اختر —</option>';
             driversCache.forEach(function (d) {
                 var id = d.saleManId || d.SaleManId;
-                var name = d.name || d.Name;
+                var name = d.name || d.Name || '-';
+                var phone = d.phone || d.Phone || '';
                 var avail = (d.isAvailable !== undefined ? d.isAvailable : d.IsAvailable);
-                var tag = avail ? '' : ' (متوقف)';
-                opts += '<option value="' + id + '">' + name + tag + '</option>';
+                var idle = (d.isIdle !== undefined ? d.isIdle : d.IsIdle);
+                var active = d.activeOrders != null ? d.activeOrders : (d.ActiveOrders || 0);
+                var tag = !avail ? ' (متوقف)' : (idle ? ' — فارغ' : ' — مشغول (' + active + ')');
+                opts += '<option value="' + id + '"' + (!avail ? ' disabled' : '') + '>' +
+                    escapeHtml(name) + (phone ? ' | ' + escapeHtml(phone) : '') + tag + '</option>';
             });
             $('#assignDriverSelect').html(opts);
             if (cb) cb();

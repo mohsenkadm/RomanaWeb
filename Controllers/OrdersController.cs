@@ -203,6 +203,7 @@ namespace RomanaWeb.Controllers
                 new DataColumn("القسم"),
                 new DataColumn("اسم المطعم"),
                 new DataColumn("اسم المندوب"),
+                new DataColumn("هاتف المندوب"),
                 new DataColumn("اسم الزبون"),
                 new DataColumn("العنوان"),
                 new DataColumn("اقرب نقطة دالة"),
@@ -228,6 +229,7 @@ namespace RomanaWeb.Controllers
                     p.CategoriesName,
                     p.RestaurantName,
                     p.SaleManName,
+                    p.SaleManPhone,
                     p.UserName,
                     p.Address,
                     p.FunctionPoint,
@@ -332,8 +334,7 @@ namespace RomanaWeb.Controllers
                 var u = ordersModel.Users;
                 if (u == null ||
                     !double.TryParse(u.Lat, out var lat) || lat == 0 ||
-                    !double.TryParse(u.Long, out var lng) || lng == 0 ||
-                    u.CityId == null || u.CityId == 0)
+                    !double.TryParse(u.Long, out var lng) || lng == 0)
                 {
                     return Response(false, "يجب تحديد الموقع والمنطقة");
                 }

@@ -337,8 +337,7 @@ namespace RomanaWeb.Helper.Repository
 
             Users1.Name = Users.Name;
             Users1.Address = Users.Address;
-
-            Users1.Phone = Users.Phone;
+            // Phone changes require OTP via UpdateProfile / ConfirmPhoneChange — do not overwrite here.
             Users1.Lat = Users.Lat;
             Users1.CityId = Users.CityId;
             Users1.Long = Users.Long;
@@ -353,6 +352,133 @@ namespace RomanaWeb.Helper.Repository
             Users1.Password = null;
             Users1.Code = null;
             return Result.Return(true, "تم الحفظ بنجاح", Users1);
+        }
+
+        public async Task<ResObj> UpdateProfile(int userId, Users input)
+        {
+            Users? user = await GetUsersById(userId);
+            if (user is null || user.IsDelete == true)
+                return Result.Return(false, "الحساب غير موجود");
+            if (user.IsBlock == true)
+                return Result.Return(false, "حسابك محظور، يرجى التواصل مع الادارة");
+            if (user.IsActive == false)
+                return Result.Return(false, "حسابك غير فعال");
+
+            string? newPhone = input.Phone?.Trim();
+            if (string.IsNullOrWhiteSpace(newPhone) || newPhone.Length != 11 || !newPhone.All(char.IsDigit))
+                return Result.Return(false, "يجب كتابة رقم الهاتف 11 رقما");
+
+            if (string.IsNullOrWhiteSpace(input.Name))
+                return Result.Return(false, "الاسم مطلوب");
+
+            user.Name = input.Name.Trim();
+            user.Address = input.Address?.Trim();
+            user.FunctionPoint = input.FunctionPoint?.Trim();
+
+            bool phoneUnchanged = string.Equals(user.Phone?.Trim(), newPhone, StringComparison.Ordinal);
+            if (phoneUnchanged)
+            {
+                user.PendingPhone = null;
+                _context.Entry(user).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Result.Return(true, "تم الحفظ بنجاح", SanitizeAndTokenize(user));
+            }
+
+            bool phoneTaken = await _context.Users.AnyAsync(i =>
+                i.UserId != userId &&
+                i.IsDelete != true &&
+                (i.Phone == newPhone || i.PendingPhone == newPhone));
+            if (phoneTaken)
+                return Result.Return(false, "رقم الهاتف موجود سابقا");
+
+            user.PendingPhone = newPhone;
+            _context.Entry(user).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            string code = OtpSettings.GenerateCode();
+            ResObj sendRes = await _otpService.SendOtpToUserAsync(user, code, newPhone);
+            if (!sendRes.success)
+                return sendRes;
+
+            Users safeUser = SanitizeAndTokenize(user);
+            return Result.Return(true,
+                "تم تحديث بياناتك. تم ارسال كود التحقق للرقم الجديد عبر الواتساب",
+                new
+                {
+                    requiresPhoneVerification = true,
+                    pendingPhone = newPhone,
+                    user = safeUser
+                });
+        }
+
+        public async Task<ResObj> ConfirmPhoneChange(int userId, string code)
+        {
+            if (!OtpSettings.IsValidCodeFormat(code))
+                return Result.Return(false, "كود التحقق غير صحيح");
+
+            Users? user = await GetUsersById(userId);
+            if (user is null || user.IsDelete == true)
+                return Result.Return(false, "الحساب غير موجود");
+            if (user.IsBlock == true)
+                return Result.Return(false, "حسابك محظور");
+            if (user.IsActive == false)
+                return Result.Return(false, "حسابك غير فعال");
+
+            string? pending = user.PendingPhone?.Trim();
+            if (string.IsNullOrWhiteSpace(pending) || pending.Length != 11)
+                return Result.Return(false, "لا يوجد طلب تغيير رقم هاتف قيد التحقق");
+
+            ResObj otpRes = await ValidateAndConsumeOtpAsync(user, code);
+            if (!otpRes.success)
+                return otpRes;
+
+            bool phoneTaken = await _context.Users.AnyAsync(i =>
+                i.UserId != userId &&
+                i.IsDelete != true &&
+                (i.Phone == pending || i.PendingPhone == pending));
+            if (phoneTaken)
+            {
+                ClearOtpFields(user);
+                user.PendingPhone = null;
+                _context.Entry(user).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+                return Result.Return(false, "رقم الهاتف موجود سابقا");
+            }
+
+            user.Phone = pending;
+            user.PendingPhone = null;
+            ClearOtpFields(user);
+            _context.Entry(user).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Result.Return(true, "تم تأكيد رقم الهاتف الجديد بنجاح", SanitizeAndTokenize(user));
+        }
+
+        public async Task<ResObj> ResendPhoneChangeOtp(int userId)
+        {
+            Users? user = await GetUsersById(userId);
+            if (user is null || user.IsDelete == true)
+                return Result.Return(false, "الحساب غير موجود");
+            if (user.IsBlock == true)
+                return Result.Return(false, "حسابك محظور، يرجى التواصل مع الادارة");
+            if (user.IsActive == false)
+                return Result.Return(false, "حسابك غير فعال");
+
+            string? pending = user.PendingPhone?.Trim();
+            if (string.IsNullOrWhiteSpace(pending) || pending.Length != 11)
+                return Result.Return(false, "لا يوجد طلب تغيير رقم هاتف قيد التحقق");
+
+            string code = OtpSettings.GenerateCode();
+            return await _otpService.SendOtpToUserAsync(user, code, pending);
+        }
+
+        private static Users SanitizeAndTokenize(Users user)
+        {
+            UserManager userManager = new UserManager() { Id = user.UserId, Name = user.Name, Role = "user" };
+            user.Token = JsonWebToken.GenerateToken(userManager);
+            user.Password = null;
+            user.Code = null;
+            return user;
         }
 
         public async Task<ResObj> UpdateAdmin(Users Users)

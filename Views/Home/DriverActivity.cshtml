@@ -1,5 +1,5 @@
 @{
-    ViewData["Title"] = "نشاط المندوبين";
+    ViewData["Title"] = "كشف المندوبين";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -174,8 +174,8 @@
         <div class="rm-page-summary">
             <div class="rm-summary-icon bg-orange"><i class="material-icons">assignment</i></div>
             <div class="rm-summary-body">
-                <h4>تقرير نشاط المندوبين</h4>
-                <p>عدد الطلبات، التوصيلات المكتملة، رسوم التوصيل، ومسافة الطريق — حسب الفترة المحددة (PDF §2.3.2).</p>
+                <h4>كشف المندوبين</h4>
+                <p>إحصائيات المندوبين: الطلبات الموصلة، المستحقات، الهاتف والمسافة — مع فلاتر الفترة والبحث.</p>
             </div>
         </div>
 
@@ -190,8 +190,8 @@
                     <input type="date" class="form-control" id="actDateTo" />
                 </div>
                 <div class="col-md-3 form-group">
-                    <label>بحث بالاسم</label>
-                    <input type="text" class="form-control" id="actDriverName" placeholder="اسم المندوب" />
+                    <label>بحث بالاسم أو الهاتف</label>
+                    <input type="text" class="form-control" id="actDriverName" placeholder="اسم أو رقم هاتف المندوب" />
                 </div>
                 <div class="col-md-3 form-group">
                     <button type="button" class="btn btn-info btn-block" id="btnActSearch"><i class="material-icons" style="font-size:16px;vertical-align:middle">search</i> بحث</button>
@@ -200,9 +200,18 @@
             </div>
         </div>
 
+        <div class="row mb-3" id="daTotalsCards">
+            <div class="col-md-2 col-6 mb-2"><div class="card mb-0"><div class="card-body text-center p-3"><div class="text-muted" style="font-size:12px">المندوبون</div><strong id="daTotDrivers">0</strong></div></div></div>
+            <div class="col-md-2 col-6 mb-2"><div class="card mb-0"><div class="card-body text-center p-3"><div class="text-muted" style="font-size:12px">موصّل</div><strong id="daTotDelivered">0</strong></div></div></div>
+            <div class="col-md-2 col-6 mb-2"><div class="card mb-0"><div class="card-body text-center p-3"><div class="text-muted" style="font-size:12px">ملغي</div><strong id="daTotCancelled">0</strong></div></div></div>
+            <div class="col-md-2 col-6 mb-2"><div class="card mb-0"><div class="card-body text-center p-3"><div class="text-muted" style="font-size:12px">جارية</div><strong id="daTotActive">0</strong></div></div></div>
+            <div class="col-md-2 col-6 mb-2"><div class="card mb-0"><div class="card-body text-center p-3"><div class="text-muted" style="font-size:12px">المستحقات</div><strong id="daTotFees">0</strong></div></div></div>
+            <div class="col-md-2 col-6 mb-2"><div class="card mb-0"><div class="card-body text-center p-3"><div class="text-muted" style="font-size:12px">المسافة كم</div><strong id="daTotKm">0</strong></div></div></div>
+        </div>
+
         <div class="card">
             <div class="card-header card-header-warning" style="text-align:right">
-                <h4 class="card-title">ملخص النشاط</h4>
+                <h4 class="card-title">كشف المندوبين</h4>
             </div>
             <div class="card-body table-responsive">
                 <table class="table table-hover">
@@ -214,13 +223,14 @@
                             <th>معينة</th>
                             <th>تم التوصيل</th>
                             <th>ملغي</th>
-                            <th>رسوم توصيل (د.ع)</th>
+                            <th>جارية</th>
+                            <th>مستحق التوصيل (د.ع)</th>
                             <th>مسافة (كم)</th>
                             <th class="da-actions-col">تفاصيل</th>
                         </tr>
                     </thead>
                     <tbody id="driverActivityBody">
-                        <tr><td colspan="9" class="text-center text-muted">اختر الفترة واضغط بحث</td></tr>
+                        <tr><td colspan="10" class="text-center text-muted">اختر الفترة واضغط بحث</td></tr>
                     </tbody>
                 </table>
             </div>

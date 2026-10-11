@@ -54,34 +54,29 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(false, "تاريخ النهاية يجب ان يكون بعد تاريخ البداية");
 
             var orders = await _context.Orders.AsNoTracking()
-                .Where(o => o.SaleManId == Id && o.OrderDate >= from && o.OrderDate <= to)
+                .Where(o => o.SaleManId == Id && !o.IsCancel
+                    && o.OrderDate >= from && o.OrderDate <= to
+                    && (o.IsDelivered == true || o.IsDeliveryConfirmed))
                 .Select(o => new
                 {
-                    o.IsCancel,
-                    o.IsDelivered,
-                    o.IsDeliveryConfirmed,
                     o.CostDelivery,
-                    o.NetAmount,
                     o.Total
                 })
                 .ToListAsync();
 
-            driver.CountOrder = orders.Count;
-            driver.daCountOrder = orders.Count(o => o.IsDelivered == true || o.IsDeliveryConfirmed);
-            driver.NetAmount = (decimal)orders.Sum(o => o.NetAmount > 0 ? o.NetAmount : o.Total);
-            driver.daNetAmount = (decimal)orders
-                .Where(o => o.IsDelivered == true || o.IsDeliveryConfirmed)
-                .Sum(o => o.NetAmount > 0 ? o.NetAmount : o.Total);
-            driver.TotalCostDelivery = orders.Sum(o => o.CostDelivery ?? 0m);
-            driver.daCostDelivery = orders
-                .Where(o => o.IsDelivered == true || o.IsDeliveryConfirmed)
-                .Sum(o => o.CostDelivery ?? 0m);
-            driver.Total = driver.NetAmount + driver.TotalCostDelivery;
-            driver.daTotal = driver.daNetAmount + driver.daCostDelivery;
-            driver.Password = null;
-            driver.Token = null;
+            int countOrder = orders.Count;
+            // Order items only (no delivery / extras) — same base as restaurant: Orders.Total
+            decimal netAmount = (decimal)orders.Sum(o => o.Total);
+            decimal totalCostDelivery = orders.Sum(o => o.CostDelivery ?? 0m);
+            decimal total = netAmount + totalCostDelivery;
 
-            return Result.Return(true, driver);
+            return Result.Return(true, new
+            {
+                countOrder,
+                totalCostDelivery,
+                netAmount,
+                total
+            });
         }
         public async Task<ResObj> GetAll(string? Name)
         {

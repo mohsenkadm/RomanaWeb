@@ -23,17 +23,24 @@ function filltableOrders(payload) {
     }
 
     if (!data || !data.length) {
-        $('#tableOrders').append("<tr><td colspan='19' class='text-center'>لا توجد طلبات</td></tr>");
+        $('#tableOrders').append("<tr><td colspan='20' class='text-center'>لا توجد طلبات</td></tr>");
         return;
     }
     $.each(data, function (i, item) {
         var cancelDisabled = item.isCancel ? " disabled" : "";
         var deliveryFee = (item.costDelivery != null && item.costDelivery !== '') ? item.costDelivery : '-';
+        var canReassign = !item.isCancel && !item.isDone && item.isDeliveryConfirmed !== true && item.isDelivered !== true;
+        var reassignBtn = canReassign
+            ? " <button type='button' class='btn btn-success btn-sm' onclick='openReassignDriver(" + item.orderId + ")' title='تبديل المندوب'><i class='material-icons' style='font-size:14px;vertical-align:middle'>swap_horiz</i> تبديل مندوب</button>"
+            : "";
+        var logBtn = " <button type='button' class='btn btn-secondary btn-sm' onclick='openOrderLog(" + item.orderId + ")' title='سجل الطلب'><i class='material-icons' style='font-size:14px;vertical-align:middle'>history</i> سجل</button>";
         var rows = "<tr>" +
             "<td class='rm-actions-cell' style='white-space:nowrap'>" +
             "<button type='button' class='btn btn-info btn-sm' onclick='OrderDetail(" + item.orderId + ")' data-toggle='modal' data-target='#OrdersDetailsModal'>تفاصيل</button> " +
             "<button type='button' class='btn btn-warning btn-sm' onclick='AdminCancelOrder(" + item.orderId + ")'" + cancelDisabled + ">الغاء</button> " +
             "<button type='button' class='btn btn-primary btn-sm' onclick='openAdminOrderControl(" + item.orderId + ")' data-toggle='modal' data-target='#AdminOrderControlModal'>تعديل</button>" +
+            reassignBtn +
+            logBtn +
             "</td>" +
             "<td>" +
             "<div class='form-check'>" +
@@ -76,6 +83,7 @@ function filltableOrders(payload) {
             "<td>" + (item.address || '') + "</td>" +
             "<td>" + (item.userName || '') + "</td>" +
             "<td>" + (item.saleManName || '') + "</td>" +
+            "<td>" + (item.saleManPhone || '') + "</td>" +
             "<td>" + (item.restaurantName || '') + "</td>" +
             "<td>" + (item.categoriesName || '') + "</td>" +
             "<td>" + item.orderDate + "</td>" +
@@ -408,6 +416,111 @@ function RefreshOrderDetail() {
 function RefreshOrders() {
     loadOrdersPage(1);
 }
+
+var _orderLogCache = [];
+
+function actorTypeLabel(t) {
+    t = (t || '').toLowerCase();
+    if (t === 'admin') return 'أدمن';
+    if (t === 'restaurant') return 'مطعم';
+    if (t === 'driver') return 'مندوب';
+    if (t === 'customer') return 'زبون';
+    return 'نظام';
+}
+
+function renderOrderLogRows(logs) {
+    logs = logs || [];
+    var q = ($('#orderLogSearch').val() || '').trim().toLowerCase();
+    if (q) {
+        logs = logs.filter(function (l) {
+            var hay = [
+                l.title || l.Title,
+                l.details || l.Details,
+                l.actorName || l.ActorName,
+                l.actorType || l.ActorType,
+                l.action || l.Action
+            ].join(' ').toLowerCase();
+            return hay.indexOf(q) !== -1;
+        });
+    }
+    if (!logs.length) {
+        $('#orderLogTimeline').html('<div class="text-center text-muted py-4">لا توجد أحداث مطابقة</div>');
+        return;
+    }
+    var html = '<ul class="list-unstyled mb-0" style="border-right:2px solid #e2e8f0;padding-right:14px;">';
+    logs.forEach(function (l) {
+        var title = l.title || l.Title || '—';
+        var details = l.details || l.Details || '';
+        var actorType = actorTypeLabel(l.actorType || l.ActorType);
+        var actorName = l.actorName || l.ActorName || '—';
+        var at = l.createdAt || l.CreatedAt;
+        var when = at ? new Date(at).toLocaleString('ar-IQ') : '—';
+        html += '<li class="mb-3">' +
+            '<div style="font-size:12px;color:#64748b;margin-bottom:2px">' + when +
+            ' · <span class="badge badge-info">' + actorType + '</span> ' + (actorName || '') + '</div>' +
+            '<div style="font-weight:700">' + title + '</div>' +
+            (details ? '<div style="font-size:13px;color:#475569">' + details + '</div>' : '') +
+            '</li>';
+    });
+    html += '</ul>';
+    $('#orderLogTimeline').html(html);
+}
+
+function openOrderLog(orderId) {
+    var cached = (window._ordersCache && window._ordersCache[orderId]) || {};
+    $('#orderLogOrderLabel').text(cached.orderNo || orderId);
+    $('#orderLogSearch').val('');
+    $('#orderLogTimeline').html('<div class="text-center text-muted py-4">جاري التحميل...</div>');
+    $('#orderLogModal').modal('show');
+    call_ajax('GET', 'admin/orders/' + orderId + '/logs', null, function (data) {
+        data = data || {};
+        var order = data.order || data.Order || {};
+        var orderNo = order.orderNo || order.OrderNo || cached.orderNo || orderId;
+        $('#orderLogOrderLabel').text(orderNo);
+        _orderLogCache = data.logs || data.Logs || [];
+        renderOrderLogRows(_orderLogCache);
+    });
+}
+
+$(document).on('input', '#orderLogSearch', function () {
+    renderOrderLogRows(_orderLogCache);
+});
+
+function openReassignDriver(orderId) {
+    var cached = (window._ordersCache && window._ordersCache[orderId]) || {};
+    $('#reassignOrderId').val(orderId);
+    $('#reassignOrderLabel').text(cached.orderNo || orderId);
+    $('#reassignDriverSelect').html('<option value="">جاري التحميل...</option>');
+    $('#reassignDriverModal').modal('show');
+    call_ajax('GET', 'admin/orders/drivers', null, function (data) {
+        var rows = data || [];
+        var opts = '<option value="">— اختر —</option>';
+        rows.forEach(function (d) {
+            var id = d.saleManId != null ? d.saleManId : d.SaleManId;
+            var name = d.name || d.Name || '-';
+            var phone = d.phone || d.Phone || '';
+            var avail = d.isAvailable !== undefined ? d.isAvailable : d.IsAvailable;
+            var idle = d.isIdle !== undefined ? d.isIdle : d.IsIdle;
+            var active = d.activeOrders != null ? d.activeOrders : (d.ActiveOrders || 0);
+            var tag = !avail ? ' (متوقف)' : (idle ? ' — فارغ' : ' — مشغول (' + active + ')');
+            opts += '<option value="' + id + '"' + (!avail ? ' disabled' : '') + '>' +
+                name + (phone ? ' | ' + phone : '') + tag + '</option>';
+        });
+        $('#reassignDriverSelect').html(opts);
+    });
+}
+
+$(document).on('click', '#btnConfirmReassign', function () {
+    var orderId = parseInt($('#reassignOrderId').val(), 10);
+    var saleManId = parseInt($('#reassignDriverSelect').val(), 10);
+    if (!orderId) { md.showNotification('طلب غير صالح'); return; }
+    if (!saleManId) { md.showNotification('اختر مندوباً'); return; }
+    call_ajax_json('POST', 'admin/orders/' + orderId + '/reassign-driver', { saleManId: saleManId }, function () {
+        $('#reassignDriverModal').modal('hide');
+        loadOrdersPage(_ordersPage);
+    });
+});
+
 function RefreshOrdersForRes() {
     _orderid = 0; $("#SaleManId").val(0).change();
     var obj = {

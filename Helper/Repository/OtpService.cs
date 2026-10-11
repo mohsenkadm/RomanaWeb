@@ -36,7 +36,7 @@ namespace RomanaWeb.Helper.Repository
             return await SendOtpToUserAsync(person, OTPCode);
         }
 
-        public async Task<ResObj> SendOtpToUserAsync(Users person, string OTPCode)
+        public async Task<ResObj> SendOtpToUserAsync(Users person, string OTPCode, string? recipientPhone = null)
         {
             try
             {
@@ -46,7 +46,11 @@ namespace RomanaWeb.Helper.Repository
                 if (person.IsActive == false)
                     return Result.Return(false, "حسابك غير فعال");
 
-                if (string.IsNullOrWhiteSpace(person.Phone) || person.Phone.Length != 11)
+                string sendTo = !string.IsNullOrWhiteSpace(recipientPhone)
+                    ? recipientPhone.Trim()
+                    : (person.Phone ?? string.Empty).Trim();
+
+                if (string.IsNullOrWhiteSpace(sendTo) || sendTo.Length != 11)
                     return Result.Return(false, "يجب كتابة رقم الهاتف 11 رقما");
 
                 if (!OtpSettings.IsValidCodeFormat(OTPCode))
@@ -79,7 +83,7 @@ namespace RomanaWeb.Helper.Repository
 
                 var requestData = new
                 {
-                    recipient = $"964{person.Phone.Substring(1)}",
+                    recipient = $"964{sendTo.Substring(1)}",
                     type = "otp",
                     code = OTPCode,
                     channel = "whatsapp"

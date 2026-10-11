@@ -1,12 +1,19 @@
 ﻿
 @{
-    ViewData["Title"] = "تقرير المتاجر";
+    ViewData["Title"] = "كشف المطاعم";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="content">
     <div class="content dark-edition">
-        <div class="container-fluid"> 
+        <div class="container-fluid">
+            <div class="rm-page-summary" style="direction:rtl;">
+                <div class="rm-summary-icon bg-info"><i class="material-icons">store</i></div>
+                <div class="rm-summary-body">
+                    <h4>كشف المطاعم</h4>
+                    <p>عدد الطلبات، الإجمالي، الخصومات، الصافي ورسوم التوصيل لكل مطعم خلال الفترة المحددة.</p>
+                </div>
+            </div>
             <div class="container alignright" style="margin:2% 0;">
                 <div class="row">
                     <div class="col-lg-6 col-md-6 col-sm-12 ">
@@ -20,34 +27,44 @@
                     <div class="col-lg-6 col-md-6 col-sm-12 ">
                         <label class="mb-2">تاريخ من</label>
                         <input type="date" name="datefrom" id="datefrom" class="form-control alignright" />
-                    </div> 
+                    </div>
                     <div class="col-lg-4 col-md-2 col-sm-2 col-xs-2">
                         <div class="text-center wow fadeInDown" style="text-align:left;">
                             <label class="mb-2"></label>
                             <button type="button" id="search-btn" class="btn btn-info btnwidth" style="text-align:center; width:100%;">بحث</button>
+                            <button type="button" id="excel-btn" class="btn btn-success btnwidth mt-2" style="text-align:center; width:100%;">تصدير Excel <i class="material-icons" style="font-size:16px;vertical-align:middle">file_download</i></button>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <div class="row mb-3" style="direction:rtl;" id="resTotalsCards">
+                <div class="col-md-2 col-6 mb-2"><div class="card mb-0"><div class="card-body text-center p-3"><div class="text-muted" style="font-size:12px">المطاعم</div><strong id="resTotCount">0</strong></div></div></div>
+                <div class="col-md-2 col-6 mb-2"><div class="card mb-0"><div class="card-body text-center p-3"><div class="text-muted" style="font-size:12px">الطلبات</div><strong id="resTotOrders">0</strong></div></div></div>
+                <div class="col-md-2 col-6 mb-2"><div class="card mb-0"><div class="card-body text-center p-3"><div class="text-muted" style="font-size:12px">الإجمالي</div><strong id="resTotTotal">0</strong></div></div></div>
+                <div class="col-md-2 col-6 mb-2"><div class="card mb-0"><div class="card-body text-center p-3"><div class="text-muted" style="font-size:12px">الخصومات</div><strong id="resTotDiscount">0</strong></div></div></div>
+                <div class="col-md-2 col-6 mb-2"><div class="card mb-0"><div class="card-body text-center p-3"><div class="text-muted" style="font-size:12px">الصافي</div><strong id="resTotNet">0</strong></div></div></div>
+                <div class="col-md-2 col-6 mb-2"><div class="card mb-0"><div class="card-body text-center p-3"><div class="text-muted" style="font-size:12px">التوصيل</div><strong id="resTotDelivery">0</strong></div></div></div>
+            </div>
+
             <div class="row">
                 <div class="col-md-12">
                     <div class="card">
                         <div class="card-header card-header-primary" style="text-align:right">
-                            <h4 class="card-title ">تقرير المتاجر</h4>
-                            <p class="card-category">جدول لعرض تقرير المتاجر</p>
+                            <h4 class="card-title ">كشف المطاعم</h4>
+                            <p class="card-category">جدول إحصائيات المطاعم حسب الفترة</p>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive" style="text-align: right;">
                                 <table class="table table-hover">
                                     <thead class=" ">
-                                        <tr>   
-                                            <th scope="col">عدد المنتجات </th> 
-                                            <th scope="col">عدد التوصيل </th> 
-                                            <th scope="col">المبلغ التوصيل الاجمالي</th> 
-                                            <th scope="col">عدد الطلبات</th> 
-                                            <th scope="col">المبلغ الاجمالي</th> 
-                                            <th scope="col">الاسم</th>
-                                            <th scope="col"></th> 
+                                        <tr>
+                                            <th scope="col">اسم المطعم</th>
+                                            <th scope="col">عدد الطلبات</th>
+                                            <th scope="col">الإجمالي</th>
+                                            <th scope="col">الخصومات</th>
+                                            <th scope="col">الصافي</th>
+                                            <th scope="col">رسوم التوصيل</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tableReportRes">
@@ -60,9 +77,9 @@
             </div>
         </div>
     </div>
-</div> 
+</div>
 <div id="mydiv">
-    <script> 
+    <script>
 
          $("#search-btn").on("click", (e) => {
             e.preventDefault();
@@ -76,8 +93,6 @@
             $("#datefrom").val(today);
             $("#dateto").val(today);
             RefreshReportRes();
-        }); 
+        });
     </script>
 </div>
-
-

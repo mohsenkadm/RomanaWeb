@@ -254,7 +254,7 @@
         });
         $("#excel-btn").on("click", (e) => {
             e.preventDefault();
-            window.open("/Restaurant/GetExcelAll?Name=" + encodeURIComponent($("#Namese").val() || ""));
+            downloadExcel("/Restaurant/GetExcelAll?Name=" + encodeURIComponent($("#Namese").val() || ""), "report-restaurant.xlsx");
         });
         $(document).ready(function () { 
             call_ajax("GET", "Categories/GetAll", null, selectCategoriesId);

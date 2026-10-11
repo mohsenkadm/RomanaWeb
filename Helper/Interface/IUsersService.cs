@@ -19,6 +19,9 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> Post(Users Users);
         Task<ResObj> Update(Users Users);
         Task<ResObj> UpdateAdmin(Users Users);
+        Task<ResObj> UpdateProfile(int userId, Users input);
+        Task<ResObj> ConfirmPhoneChange(int userId, string code);
+        Task<ResObj> ResendPhoneChangeOtp(int userId);
         Task<ResObj> Delete(int Id);
         Task<Users> GetUsersById(int Id);
         Task<ResObj> GetById(int Id);     

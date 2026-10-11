@@ -14,7 +14,9 @@ public class RestaurantZoneFilteringTests
         public Task<List<T>> GetEntityListScriptAsync(string Query, string pars) => Task.FromResult(new List<T>());
         public Task<T> GetEntityScriptAsync(string Query, string pars) => Task.FromResult(default(T)!);
         public void RunScript(string Query) { }
+        public void RunScript(string Query, object pars) { }
         public Task RunScriptAsync(string Query) => Task.CompletedTask;
+        public Task RunScriptAsync(string Query, object pars) => Task.CompletedTask;
         public void RunSp(string spName, object pars) { }
         public Task RunSpAsync(string spName, object pars) => Task.CompletedTask;
     }

@@ -41,5 +41,6 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> AdminSetStatus(int orderId, int statusCode);
         Task<ResObj> GetNearbyDriverOrders(int saleManId, double lat, double lng, double radiusKm);
         Task<ResObj> ApproveOrderBySaleMan(int orderId, int saleManId);
+        Task<ResObj> AdminReassignDriver(int orderId, int saleManId);
     }
 }

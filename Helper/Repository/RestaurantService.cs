@@ -69,8 +69,28 @@ namespace RomanaWeb.Helper.Repository
         }
         public async Task<ResObj> GetCountForRes(int Id,DateTime datefrom, DateTime dateto)
         {
-            Restaurant Restaurant = await _repository.GetEntityAsync("dbo.GetCountForRes", new { Id, datefrom, dateto });
-            return Result.Return(true, Restaurant);
+            var restaurant = await _context.Restaurant.AsNoTracking()
+                .FirstOrDefaultAsync(r => r.RestaurantId == Id && r.IsDelete != true);
+            if (restaurant == null)
+                return Result.Return(false, "المطعم غير موجود");
+
+            var from = datefrom.Date;
+            var to = dateto.Date.AddDays(1).AddTicks(-1);
+            if (to < from)
+                return Result.Return(false, "تاريخ النهاية يجب ان يكون بعد تاريخ البداية");
+
+            // Total = sum of item amounts only (Orders.Total): no discounts, no delivery fees.
+            var orders = await _context.Orders.AsNoTracking()
+                .Where(o => o.RestaurantId == Id && !o.IsCancel
+                    && o.OrderDate >= from && o.OrderDate <= to)
+                .Select(o => o.Total)
+                .ToListAsync();
+
+            return Result.Return(true, new
+            {
+                countOrder = orders.Count,
+                total = (decimal)orders.Sum()
+            });
         }
         public async Task<ResObj> GetAll(string? Name)
         {
@@ -385,13 +405,75 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> GetReportRes(string RestaurantName, DateTime datefrom, DateTime dateto)
         {
-            var items = await _repository.GetEntityListAsync("dbo.GetReportRes", new { RestaurantName, datefrom , dateto });
-            if (items != null)
+            var rangeFrom = datefrom.Date;
+            var rangeTo = dateto.Date.AddDays(1).AddTicks(-1);
+            var nameFilter = string.IsNullOrWhiteSpace(RestaurantName) ? null : RestaurantName.Trim();
+
+            var ordersQuery = _context.Orders.AsNoTracking()
+                .Where(o => !o.IsCancel && o.OrderDate >= rangeFrom && o.OrderDate <= rangeTo);
+
+            var statsQuery =
+                from o in ordersQuery
+                join r in _context.Restaurant.AsNoTracking() on o.RestaurantId equals r.RestaurantId
+                where r.IsDelete != true
+                      && (nameFilter == null || (r.Name != null && r.Name.Contains(nameFilter)))
+                group o by new { r.RestaurantId, r.Name } into g
+                select new
+                {
+                    g.Key.RestaurantId,
+                    g.Key.Name,
+                    CountOrder = g.Count(),
+                    Total = g.Sum(x => (decimal)x.Total),
+                    TotalDiscount = g.Sum(x => (decimal)x.TotalDiscount),
+                    NetAmount = g.Sum(x => (decimal)(x.NetAmount > 0 ? x.NetAmount : (x.Total - x.TotalDiscount))),
+                    CostDelivery = g.Sum(x => x.CostDelivery ?? 0m)
+                };
+
+            var stats = await statsQuery.OrderBy(x => x.Name).ToListAsync();
+
+            // When searching by name, also include matching restaurants with zero orders in range.
+            if (nameFilter != null)
             {
-                return Result.Return(true, items);
+                var withOrders = stats.Select(s => s.RestaurantId).ToHashSet();
+                var empty = await _context.Restaurant.AsNoTracking()
+                    .Where(r => r.IsDelete != true && r.Name != null && r.Name.Contains(nameFilter)
+                        && !withOrders.Contains(r.RestaurantId))
+                    .Select(r => new
+                    {
+                        r.RestaurantId,
+                        r.Name,
+                        CountOrder = 0,
+                        Total = 0m,
+                        TotalDiscount = 0m,
+                        NetAmount = 0m,
+                        CostDelivery = 0m
+                    })
+                    .ToListAsync();
+                stats = stats.Concat(empty).OrderBy(x => x.Name).ToList();
             }
-            else
-                return Result.Return(false);
+
+            var rows = stats.Select(s => new
+            {
+                restaurantId = s.RestaurantId,
+                name = s.Name,
+                countOrder = s.CountOrder,
+                total = s.Total,
+                totalDiscount = s.TotalDiscount,
+                netAmount = s.NetAmount,
+                costDelivery = s.CostDelivery
+            }).ToList();
+
+            var totals = new
+            {
+                restaurantsCount = rows.Count,
+                countOrder = rows.Sum(x => x.countOrder),
+                total = rows.Sum(x => x.total),
+                totalDiscount = rows.Sum(x => x.totalDiscount),
+                netAmount = rows.Sum(x => x.netAmount),
+                costDelivery = rows.Sum(x => x.costDelivery)
+            };
+
+            return Result.Return(true, new { rows, totals });
         }
 
         public async Task<ResObj> RefreshToken(int Id)
