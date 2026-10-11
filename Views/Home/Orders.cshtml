@@ -14,7 +14,7 @@
                 <div class="rm-summary-icon bg-green"><i class="material-icons">shopping_cart</i></div>
                 <div class="rm-summary-body">
                     <h4>ادارة الطلبات</h4>
-                    <p>متابعة وادارة جميع الطلبات الواردة من الزبائن. يمكنك البحث بالرقم او اسم المطعم، تصفية حسب التاريخ والمحافظة، وتصدير البيانات الى ملف اكسل.</p>
+                    <p>متابعة وادارة جميع الطلبات الواردة من الزبائن. يمكنك البحث بالرقم او اسم المطعم، تصفية حسب التاريخ والوقت والمحافظة، وتصدير البيانات الى ملف اكسل.</p>
                 </div>
                 <div class="rm-summary-stats">
                     <div class="rm-stat"><span class="rm-stat-value" id="ordSummaryTotal">-</span><span class="rm-stat-label">اجمالي</span></div>
@@ -53,13 +53,21 @@
                         <label class="mb-2">اسم المطعم</label>
                         <input type="text" id="RestaurantName" name="RestaurantName" class="form-control alignright" placeholder="ابحث عن اسم المطعم" />
                     </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12 ">
+                    <div class="col-lg-3 col-md-6 col-sm-12 ">
                         <label class="mb-2">تاريخ من</label>
                         <input type="date" name="datefrom" id="datefrom" class="form-control alignright" />
                     </div>
-                    <div class="col-lg-4 col-md-6 col-sm-12 ">
+                    <div class="col-lg-3 col-md-6 col-sm-12 ">
+                        <label class="mb-2">وقت من</label>
+                        <input type="time" name="timefrom" id="timefrom" class="form-control alignright" value="00:00" />
+                    </div>
+                    <div class="col-lg-3 col-md-6 col-sm-12 ">
                         <label class="mb-2">تاريخ الى</label>
                         <input type="date" name="dateto" id="dateto" class="form-control alignright" />
+                    </div>
+                    <div class="col-lg-3 col-md-6 col-sm-12 ">
+                        <label class="mb-2">وقت الى</label>
+                        <input type="time" name="timeto" id="timeto" class="form-control alignright" value="23:59" />
                     </div>
                     <div class="col-lg-4 col-md-6 col-sm-12 ">
                         <label class="mb-2">رقم الهاتف</label>
@@ -122,26 +130,26 @@
                                 <table class="table table-hover">
                                     <thead class=" ">
                                         <tr>
-                                            <th scope="col" class="rm-actions-cell">اجراءات</th>
-                                            <th scope="col">منتهي</th>
-                                            <th scope="col">موافقة</th>
-                                            <th scope="col">ملغي</th>
-                                            <th scope="col">صافي المبلغ</th>
-                                            <th scope="col">الخصم</th>
-                                            <th scope="col">المجموع</th>
-                                            <th scope="col">سعر التوصيل</th>
-                                            <th scope="col">المدينة</th>
-                                            <th scope="col">المحافظة</th>
-                                            <th scope="col">رقم الهاتف</th>
-                                            <th scope="col">اقرب نقطة دالة</th>
-                                            <th scope="col">العنوان</th>
+                                            <th scope="col">رقم الطلب</th>
+                                            <th scope="col">تاريخ الطلب</th>
+                                            <th scope="col">اسم المطعم</th>
                                             <th scope="col">اسم الزبون</th>
+                                            <th scope="col">رقم الهاتف</th>
+                                            <th scope="col">العنوان</th>
+                                            <th scope="col">اقرب نقطة دالة</th>
                                             <th scope="col">اسم المندوب</th>
                                             <th scope="col">هاتف المندوب</th>
-                                            <th scope="col">اسم المطعم</th>
                                             <th scope="col">القسم</th>
-                                            <th scope="col">تاريخ الطلب</th>
-                                            <th scope="col">رقم الطلب</th>
+                                            <th scope="col">المحافظة</th>
+                                            <th scope="col">المدينة</th>
+                                            <th scope="col">سعر التوصيل</th>
+                                            <th scope="col">المجموع</th>
+                                            <th scope="col">الخصم</th>
+                                            <th scope="col">صافي المبلغ</th>
+                                            <th scope="col">ملغي</th>
+                                            <th scope="col">موافقة</th>
+                                            <th scope="col">منتهي</th>
+                                            <th scope="col" class="rm-actions-cell">اجراءات</th>
                                         </tr>
                                     </thead>
                                     <tbody id="tableOrders">
@@ -313,10 +321,14 @@
         $("#execel-btn").on("click", (e) => {
             e.preventDefault();
             var status = $("#FilterOrderStatus").val();
+            var range = typeof getOrdersDateTimeRange === 'function' ? getOrdersDateTimeRange() : {
+                datefrom: $("#datefrom").val() || "",
+                dateto: $("#dateto").val() || ""
+            };
             var qs = "OrderNo=" + encodeURIComponent($("#OrderNo").val() || "") +
                 "&RestaurantName=" + encodeURIComponent($("#RestaurantName").val() || "") +
-                "&datefrom=" + encodeURIComponent($("#datefrom").val() || "") +
-                "&dateto=" + encodeURIComponent($("#dateto").val() || "") +
+                "&datefrom=" + encodeURIComponent(range.datefrom) +
+                "&dateto=" + encodeURIComponent(range.dateto) +
                 "&CountriesId=" + encodeURIComponent($("#CountriesId").val() || "") +
                 "&Phone=" + encodeURIComponent($("#FilterPhone").val() || "");
             if (status !== '') qs += "&orderStatus=" + encodeURIComponent(status);
@@ -420,8 +432,11 @@
 <script>
     var ordCharts = {};
     function loadOrdCharts() {
-        var df = $('#datefrom').val(), dt = $('#dateto').val();
-        call_ajax("GET", "Orders/GetAll", { OrderNo: '', RestaurantName: '', datefrom: df, dateto: dt, CountriesId: 0, state: 0 }, function (data) {
+        var range = typeof getOrdersDateTimeRange === 'function' ? getOrdersDateTimeRange() : {
+            datefrom: $('#datefrom').val(),
+            dateto: $('#dateto').val()
+        };
+        call_ajax("GET", "Orders/GetAll", { OrderNo: '', RestaurantName: '', datefrom: range.datefrom, dateto: range.dateto, CountriesId: 0, state: 0 }, function (data) {
             if (!data) return;
             $('#ordSummaryTotal').text(data.length.toLocaleString());
             var totalAmt = 0;
