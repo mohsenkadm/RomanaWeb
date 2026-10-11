@@ -460,6 +460,29 @@ namespace RomanaWeb.Controllers
         }
         #endregion
 
+        // نشاط الزبون: تنشيط / الغاء تنشيط (admin only).
+        // POST /Users/SetActive?Id=12&isActive=false
+        [Authorize]
+        [HttpPost("Users/SetActive")]
+        public async Task<IActionResult> SetActive(int Id, bool isActive)
+        {
+            try
+            {
+                if (!IsAdmin())
+                    return Response(false, "هذه العملية مخصصة للوحة التحكم فقط");
+                if (Id <= 0)
+                    return Response(false, "معرف غير صالح");
+
+                ResObj res = await _UsersService.SetActive(Id, isActive);
+                return Response(res.success, res.msg, res.data);
+            }
+            catch (Exception ex)
+            {
+                await _logger.WriteAsync(ex, "UsersController => SetActive => Id:" + Id);
+                return Response(false, "حدث خطأ اثناء تغيير نشاط الزبون");
+            }
+        }
+
         #region Get Users ById — Admin dashboard only
         [Authorize]
         [HttpGet]
@@ -471,6 +494,10 @@ namespace RomanaWeb.Controllers
                 {
                     if (!TryGetUserManager(out var manager) || manager == null || manager.Id != Id)
                         return Response(false, "هذه العملية مخصصة للوحة التحكم فقط");
+
+                    ResObj activeCheck = await _UsersService.EnsureActiveForApp(Id);
+                    if (!activeCheck.success)
+                        return Response(false, activeCheck.msg);
                 }
 
                 ResObj res = await _UsersService.GetById(Id);

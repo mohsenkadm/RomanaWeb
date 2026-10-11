@@ -23,6 +23,11 @@ namespace RomanaWeb.Helper.Interface
         Task<ResObj> ConfirmPhoneChange(int userId, string code);
         Task<ResObj> ResendPhoneChangeOtp(int userId);
         Task<ResObj> Delete(int Id);
+        Task<ResObj> SetActive(int Id, bool isActive);
+        /// <summary>
+        /// App gate for inactive/blocked/deleted customers. success=true when the user may use the app.
+        /// </summary>
+        Task<ResObj> EnsureActiveForApp(int userId);
         Task<Users> GetUsersById(int Id);
         Task<ResObj> GetById(int Id);     
     }
