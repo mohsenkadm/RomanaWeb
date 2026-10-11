@@ -4,6 +4,21 @@ var _ordersPageSize = 25;
 var _ordersTotalPages = 1;
 var _ordersLoading = false;
 
+/** Combine date + time filters into API datetime strings (YYYY-MM-DDTHH:mm). */
+function getOrdersDateTimeRange() {
+    var dateFrom = ($("#datefrom").val() || "").trim();
+    var dateTo = ($("#dateto").val() || "").trim();
+    var timeFrom = ($("#timefrom").val() || "").trim() || "00:00";
+    var timeTo = ($("#timeto").val() || "").trim() || "23:59";
+    // Accept HH:mm or HH:mm:ss from the time input
+    if (timeFrom.length === 5) timeFrom += ":00";
+    if (timeTo.length === 5) timeTo += ":59";
+    return {
+        datefrom: dateFrom ? (dateFrom + "T" + timeFrom) : "",
+        dateto: dateTo ? (dateTo + "T" + timeTo) : ""
+    };
+}
+
 function filltableOrders(payload) {
     $('#tableOrders').empty();
 
@@ -34,18 +49,28 @@ function filltableOrders(payload) {
             ? " <button type='button' class='btn btn-success btn-sm' onclick='openReassignDriver(" + item.orderId + ")' title='تبديل المندوب'><i class='material-icons' style='font-size:14px;vertical-align:middle'>swap_horiz</i> تبديل مندوب</button>"
             : "";
         var logBtn = " <button type='button' class='btn btn-secondary btn-sm' onclick='openOrderLog(" + item.orderId + ")' title='سجل الطلب'><i class='material-icons' style='font-size:14px;vertical-align:middle'>history</i> سجل</button>";
+        // RTL: first cells appear on the right — order no, date, restaurant, customer first
         var rows = "<tr>" +
-            "<td class='rm-actions-cell' style='white-space:nowrap'>" +
-            "<button type='button' class='btn btn-info btn-sm' onclick='OrderDetail(" + item.orderId + ")' data-toggle='modal' data-target='#OrdersDetailsModal'>تفاصيل</button> " +
-            "<button type='button' class='btn btn-warning btn-sm' onclick='AdminCancelOrder(" + item.orderId + ")'" + cancelDisabled + ">الغاء</button> " +
-            "<button type='button' class='btn btn-primary btn-sm' onclick='openAdminOrderControl(" + item.orderId + ")' data-toggle='modal' data-target='#AdminOrderControlModal'>تعديل</button>" +
-            reassignBtn +
-            logBtn +
-            "</td>" +
+            "<td><strong>" + (item.orderNo || '') + "</strong></td>" +
+            "<td>" + item.orderDate + "</td>" +
+            "<td>" + (item.restaurantName || '') + "</td>" +
+            "<td>" + (item.userName || '') + "</td>" +
+            "<td>" + (item.phone || '') + "</td>" +
+            "<td>" + (item.address || '') + "</td>" +
+            "<td>" + (item.functionPoint || '') + "</td>" +
+            "<td>" + (item.saleManName || '') + "</td>" +
+            "<td>" + (item.saleManPhone || '') + "</td>" +
+            "<td>" + (item.categoriesName || '') + "</td>" +
+            "<td>" + (item.countriesName || '') + "</td>" +
+            "<td>" + (item.cityName || '') + "</td>" +
+            "<td>" + deliveryFee + "</td>" +
+            "<td>" + item.total + "</td>" +
+            "<td>" + item.totalDiscount + "</td>" +
+            "<td>" + item.netAmount + "</td>" +
             "<td>" +
             "<div class='form-check'>" +
             "<label class='form-check-label'>" +
-            "<input class='form-check-input' type='checkbox' id='IsDone" + item.orderId + "' disabled>" +
+            "<input class='form-check-input' type='checkbox' id='IsCancel" + item.orderId + "' disabled>" +
             "<span class='form-check-sign'>" +
             "<span class='check'></span>" +
             "</span>" +
@@ -65,29 +90,20 @@ function filltableOrders(payload) {
             "<td>" +
             "<div class='form-check'>" +
             "<label class='form-check-label'>" +
-            "<input class='form-check-input' type='checkbox' id='IsCancel" + item.orderId + "' disabled>" +
+            "<input class='form-check-input' type='checkbox' id='IsDone" + item.orderId + "' disabled>" +
             "<span class='form-check-sign'>" +
             "<span class='check'></span>" +
             "</span>" +
             "</label>" +
             "</div>" +
             "</td>" +
-            "<td>" + item.netAmount + "</td>" +
-            "<td>" + item.totalDiscount + "</td>" +
-            "<td>" + item.total + "</td>" +
-            "<td>" + deliveryFee + "</td>" +
-            "<td>" + (item.cityName || '') + "</td>" +
-            "<td>" + (item.countriesName || '') + "</td>" +
-            "<td>" + (item.phone || '') + "</td>" +
-            "<td>" + (item.functionPoint || '') + "</td>" +
-            "<td>" + (item.address || '') + "</td>" +
-            "<td>" + (item.userName || '') + "</td>" +
-            "<td>" + (item.saleManName || '') + "</td>" +
-            "<td>" + (item.saleManPhone || '') + "</td>" +
-            "<td>" + (item.restaurantName || '') + "</td>" +
-            "<td>" + (item.categoriesName || '') + "</td>" +
-            "<td>" + item.orderDate + "</td>" +
-            "<td><strong>" + (item.orderNo || '') + "</strong></td></tr>";
+            "<td class='rm-actions-cell' style='white-space:nowrap'>" +
+            "<button type='button' class='btn btn-info btn-sm' onclick='OrderDetail(" + item.orderId + ")' data-toggle='modal' data-target='#OrdersDetailsModal'>تفاصيل</button> " +
+            "<button type='button' class='btn btn-warning btn-sm' onclick='AdminCancelOrder(" + item.orderId + ")'" + cancelDisabled + ">الغاء</button> " +
+            "<button type='button' class='btn btn-primary btn-sm' onclick='openAdminOrderControl(" + item.orderId + ")' data-toggle='modal' data-target='#AdminOrderControlModal'>تعديل</button>" +
+            reassignBtn +
+            logBtn +
+            "</td></tr>";
 
         $('#tableOrders').append(rows);
         $('#IsDone' + item.orderId).attr('checked', item.isDone);
@@ -156,11 +172,12 @@ function loadOrdersPage(page) {
     _ordersPageSize = pageSize;
 
     var status = $("#FilterOrderStatus").val();
+    var range = getOrdersDateTimeRange();
     var obj = {
         OrderNo: $("#OrderNo").val(),
         RestaurantName: $("#RestaurantName").val(),
-        datefrom: $("#datefrom").val(),
-        dateto: $("#dateto").val(),
+        datefrom: range.datefrom,
+        dateto: range.dateto,
         CountriesId: $("#CountriesId").val(),
         Phone: $("#FilterPhone").val() || '',
         orderStatus: status === '' ? null : parseInt(status, 10),

@@ -106,7 +106,16 @@ namespace RomanaWeb.Helper.Repository
             List<Orders> data = await _OrdersRepository.GetEntityListAsync("dbo.GetOrderAll",
                 new { OrderNo, RestaurantName, datefrom, dateto,RestaurantId , CountriesId , state });
 
-
+            // Apply datetime range (supports time-from / time-to from admin Orders UI).
+            // Date-only dateto (midnight) → end of that day for backward-compatible callers.
+            var rangeFrom = datefrom;
+            var rangeTo = dateto != default && dateto.TimeOfDay == TimeSpan.Zero
+                ? dateto.Date.AddDays(1).AddTicks(-1)
+                : dateto;
+            if (rangeFrom != default)
+                data = data.Where(o => o.OrderDate >= rangeFrom).ToList();
+            if (rangeTo != default)
+                data = data.Where(o => o.OrderDate <= rangeTo).ToList();
 
             if (!string.IsNullOrWhiteSpace(phone))
                 data = data.Where(o => o.Phone != null && o.Phone.Contains(phone.Trim())).ToList();
