@@ -41,6 +41,12 @@ function filltableSaleMan(data) {
             ? ZonePicker.saleManZoneLabels(id)
             : '<span class="text-muted">—</span>';
 
+        var foodBal = Number(item.foodNetBalance != null ? item.foodNetBalance : (item.FoodNetBalance || 0)) || 0;
+        var feeBal = Number(item.deliveryFeeBalance != null ? item.deliveryFeeBalance : (item.DeliveryFeeBalance || 0)) || 0;
+        var hasBalance = foodBal > 0 || feeBal > 0;
+        var foodTxt = formatIqdSaleMan(foodBal);
+        var feeTxt = formatIqdSaleMan(feeBal);
+
         var html =
             '<article class="saleman-card">' +
                 '<div class="saleman-card-top">' +
@@ -56,6 +62,16 @@ function filltableSaleMan(data) {
                     '</div>' +
                     '<div class="saleman-card-badges">' +
                         activeBadge + workBadge + multiBadge +
+                    '</div>' +
+                '</div>' +
+                '<div class="saleman-balance-row">' +
+                    '<div class="saleman-balance-box saleman-balance-food">' +
+                        '<span class="saleman-balance-label">مبلغ الأكل الصافي</span>' +
+                        '<strong class="saleman-balance-value">' + foodTxt + '</strong>' +
+                    '</div>' +
+                    '<div class="saleman-balance-box saleman-balance-fee">' +
+                        '<span class="saleman-balance-label">مستحق أجور التوصيل</span>' +
+                        '<strong class="saleman-balance-value">' + feeTxt + '</strong>' +
                     '</div>' +
                 '</div>' +
                 '<div class="saleman-card-assign">' +
@@ -77,12 +93,58 @@ function filltableSaleMan(data) {
                         'onclick="toggleSaleManAvailability(' + id + ',' + (!working) + ')">' +
                         (working ? 'ايقاف العمل' : 'تفعيل العمل') +
                     '</button>' +
+                    '<button type="button" class="btn btn-sm btn-dark" ' +
+                        (hasBalance ? '' : 'disabled title="لا يوجد رصيد للتصفير" ') +
+                        'onclick="settleSaleManBalance(' + id + ', \'' + escapeHtmlSaleMan(item.name || '') + '\', ' + foodBal + ', ' + feeBal + ')">' +
+                        'تصفير الحساب' +
+                    '</button>' +
+                    '<button type="button" class="btn btn-sm btn-info" onclick="showOpenBalanceOrders(' + id + ')">طلبات الرصيد</button>' +
                     '<button type="button" class="btn btn-sm btn-primary" onclick="updateSaleMan(' + id + ')" data-toggle="modal" data-target="#SaleManModal">تعديل</button>' +
                     '<button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSaleMan(' + id + ')">حذف</button>' +
                 '</div>' +
             '</article>';
 
         $wrap.append(html);
+    });
+}
+
+function formatIqdSaleMan(n) {
+    var v = Math.round(Number(n) || 0);
+    try {
+        return v.toLocaleString('en-US') + ' د.ع';
+    } catch (e) {
+        return v + ' د.ع';
+    }
+}
+
+function settleSaleManBalance(id, name, food, fee) {
+    var msg =
+        'تصفير حساب المندوب: ' + (name || ('#' + id)) + '\n\n' +
+        'مبلغ الأكل الصافي: ' + formatIqdSaleMan(food) + '\n' +
+        'مستحق أجور التوصيل: ' + formatIqdSaleMan(fee) + '\n\n' +
+        'سيتم حفظ عملية التصفير في التقرير، وتصفير الرصيد فقط دون حذف بياناته أو طلباته.';
+    if (!confirm(msg)) return;
+    call_ajax('POST', 'SaleMan/SettleBalance/' + id, null, function () {
+        md.showNotification('تم تصفير الحساب بنجاح');
+        RefreshSaleMan();
+    });
+}
+
+function showOpenBalanceOrders(id) {
+    call_ajax('GET', 'SaleMan/GetOpenBalanceOrders/' + id, null, function (data) {
+        var orders = (data && (data.orders || data.Orders)) || [];
+        if (!orders.length) {
+            alert('لا توجد طلبات مفتوحة في رصيد هذا المندوب حالياً');
+            return;
+        }
+        var lines = orders.map(function (o) {
+            var no = o.orderNo || o.OrderNo || o.orderId || o.OrderId;
+            var food = formatIqdSaleMan(o.foodNetAmount != null ? o.foodNetAmount : o.FoodNetAmount);
+            var fee = formatIqdSaleMan(o.deliveryFeeAmount != null ? o.deliveryFeeAmount : o.DeliveryFeeAmount);
+            var res = o.restaurantName || o.RestaurantName || '—';
+            return '#' + no + ' | ' + res + ' | أكل: ' + food + ' | توصيل: ' + fee;
+        });
+        alert('طلبات الرصيد الحالي:\n\n' + lines.join('\n'));
     });
 }
 

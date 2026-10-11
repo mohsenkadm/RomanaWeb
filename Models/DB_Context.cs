@@ -60,6 +60,9 @@ namespace RomanaWeb.Model
             modelBuilder.ApplyConfiguration(new DriverLocationMap());
             modelBuilder.ApplyConfiguration(new ProblemReportMap());
             modelBuilder.ApplyConfiguration(new OrderLogMap());
+            modelBuilder.ApplyConfiguration(new SaleManBalanceMap());
+            modelBuilder.ApplyConfiguration(new SaleManSettlementMap());
+            modelBuilder.ApplyConfiguration(new SaleManBalanceEntryMap());
         }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -134,5 +137,8 @@ namespace RomanaWeb.Model
         public DbSet<DriverLocation> DriverLocations { get; set; }
         public DbSet<ProblemReport> ProblemReports { get; set; }
         public DbSet<OrderLog> OrderLogs { get; set; }
+        public DbSet<SaleManBalance> SaleManBalance { get; set; }
+        public DbSet<SaleManSettlement> SaleManSettlement { get; set; }
+        public DbSet<SaleManBalanceEntry> SaleManBalanceEntry { get; set; }
     }
 }

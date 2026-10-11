@@ -15,12 +15,16 @@ namespace RomanaWeb.Helper.Repository
         public readonly IDapperRepository<SaleMan> _repository;
         // cotext only apply scopped 
         private readonly DB_Context _context;
+        private readonly ISaleManBalanceService _balance;
 
         public SaleManService(
-            DB_Context context, IDapperRepository<SaleMan> repository)
+            DB_Context context,
+            IDapperRepository<SaleMan> repository,
+            ISaleManBalanceService balance)
         {
             _context = context;
             _repository = repository;
+            _balance = balance;
         }
         public async Task<ResObj> Login(string Phone, string password)
         {
@@ -39,6 +43,14 @@ namespace RomanaWeb.Helper.Repository
             UserManager userManager = new UserManager() { Id = login.SaleManId, Name = login.Name,Role= "sal" };
             login.Token = JsonWebToken.GenerateToken(userManager);
             login.Password = null;
+
+            var balMap = await _balance.GetBalancesMapAsync(new[] { login.SaleManId });
+            if (balMap.TryGetValue(login.SaleManId, out var bal))
+            {
+                login.FoodNetBalance = bal.FoodNetBalance;
+                login.DeliveryFeeBalance = bal.DeliveryFeeBalance;
+            }
+
             return Result.Return(true, login);
         }                                       
         public async Task<ResObj> GetCountForSale(int Id, DateTime datefrom, DateTime dateto)
@@ -96,8 +108,16 @@ namespace RomanaWeb.Helper.Repository
                 .OrderByDescending(i => i.SaleManId)
                 .ToListAsync();
 
+            var balMap = await _balance.GetBalancesMapAsync(list.Select(i => i.SaleManId));
             foreach (SaleMan item in list)
+            {
                 item.Password = null;
+                if (balMap.TryGetValue(item.SaleManId, out var bal))
+                {
+                    item.FoodNetBalance = bal.FoodNetBalance;
+                    item.DeliveryFeeBalance = bal.DeliveryFeeBalance;
+                }
+            }
 
             return Result.Return(true, list);
         }

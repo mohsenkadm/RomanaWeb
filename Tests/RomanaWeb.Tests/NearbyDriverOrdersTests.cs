@@ -70,7 +70,8 @@ public class NearbyDriverOrdersTests
             new ConfigurationBuilder().Build(),
             new FakeLogger(),
             new PromoCodeService(ctx, new MapperConfiguration(_ => { }, NullLoggerFactory.Instance).CreateMapper(), null!,
-                new ConfigurationBuilder().Build()));
+                new ConfigurationBuilder().Build()),
+            new SaleManBalanceService(ctx));
     }
 
     [Fact]

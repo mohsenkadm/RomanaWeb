@@ -35,6 +35,8 @@ namespace RomanaWeb.Model.EntityMap
             builder.Ignore(x => x.daNetAmount);
             builder.Ignore(x => x.daTotal);
             builder.Ignore(x => x.daCostDelivery);
+            builder.Ignore(x => x.FoodNetBalance);
+            builder.Ignore(x => x.DeliveryFeeBalance);
         }
     }
 }
