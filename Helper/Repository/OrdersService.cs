@@ -22,6 +22,7 @@ namespace RomanaWeb.Helper.Repository
         private readonly IConfiguration _config;
         private readonly ILoggerRepository _logger;
         private readonly IPromoCodeService _promoCode;
+        private readonly ISaleManBalanceService _saleManBalance;
 
         public OrdersService(
             DB_Context context,
@@ -32,7 +33,8 @@ namespace RomanaWeb.Helper.Repository
             IPricingService pricing,
             IConfiguration config,
             ILoggerRepository logger,
-            IPromoCodeService promoCode)
+            IPromoCodeService promoCode,
+            ISaleManBalanceService saleManBalance)
         {
             _context = context;
             _OrdersRepository = orderRepository;
@@ -43,6 +45,7 @@ namespace RomanaWeb.Helper.Repository
             _config = config;
             _logger = logger;
             _promoCode = promoCode;
+            _saleManBalance = saleManBalance;
         }
 
 
@@ -437,6 +440,9 @@ namespace RomanaWeb.Helper.Repository
             if (saleManId is > 0)
                 await _dispatch.ClearActiveOrderAsync(saleManId.Value);
 
+            try { await _saleManBalance.AccrueOnDeliveredAsync(orders); }
+            catch (Exception ex) { await _logger.WriteAsync(ex, "OrdersService => AccrueOnDelivered (SetDeliveryConfirmed)"); }
+
             return Result.Return(true, "تم تأكيد استلام الطلب", orders);
         }
 
@@ -498,6 +504,10 @@ namespace RomanaWeb.Helper.Repository
             orders.IsWaiting = false;
             _context.Entry(orders).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+
+            try { await _saleManBalance.AccrueOnDeliveredAsync(orders); }
+            catch (Exception ex) { await _logger.WriteAsync(ex, "OrdersService => AccrueOnDelivered (SetIsDelivered)"); }
+
             return Result.Return(true, "تمت  توصيل  بنجاح", orders);
         }                 
         public async Task<ResObj> SetIsSaleManCancel(int id)
@@ -838,6 +848,12 @@ namespace RomanaWeb.Helper.Repository
             // Clear driver active order when cancelling or confirming delivery.
             if ((statusCode == 9 || statusCode == 8) && previousSaleManId is > 0)
                 await _dispatch.ClearActiveOrderAsync(previousSaleManId.Value);
+
+            if (statusCode is 7 or 8)
+            {
+                try { await _saleManBalance.AccrueOnDeliveredAsync(order); }
+                catch (Exception ex) { await _logger.WriteAsync(ex, "OrdersService => AccrueOnDelivered (AdminSetStatus)"); }
+            }
 
             // Auto-dispatch when admin approves an unassigned order (same as SetIsApporve).
             if (statusCode == 1 && (order.SaleManId == null || order.SaleManId == 0))

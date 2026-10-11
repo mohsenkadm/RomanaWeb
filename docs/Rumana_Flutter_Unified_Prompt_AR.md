@@ -894,6 +894,23 @@ POST {BASE_URL}dispatch/driver/location
 | GPS service | `lib/features/location/driver_location_service.dart` |
 | زوناتي | `lib/features/profile/my_zones_page.dart` |
 
+### 8.9 رصيد المندوب (مربعان في الواجهة)
+
+راجع التفاصيل الكاملة في [`Driver_Balance_Settlement_Flutter_Prompt_AR.md`](Driver_Balance_Settlement_Flutter_Prompt_AR.md).
+
+```
+GET {BASE_URL}SaleMan/MyBalance
+```
+
+اعرض مربعين على الشاشة الرئيسية:
+
+| حقل | المعنى |
+|-----|--------|
+| `foodNetBalance` | مبلغ الأكل الصافي (بدون توصيل) |
+| `deliveryFeeBalance` | مستحق أجور التوصيل |
+
+بعد `SetDeliveryConfirmed` أعد جلب `MyBalance`. التصفير من لوحة التحكم فقط (ليس من التطبيق).
+
 ---
 
 ## §9 — جدول APIs كامل
@@ -917,6 +934,7 @@ POST {BASE_URL}dispatch/driver/location
 | POST | `Orders/SetIsPreparing/{id}` | 🏪 | JWT res |
 | POST | `Products/SetIsAvailable/{id}/{bool}` | 🏪 | JWT res |
 | GET | `SaleMan/Login?Phone=&password=` | 🚗 | 🌐 |
+| GET | `SaleMan/MyBalance` | 🚗 | JWT sal |
 | POST | `SaleMan/ToggleMyAvailability?isAvailable=` | 🚗 | JWT sal |
 | GET | `drivers/me/zones` | 🚗 | JWT sal |
 | GET | `Orders/GetNearbyDriverOrders/{lat},{lng},{radiusKm}` | 🚗 | JWT sal |

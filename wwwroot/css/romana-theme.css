@@ -2952,6 +2952,40 @@ body.rm-app .pagination .page-item.active .page-link {
     align-items: flex-start;
 }
 
+.saleman-balance-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 0 18px 12px;
+}
+.saleman-balance-box {
+    border-radius: 12px;
+    padding: 12px 14px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+.saleman-balance-food {
+    background: linear-gradient(145deg, #fff7ed, #ffedd5);
+    border-color: #fdba74;
+}
+.saleman-balance-fee {
+    background: linear-gradient(145deg, #ecfeff, #cffafe);
+    border-color: #67e8f9;
+}
+.saleman-balance-label {
+    display: block;
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 4px;
+}
+.saleman-balance-value {
+    display: block;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
 .saleman-card-actions {
     display: flex;
     flex-wrap: wrap;
