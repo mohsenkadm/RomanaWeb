@@ -105,7 +105,8 @@ public class DriverLocationServiceTests
             new ConfigurationBuilder().Build(),
             new FakeLogger(),
             new PromoCodeService(ctx, new MapperConfiguration(_ => { }, NullLoggerFactory.Instance).CreateMapper(), null!,
-                new ConfigurationBuilder().Build()));
+                new ConfigurationBuilder().Build()),
+            new SaleManBalanceService(ctx));
     }
 
     private static SaleMan SeedDriver(RomanaWeb.Model.DB_Context ctx, int id = 8, bool assignDefaultZone = true)
@@ -250,7 +251,8 @@ public class DriverLocationServiceTests
             new ConfigurationBuilder().Build(),
             new FakeLogger(),
             new PromoCodeService(ctx, new MapperConfiguration(_ => { }, NullLoggerFactory.Instance).CreateMapper(), null!,
-                new ConfigurationBuilder().Build()));
+                new ConfigurationBuilder().Build()),
+            new SaleManBalanceService(ctx));
 
         var res = await ordersSvc.GetOrderFullDetails(456);
         Assert.True(res.success);

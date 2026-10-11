@@ -80,6 +80,7 @@ var _navIcons = {
     'Analytics': 'insights',
     'Zones': 'map',
     'DriverActivity': 'assignment',
+    'DriverSettlements': 'account_balance_wallet',
     'EmergencyOrders': 'warning',
     'CoverageRequests': 'location_searching',
     'ProblemReports': 'report_problem',

@@ -1,0 +1,148 @@
+@{
+    ViewData["Title"] = "تصفير حسابات المندوبين";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .ds-page { direction: rtl; }
+    .ds-actions-col { width: 110px; white-space: nowrap; }
+    .ds-btn-details {
+        display: inline-flex; align-items: center; gap: 4px;
+        border: none; border-radius: 8px; padding: 6px 12px;
+        background: #0f766e; color: #fff; font-size: 12px; font-weight: 600;
+    }
+    .ds-btn-details:hover { background: #0d9488; color: #fff; }
+    .ds-btn-details .material-icons { font-size: 16px; }
+    .ds-modal .modal-dialog { max-width: 960px; margin: 1.5rem auto; }
+    .ds-modal .modal-content {
+        border: none; border-radius: 18px; overflow: hidden;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, .18);
+        background: #f8fafc;
+    }
+    .ds-modal-header {
+        display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+        padding: 22px 24px 18px; background: #fff;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .ds-modal-header h5 { margin: 0 0 4px; font-size: 1.15rem; font-weight: 700; }
+    .ds-modal-meta { margin: 0; color: #64748b; font-size: 13px; }
+    .ds-stats {
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+        padding: 14px 24px; background: #fff; border-bottom: 1px solid #e2e8f0;
+    }
+    .ds-stat {
+        background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
+        padding: 12px 14px; text-align: center;
+    }
+    .ds-stat-value { display: block; font-size: 1.1rem; font-weight: 700; color: #0f172a; }
+    .ds-stat-label { display: block; margin-top: 2px; font-size: 11px; color: #64748b; }
+    .ds-modal-body { max-height: 55vh; overflow: auto; padding: 16px 24px; }
+    .ds-order-row {
+        display: grid; grid-template-columns: 90px 1fr 120px 120px;
+        gap: 10px; padding: 10px 0; border-bottom: 1px solid #e2e8f0;
+        font-size: 13px; align-items: center;
+    }
+    .ds-order-row:last-child { border-bottom: none; }
+    .ds-empty { text-align: center; color: #94a3b8; padding: 28px; }
+    @@media (max-width: 768px) {
+        .ds-stats { grid-template-columns: 1fr; }
+        .ds-order-row { grid-template-columns: 1fr 1fr; }
+    }
+</style>
+
+<div class="content ds-page">
+    <div class="container-fluid">
+        <div class="rm-page-summary">
+            <div class="rm-summary-icon" style="background:linear-gradient(135deg,#0f766e,#14b8a6);">
+                <i class="material-icons">account_balance_wallet</i>
+            </div>
+            <div class="rm-summary-body">
+                <h4>تقرير تصفير حسابات المندوبين</h4>
+                <p>سجل عمليات التصفير: مبلغ الأكل الصافي، مستحق أجور التوصيل، والرصيد الحالي بعد التصفير. زر التفاصيل يعرض الطلبات التي جُمعت في تلك العملية.</p>
+            </div>
+        </div>
+
+        <div class="rm-filter-bar mb-3">
+            <div class="row align-items-end">
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
+                    <label class="mb-1">من تاريخ</label>
+                    <input type="date" class="form-control" id="dsFrom" />
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
+                    <label class="mb-1">إلى تاريخ</label>
+                    <input type="date" class="form-control" id="dsTo" />
+                </div>
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
+                    <label class="mb-1">اسم / هاتف المندوب</label>
+                    <input type="text" class="form-control alignright" id="dsName" placeholder="بحث..." autocomplete="off" />
+                </div>
+                <div class="col-lg-2 col-md-3 col-sm-6 mb-2">
+                    <button type="button" class="btn btn-info btnwidth" style="width:100%;" id="dsSearchBtn">بحث <i class="material-icons">search</i></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header card-header-success" style="text-align:right">
+                <h4 class="card-title">عمليات التصفير</h4>
+            </div>
+            <div class="card-body table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>المندوب</th>
+                            <th>الهاتف</th>
+                            <th>مبلغ الأكل الصافي</th>
+                            <th>مستحق أجور التوصيل</th>
+                            <th>رصيد الأكل الحالي</th>
+                            <th>رصيد التوصيل الحالي</th>
+                            <th>عدد الطلبات</th>
+                            <th>تاريخ التصفير</th>
+                            <th>بواسطة</th>
+                            <th class="ds-actions-col">تفاصيل</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dsBody">
+                        <tr><td colspan="11" class="text-center text-muted">اختر الفترة واضغط بحث</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade ds-modal" id="dsOrdersModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="ds-modal-header">
+                <div>
+                    <h5 id="dsModalTitle">تفاصيل التصفير</h5>
+                    <p class="ds-modal-meta" id="dsModalMeta">—</p>
+                </div>
+                <button type="button" class="close" data-dismiss="modal" aria-label="إغلاق">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="ds-stats">
+                <div class="ds-stat">
+                    <span class="ds-stat-value" id="dsStatFood">0</span>
+                    <span class="ds-stat-label">مبلغ الأكل الصافي</span>
+                </div>
+                <div class="ds-stat">
+                    <span class="ds-stat-value" id="dsStatFee">0</span>
+                    <span class="ds-stat-label">مستحق أجور التوصيل</span>
+                </div>
+                <div class="ds-stat">
+                    <span class="ds-stat-value" id="dsStatCount">0</span>
+                    <span class="ds-stat-label">عدد الطلبات</span>
+                </div>
+            </div>
+            <div class="ds-modal-body" id="dsOrdersBody">
+                <div class="ds-empty">جاري التحميل...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/DriverSettlements.js" asp-append-version="true"></script>

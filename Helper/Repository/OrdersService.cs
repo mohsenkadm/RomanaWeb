@@ -23,6 +23,7 @@ namespace RomanaWeb.Helper.Repository
         private readonly ILoggerRepository _logger;
         private readonly IPromoCodeService _promoCode;
         private readonly IUsersService _usersService;
+        private readonly ISaleManBalanceService _saleManBalance;
 
         public OrdersService(
             DB_Context context,
@@ -34,7 +35,8 @@ namespace RomanaWeb.Helper.Repository
             IConfiguration config,
             ILoggerRepository logger,
             IPromoCodeService promoCode,
-            IUsersService usersService)
+            IUsersService usersService,
+            ISaleManBalanceService saleManBalance)
         {
             _context = context;
             _OrdersRepository = orderRepository;
@@ -46,6 +48,7 @@ namespace RomanaWeb.Helper.Repository
             _logger = logger;
             _promoCode = promoCode;
             _usersService = usersService;
+            _saleManBalance = saleManBalance;
         }
 
 
@@ -106,7 +109,16 @@ namespace RomanaWeb.Helper.Repository
             List<Orders> data = await _OrdersRepository.GetEntityListAsync("dbo.GetOrderAll",
                 new { OrderNo, RestaurantName, datefrom, dateto,RestaurantId , CountriesId , state });
 
-
+            // Apply datetime range (supports time-from / time-to from admin Orders UI).
+            // Date-only dateto (midnight) → end of that day for backward-compatible callers.
+            var rangeFrom = datefrom;
+            var rangeTo = dateto != default && dateto.TimeOfDay == TimeSpan.Zero
+                ? dateto.Date.AddDays(1).AddTicks(-1)
+                : dateto;
+            if (rangeFrom != default)
+                data = data.Where(o => o.OrderDate >= rangeFrom).ToList();
+            if (rangeTo != default)
+                data = data.Where(o => o.OrderDate <= rangeTo).ToList();
 
             if (!string.IsNullOrWhiteSpace(phone))
                 data = data.Where(o => o.Phone != null && o.Phone.Contains(phone.Trim())).ToList();
@@ -438,6 +450,9 @@ namespace RomanaWeb.Helper.Repository
             if (saleManId is > 0)
                 await _dispatch.ClearActiveOrderAsync(saleManId.Value);
 
+            try { await _saleManBalance.AccrueOnDeliveredAsync(orders); }
+            catch (Exception ex) { await _logger.WriteAsync(ex, "OrdersService => AccrueOnDelivered (SetDeliveryConfirmed)"); }
+
             return Result.Return(true, "تم تأكيد استلام الطلب", orders);
         }
 
@@ -499,6 +514,10 @@ namespace RomanaWeb.Helper.Repository
             orders.IsWaiting = false;
             _context.Entry(orders).State = EntityState.Modified;
             await _context.SaveChangesAsync();
+
+            try { await _saleManBalance.AccrueOnDeliveredAsync(orders); }
+            catch (Exception ex) { await _logger.WriteAsync(ex, "OrdersService => AccrueOnDelivered (SetIsDelivered)"); }
+
             return Result.Return(true, "تمت  توصيل  بنجاح", orders);
         }                 
         public async Task<ResObj> SetIsSaleManCancel(int id)
@@ -843,6 +862,12 @@ namespace RomanaWeb.Helper.Repository
             // Clear driver active order when cancelling or confirming delivery.
             if ((statusCode == 9 || statusCode == 8) && previousSaleManId is > 0)
                 await _dispatch.ClearActiveOrderAsync(previousSaleManId.Value);
+
+            if (statusCode is 7 or 8)
+            {
+                try { await _saleManBalance.AccrueOnDeliveredAsync(order); }
+                catch (Exception ex) { await _logger.WriteAsync(ex, "OrdersService => AccrueOnDelivered (AdminSetStatus)"); }
+            }
 
             // Auto-dispatch when admin approves an unassigned order (same as SetIsApporve).
             if (statusCode == 1 && (order.SaleManId == null || order.SaleManId == 0))

@@ -55,5 +55,10 @@ namespace RomanaWeb.Models.Entity
         public decimal daNetAmount { get; set; }
         public decimal daCostDelivery { get; set; }
         public decimal daTotal { get; set; }
+
+        /// <summary>API/UI only — current food-net balance owed (no delivery fees).</summary>
+        public decimal FoodNetBalance { get; set; }
+        /// <summary>API/UI only — current delivery-fee balance owed.</summary>
+        public decimal DeliveryFeeBalance { get; set; }
     }
 }
