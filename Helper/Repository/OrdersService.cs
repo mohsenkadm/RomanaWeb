@@ -22,6 +22,7 @@ namespace RomanaWeb.Helper.Repository
         private readonly IConfiguration _config;
         private readonly ILoggerRepository _logger;
         private readonly IPromoCodeService _promoCode;
+        private readonly IUsersService _usersService;
         private readonly ISaleManBalanceService _saleManBalance;
 
         public OrdersService(
@@ -34,6 +35,7 @@ namespace RomanaWeb.Helper.Repository
             IConfiguration config,
             ILoggerRepository logger,
             IPromoCodeService promoCode,
+            IUsersService usersService,
             ISaleManBalanceService saleManBalance)
         {
             _context = context;
@@ -45,6 +47,7 @@ namespace RomanaWeb.Helper.Repository
             _config = config;
             _logger = logger;
             _promoCode = promoCode;
+            _usersService = usersService;
             _saleManBalance = saleManBalance;
         }
 
@@ -323,6 +326,13 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> GetOrdersByOrderNoAndUserId(string OrderNo, int? UserId)
         {
+            if (UserId is > 0)
+            {
+                ResObj activeCheck = await _usersService.EnsureActiveForApp(UserId.Value);
+                if (!activeCheck.success)
+                    return Result.Return(false, activeCheck.msg, new List<Orders>());
+            }
+
             List<Orders> data = await _OrdersRepository.GetEntityListAsync("dbo.GetOrdersByOrderNoAndUserId", new { OrderNo, UserId });
             return Result.Return(true, data);
         }   
@@ -591,6 +601,10 @@ namespace RomanaWeb.Helper.Repository
             }
             else
             {
+                ResObj activeCheck = await _usersService.EnsureActiveForApp(users.UserId);
+                if (!activeCheck.success)
+                    return Result.Return(false, activeCheck.msg);
+
                 var item = await _context.Users.FirstOrDefaultAsync(i=>i.UserId==users.UserId);
                 if (item != null)
                 {

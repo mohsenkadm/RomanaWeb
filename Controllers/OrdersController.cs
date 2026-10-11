@@ -17,6 +17,7 @@ namespace RomanaWeb.Controllers
         #region Readonly 
         private readonly ILoggerRepository _logger;
         private readonly IOrdersService _OrdersService;
+        private readonly IUsersService _UsersService;
         private readonly INotificationService _noteService;
         private readonly IOrderHubNotifier _hubNotifier;
         public readonly IMapper _mapper;
@@ -26,15 +27,40 @@ namespace RomanaWeb.Controllers
         public OrdersController(
             ILoggerRepository logger,
             IOrdersService OrdersService,
+            IUsersService UsersService,
             INotificationService noteService,
             IOrderHubNotifier hubNotifier,
             IMapper mapper)
         {
             _logger = logger;
             _OrdersService = OrdersService;
+            _UsersService = UsersService;
             _noteService = noteService;
             _hubNotifier = hubNotifier;
             _mapper = mapper;
+        }
+
+        private async Task<IActionResult?> RejectInactiveAuthenticatedCustomerAsync()
+        {
+            try
+            {
+                if (!(User?.Identity?.IsAuthenticated ?? false))
+                    return null;
+                var manager = UserManager;
+                if (manager == null)
+                    return null;
+                if (!string.Equals(manager.Role, "user", StringComparison.OrdinalIgnoreCase))
+                    return null;
+
+                ResObj activeCheck = await _UsersService.EnsureActiveForApp(manager.Id);
+                if (!activeCheck.success)
+                    return Response(false, activeCheck.msg);
+            }
+            catch
+            {
+                // No usable JWT claim.
+            }
+            return null;
         }
 
         private static string ResolveDisplayMode(string statusKey) =>
@@ -66,6 +92,9 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                var denied = await RejectInactiveAuthenticatedCustomerAsync();
+                if (denied != null) return denied;
+
                 ResObj res = await _OrdersService.GetOrdersWithDetailAll(Id);
 
                 return Response(res.success, res.data);
@@ -340,15 +369,14 @@ namespace RomanaWeb.Controllers
                 }
 
                 ResObj resuser = await _OrdersService.PostUser(ordersModel.Users);
-                                                                               
-                if (resuser.success)
-                {
-                    Users user = (Users)resuser.data;
-                   Orders.UserId=user.UserId;
-                   Orders.UserName=user.Name;
-                   Orders.Lat = user.Lat;
-                   Orders.Long = user.Long;
-                }
+                if (!resuser.success)
+                    return Response(false, resuser.msg);
+
+                Users user = (Users)resuser.data;
+                Orders.UserId = user.UserId;
+                Orders.UserName = user.Name;
+                Orders.Lat = user.Lat;
+                Orders.Long = user.Long;
 
                 ResObj res;
                 res = await _OrdersService.Post(Orders);
@@ -1123,6 +1151,9 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                var denied = await RejectInactiveAuthenticatedCustomerAsync();
+                if (denied != null) return denied;
+
                 ResObj res = await _OrdersService.GetOrderFullDetails(OrderId);
                 return Response(res.success, res.data);
             }

@@ -97,6 +97,8 @@ namespace RomanaWeb.Helper.Repository
                 return Result.Return(false, "الحساب غير موجود");
             if (user.IsBlock == true)
                 return Result.Return(false, "حسابك محظور");
+            if (user.IsActive == false)
+                return Result.Return(false, "حسابك غير فعال يرجى التواصل مع مدير التطبيق");
 
             var otpCheck = await ValidateAndConsumeOtpAsync(user, code);
             if (!otpCheck.success)
@@ -356,13 +358,13 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> UpdateProfile(int userId, Users input)
         {
+            ResObj activeCheck = await EnsureActiveForApp(userId);
+            if (!activeCheck.success)
+                return activeCheck;
+
             Users? user = await GetUsersById(userId);
-            if (user is null || user.IsDelete == true)
+            if (user is null)
                 return Result.Return(false, "الحساب غير موجود");
-            if (user.IsBlock == true)
-                return Result.Return(false, "حسابك محظور، يرجى التواصل مع الادارة");
-            if (user.IsActive == false)
-                return Result.Return(false, "حسابك غير فعال");
 
             string? newPhone = input.Phone?.Trim();
             if (string.IsNullOrWhiteSpace(newPhone) || newPhone.Length != 11 || !newPhone.All(char.IsDigit))
@@ -416,13 +418,13 @@ namespace RomanaWeb.Helper.Repository
             if (!OtpSettings.IsValidCodeFormat(code))
                 return Result.Return(false, "كود التحقق غير صحيح");
 
+            ResObj activeCheck = await EnsureActiveForApp(userId);
+            if (!activeCheck.success)
+                return activeCheck;
+
             Users? user = await GetUsersById(userId);
-            if (user is null || user.IsDelete == true)
+            if (user is null)
                 return Result.Return(false, "الحساب غير موجود");
-            if (user.IsBlock == true)
-                return Result.Return(false, "حسابك محظور");
-            if (user.IsActive == false)
-                return Result.Return(false, "حسابك غير فعال");
 
             string? pending = user.PendingPhone?.Trim();
             if (string.IsNullOrWhiteSpace(pending) || pending.Length != 11)
@@ -456,13 +458,13 @@ namespace RomanaWeb.Helper.Repository
 
         public async Task<ResObj> ResendPhoneChangeOtp(int userId)
         {
+            ResObj activeCheck = await EnsureActiveForApp(userId);
+            if (!activeCheck.success)
+                return activeCheck;
+
             Users? user = await GetUsersById(userId);
-            if (user is null || user.IsDelete == true)
+            if (user is null)
                 return Result.Return(false, "الحساب غير موجود");
-            if (user.IsBlock == true)
-                return Result.Return(false, "حسابك محظور، يرجى التواصل مع الادارة");
-            if (user.IsActive == false)
-                return Result.Return(false, "حسابك غير فعال");
 
             string? pending = user.PendingPhone?.Trim();
             if (string.IsNullOrWhiteSpace(pending) || pending.Length != 11)
@@ -515,6 +517,42 @@ namespace RomanaWeb.Helper.Repository
             await _context.SaveChangesAsync();
 
             return Result.Return(true, "تم حذف بنجاح");
+        }
+
+        public async Task<ResObj> SetActive(int Id, bool isActive)
+        {
+            Users? user = await _context.Users.FirstOrDefaultAsync(i => i.UserId == Id);
+            if (user == null)
+                return Result.Return(false, "الزبون غير موجود");
+            if (user.IsDelete == true)
+                return Result.Return(false, "حساب الزبون محذوف");
+
+            user.IsActive = isActive;
+            _context.Entry(user).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+
+            return Result.Return(true,
+                isActive
+                    ? "تم تنشيط الزبون بنجاح"
+                    : "تم الغاء تنشيط الزبون — الحساب باقٍ لكن لن يتمكن من استخدام التطبيق",
+                new { user.UserId, user.IsActive });
+        }
+
+        public async Task<ResObj> EnsureActiveForApp(int userId)
+        {
+            if (userId <= 0)
+                return Result.Return(false, "معرف غير صالح");
+
+            Users? user = await _context.Users.AsNoTracking()
+                .FirstOrDefaultAsync(i => i.UserId == userId);
+            if (user == null || user.IsDelete == true)
+                return Result.Return(false, "الحساب غير موجود");
+            if (user.IsBlock == true)
+                return Result.Return(false, "حسابك محظور، يرجى التواصل مع الادارة");
+            if (user.IsActive == false)
+                return Result.Return(false, "حسابك غير فعال يرجى التواصل مع مدير التطبيق");
+
+            return Result.Return(true, "ok");
         }
 
         public async Task<Users> GetUsersById(int Id)

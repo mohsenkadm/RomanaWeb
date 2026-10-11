@@ -22,6 +22,7 @@ namespace RomanaWeb.Controllers
         #region Readonly 
         private readonly ILoggerRepository _logger;
         private readonly INotificationService _NotificationServices;
+        private readonly IUsersService _UsersService;
         DB_Context _Context;
         private readonly IWebHostEnvironment _hostEnvironment;   
         public readonly IStorageServices _storageServices;
@@ -32,11 +33,13 @@ namespace RomanaWeb.Controllers
         public NotificationController(
             ILoggerRepository logger,
             INotificationService NotificationServices,
+            IUsersService UsersService,
             DB_Context dB_Context,
              IWebHostEnvironment hostEnvironment,  IStorageServices storageServices)
         {
             _logger = logger;
             _NotificationServices = NotificationServices;
+            _UsersService = UsersService;
             _Context=dB_Context;
                 _hostEnvironment = hostEnvironment;
             _storageServices = storageServices;
@@ -50,6 +53,13 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                if (UserId is > 0)
+                {
+                    ResObj activeCheck = await _UsersService.EnsureActiveForApp(UserId.Value);
+                    if (!activeCheck.success)
+                        return Response(false, activeCheck.msg, Array.Empty<object>());
+                }
+
                 ResObj res = await _NotificationServices.GetNotificationAll(UserId);
 
                 return Response(res.success, res.data);

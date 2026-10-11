@@ -42,6 +42,7 @@ function filltableUsers(payload) {
 
     $.each(items, function (i, item) {
         var uid = item.userId;
+        var active = item.isActive === true;
         var rows = "<tr>" +
             "<td>" + escHtml(item.functionPoint) + "</td>" +
             "<td>" +
@@ -60,13 +61,25 @@ function filltableUsers(payload) {
             "<td>" + escHtml(item.phone) + "</td>" +
             "<td>" + escHtml(item.name) + "</td>" +
             "<td class='rm-actions-cell'>" +
+            "<button type='button' class='btn btn-sm " + (active ? 'btn-warning' : 'btn-success') + "' onclick='toggleUserActive(" + uid + "," + (!active) + ")'>" +
+            (active ? 'الغاء تنشيط' : 'تنشيط') +
+            "</button> " +
             "<button type='button' class='btn btn-danger btn-sm' onclick='deleteUsers(" + uid + ")'>حذف</button> " +
             "<button type='button' class='btn btn-primary btn-sm' onclick='updateUsers(" + uid + ")' data-toggle='modal' data-target='#UsersModal'>تعديل</button>" +
             "</td></tr>";
         $('#tableUsers').append(rows);
         $('#IsConfirm' + uid).prop('checked', item.isConfirm === true);
-        $('#IsActive' + uid).prop('checked', item.isActive === true);
+        $('#IsActive' + uid).prop('checked', active);
     });
+}
+
+function toggleUserActive(id, makeActive) {
+    var msg = makeActive
+        ? 'هل تريد تنشيط هذا الزبون؟ سيتمكن من استخدام التطبيق ورؤية المطاعم والطلبات.'
+        : 'هل تريد الغاء تنشيط هذا الزبون؟ سيبقى حسابه لكن لن تظهر له المطاعم ولا الحساب ولا الاشعارات ولا الطلبات.';
+    if (!confirm(msg)) return;
+    call_ajax('POST', 'Users/SetActive?Id=' + id + '&isActive=' + (!!makeActive),
+        null, function () { loadUsersPage(_usersPage); });
 }
 
 function renderUsersPagination() {

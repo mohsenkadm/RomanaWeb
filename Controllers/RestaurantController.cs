@@ -21,6 +21,7 @@ namespace RomanaWeb.Controllers
         #region Readonly 
         private readonly ILoggerRepository _logger;
         private readonly IRestaurantService _RestaurantService;
+        private readonly IUsersService _UsersService;
         private readonly IWebHostEnvironment _hostEnvironment;
         public readonly IMapper _mapper;
         public readonly IStorageServices _storageServices;     
@@ -32,18 +33,47 @@ namespace RomanaWeb.Controllers
         public RestaurantController(
             ILoggerRepository logger,
             IRestaurantService RestaurantService,
+            IUsersService UsersService,
              IWebHostEnvironment hostEnvironment,   DB_Context dB_Context, IMapper mapper, IStorageServices storageServices,
              IConfiguration config)
         {
             _logger = logger;
-            _RestaurantService = RestaurantService;      
+            _RestaurantService = RestaurantService;
+            _UsersService = UsersService;
             _Context= dB_Context;
             _hostEnvironment = hostEnvironment;
             _mapper = mapper;
             _storageServices = storageServices;
             _config = config;
         }
-        #endregion         
+        #endregion
+
+        /// <summary>
+        /// When an authenticated customer is inactive, catalog endpoints return empty.
+        /// Guests (no JWT / non-user roles) are unaffected.
+        /// </summary>
+        private async Task<IActionResult?> RejectInactiveCustomerCatalogAsync()
+        {
+            try
+            {
+                if (!(User?.Identity?.IsAuthenticated ?? false))
+                    return null;
+                var manager = UserManager;
+                if (manager == null)
+                    return null;
+                if (!string.Equals(manager.Role, "user", StringComparison.OrdinalIgnoreCase))
+                    return null;
+
+                ResObj activeCheck = await _UsersService.EnsureActiveForApp(manager.Id);
+                if (!activeCheck.success)
+                    return Response(false, activeCheck.msg, Array.Empty<object>());
+            }
+            catch
+            {
+                // No usable JWT claim — treat as guest.
+            }
+            return null;
+        }         
 
         #region LoginRestaurant 
         [AllowAnonymous]
@@ -77,6 +107,9 @@ namespace RomanaWeb.Controllers
                 if (!_config.GetValue<bool>("Stores:AllowFetchByCity", false))
                     return StatusCode(410, new { success = false, msg = "This endpoint is deprecated. Use /Restaurant/GetByUserLocation." });
 
+                var denied = await RejectInactiveCustomerCatalogAsync();
+                if (denied != null) return denied;
+
 #pragma warning disable CS0618
                 ResObj res = await _RestaurantService.GetAllForApp(Name, CategoriesId,Long,Lat, CityId);
 #pragma warning restore CS0618
@@ -98,6 +131,9 @@ namespace RomanaWeb.Controllers
         {
             try
             {
+                var denied = await RejectInactiveCustomerCatalogAsync();
+                if (denied != null) return denied;
+
                 ResObj res = await _RestaurantService.GetByUserLocation(lat, lng, radius_km);
                 return Response(res.success, res.data);
             }
@@ -215,6 +251,9 @@ namespace RomanaWeb.Controllers
             {
                 if (!_config.GetValue<bool>("Stores:AllowFetchByCity", false))
                     return StatusCode(410, new { success = false, msg = "This endpoint is deprecated. Use /Restaurant/GetByUserLocation." });
+
+                var denied = await RejectInactiveCustomerCatalogAsync();
+                if (denied != null) return denied;
 
 #pragma warning disable CS0618
                 ResObj res = await _RestaurantService.GetTopAllForApp(Long,Lat, CityId);
